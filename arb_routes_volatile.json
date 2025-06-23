@@ -1,0 +1,8 @@
+[
+  ["USDC","WETH","USDC"],
+  ["USDC","WBTC","USDC"],
+  ["USDC","WMATIC","USDC"],   
+  ["DAI","WETH","DAI"],
+  ["USDT","WETH","USDT"]
+]
+
