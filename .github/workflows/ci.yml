@@ -14,7 +14,14 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v3
 
-      - name: 🧰 Setup Node.js
+      - name: 🚫 Reject env files
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.env($|\.)'; then
+            echo "::error ::🚨 Detected .env file(s) in commit—this is not allowed."
+            exit 1
+          fi
+
+      - name:   Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -22,11 +29,12 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
-      - name: 🧪 Syntax check for bot.js
+      - name:   Syntax check for bot.js
         run: node --check bot.js
 
       - name: 🔍 Simulate dry run (no private .env interaction)
         run: echo "Dry run would occur here" && ls -R .
 
-      - name: ✅ Success
+      - name:   Success
         run: echo "CI checks passed!"
+
