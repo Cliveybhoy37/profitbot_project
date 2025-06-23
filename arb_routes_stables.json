@@ -1,0 +1,8 @@
+[
+  ["DAI",  "USDC",  "DAI"],
+  ["DAI",  "USDT",  "DAI"],
+  ["USDC", "USDT",  "USDC"],
+  ["MAI",  "USDC",  "MAI"],
+  ["agEUR","EUROC","agEUR"]
+]
+
