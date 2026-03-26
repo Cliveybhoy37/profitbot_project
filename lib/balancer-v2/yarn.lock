@@ -13153,9 +13153,9 @@ __metadata:
   linkType: hard
 
 "yaml@npm:^1.10.2":
-  version: 1.10.2
-  resolution: "yaml@npm:1.10.2"
-  checksum: d6f04384bdf1105256581aef39991f825e358f3f48f081974b0e0f39ff5240c60ccafb5842cb79d1287517efa2b9ee172c702f2e4855ba6cc46948b40a43aa6e
+  version: 1.10.3
+  resolution: "yaml@npm:1.10.3"
+  checksum: 46a958a9df7e16acc0c3941e67001aa42c5bce46b99dd58e28d594cc15321a207b40a9348219ab273d48d29b551aee4f623c40521bf40f1d628d9057c585fa68
   languageName: node
   linkType: hard
 
