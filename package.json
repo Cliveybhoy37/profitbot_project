@@ -21,6 +21,6 @@
     "@aave/core-v3": "^1.19.3",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
-    "hardhat": "^2.20.2"
+    "hardhat": "^3.2.0"
   }
 }
