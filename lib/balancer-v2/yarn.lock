@@ -489,7 +489,7 @@ __metadata:
     ethers: "npm:^5.7.2"
     hardhat: "npm:^2.12.5"
     hardhat-ignore-warnings: "npm:^0.2.4"
-    lodash: "npm:^4.17.21"
+    lodash: "npm:^4.18.1"
     mocha: "npm:^10.1.0"
     nodemon: "npm:^2.0.20"
     prettier: "npm:^2.7.1"
@@ -8412,6 +8412,13 @@ __metadata:
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: 3ac18e92108d68f88429fcddee609e42cf2b653583d9bac22308815a4cd6b185b89a0ad0d9b0c670c371d9d6b61571a98fee6b36e1db14e52766ca253ed9cba0
+  languageName: node
+  linkType: hard
+
+"lodash@npm:^4.18.1":
+  version: 4.18.1
+  resolution: "lodash@npm:4.18.1"
+  checksum: 320def45917c82978a57fc7451c3f6c48ecdebe5df264b2f9023797573090e76051c7a3e5152fc0a1e4f070ec99d58ac80cd91af4c6e948cc4c30d66363aec48
   languageName: node
   linkType: hard
 
