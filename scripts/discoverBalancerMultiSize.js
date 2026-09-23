@@ -9,6 +9,9 @@ const { getQuote } = require("./utils/polygonDiscoveryQuotes");
 const { getBalancerQuote } = require("./utils/polygonBalancerQuotes");
 const TOKENS = require("./utils/polygonScannerTokens");
 const POOLS = require("./utils/polygonBalancerPools");
+const {
+  buildScanTarget
+} = require("./utils/polygonBalancerScanTarget");
 
 const provider =
   new ethers.providers.JsonRpcProvider(process.env.ALCHEMY_POLYGON);
@@ -32,33 +35,24 @@ if (!selectedPool) {
   );
 }
 
-if (!selectedPool.poolId) {
-  throw new Error(`Balancer pool ${poolKey} has no verified poolId`);
-}
+const scanTarget = buildScanTarget({
+  name: selectedPool.name,
+  address: selectedPool.address,
+  poolId: selectedPool.poolId,
+  tokens: selectedPool.tokens,
+  tokenRegistry: TOKENS,
+  startToken: "USDC_E"
+});
 
-if (selectedPool.tokens.length !== 3) {
-  throw new Error(
-    `Balancer pool ${poolKey} must expose exactly 3 scanner tokens`
-  );
-}
-
-const BALANCER_ASSETS =
-  selectedPool.tokens.map(symbol => TOKENS[symbol].address);
-
-const START_TOKEN = "USDC_E";
-
-if (!selectedPool.tokens.includes(START_TOKEN)) {
-  throw new Error(`${poolKey} does not contain ${START_TOKEN}`);
-}
-
-const OTHER_TOKENS =
-  selectedPool.tokens.filter(symbol => symbol !== START_TOKEN);
+const BALANCER_ASSETS = scanTarget.assets;
+const START_TOKEN = scanTarget.startToken;
+const OTHER_TOKENS = scanTarget.otherTokens;
 
 async function quote(venue, tokenIn, tokenOut, amountIn, blockTag) {
   if (venue === "BALANCER_V2") {
     return getBalancerQuote({
       provider,
-      poolId: selectedPool.poolId,
+      poolId: scanTarget.poolId,
       assets: BALANCER_ASSETS,
       tokenIn,
       tokenOut,
@@ -163,9 +157,9 @@ function bps(delta, startAmount) {
 
   console.log("Polygon snapshot block:", block);
   console.log("Balancer pool:", poolKey);
-  console.log("Pool address:", selectedPool.address);
-  console.log("Pool ID:", selectedPool.poolId);
-  console.log("Tokens:", selectedPool.tokens.join(", "));
+  console.log("Pool address:", scanTarget.address);
+  console.log("Pool ID:", scanTarget.poolId);
+  console.log("Tokens:", scanTarget.tokens.join(", "));
   console.log("Research sizes:", START_SIZES.join(", "), START_TOKEN);
   console.log("Live execution: OFF\n");
 
