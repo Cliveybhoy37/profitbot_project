@@ -7,6 +7,10 @@
 require("dotenv").config();
 const { ethers } = require("ethers");
 const TOKENS = require("./utils/polygonScannerTokens");
+const {
+  blocksSinceChange,
+  rankCandidates
+} = require("./utils/polygonBalancerCandidateRanking");
 
 const ENDPOINT = "https://api-v3.balancer.fi/graphql";
 const VAULT = "0xBA12222222228d8Ba445958a75a0704d566BF2C8";
@@ -165,6 +169,7 @@ async function verifyPool(pool, blockTag, vault) {
 
   let verifiedCount = 0;
   let triangleCount = 0;
+  const verifiedCandidates = [];
 
   for (const pool of candidates) {
     console.log("\n========================================");
@@ -190,12 +195,14 @@ async function verifyPool(pool, blockTag, vault) {
         result.lastChangeBlock.toString()
       );
 
-      const blocksSinceChange =
-        block - result.lastChangeBlock.toNumber();
+      const activityAge = blocksSinceChange(
+        block,
+        result.lastChangeBlock.toNumber()
+      );
 
       console.log(
         "Blocks since last change:",
-        blocksSinceChange
+        activityAge
       );
 
       if (!result.apiMatchesChain) {
@@ -209,6 +216,17 @@ async function verifyPool(pool, blockTag, vault) {
       }
 
       verifiedCount++;
+
+      verifiedCandidates.push({
+        name: pool.name,
+        address: pool.address,
+        poolId: result.poolId,
+        type: pool.type,
+        liquidity: pool.dynamicData?.totalLiquidity,
+        blocksSinceChange: activityAge,
+        verifiedTokens: result.verifiedTokens,
+        triangleCount: result.triangles.length
+      });
 
       for (const triangle of result.triangles) {
         triangleCount++;
@@ -225,5 +243,36 @@ async function verifyPool(pool, blockTag, vault) {
   console.log("\n========================================");
   console.log("On-chain verified candidate pools:", verifiedCount);
   console.log("Generated verified-token triangles:", triangleCount);
+
+  console.log("\nRESEARCH PRIORITY");
+  console.log("========================================");
+
+  const ranked = rankCandidates(verifiedCandidates);
+
+  for (const [index, candidate] of ranked.entries()) {
+    console.log(
+      `${index + 1}. [${candidate.priority}] ${candidate.name}`
+    );
+    console.log("   Type:", candidate.type);
+    console.log("   Liquidity:", candidate.liquidity);
+    console.log(
+      "   Blocks since last change:",
+      candidate.blocksSinceChange
+    );
+    console.log(
+      "   Verified tokens:",
+      candidate.verifiedTokens.join("/")
+    );
+    console.log("   Triangles:", candidate.triangleCount);
+    console.log(
+      "   Flags:",
+      candidate.reasons.length
+        ? candidate.reasons.join(", ")
+        : "none"
+    );
+  }
+
+  console.log("\nPriority is for research ordering only.");
+  console.log("No candidate is removed by ranking.");
   console.log("Live execution: OFF");
 })();
