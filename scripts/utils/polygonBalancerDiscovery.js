@@ -156,6 +156,59 @@ async function verifyPool({
   };
 }
 
+
+async function discoverVerifiedCandidates({
+  provider,
+  blockTag
+}) {
+  if (!provider) {
+    throw new Error("Balancer discovery requires provider");
+  }
+
+  if (blockTag === undefined || blockTag === null) {
+    throw new Error("Balancer discovery requires pinned blockTag");
+  }
+
+  const pools = await fetchPools();
+  const vault = createVault(provider);
+
+  const candidates = pools.filter(pool =>
+    Number(pool.protocolVersion) === 2 &&
+    verifiedOverlap(pool).length >= 3
+  );
+
+  const verified = [];
+
+  for (const pool of candidates) {
+    try {
+      const verification = await verifyPool({
+        pool,
+        blockTag,
+        provider,
+        vault
+      });
+
+      verified.push({
+        candidate: pool,
+        verification
+      });
+    } catch (error) {
+      verified.push({
+        candidate: pool,
+        verification: null,
+        error: error.message
+      });
+    }
+  }
+
+  return {
+    blockTag,
+    apiPoolCount: pools.length,
+    candidateCount: candidates.length,
+    verified
+  };
+}
+
 function createVault(provider) {
   if (!provider) {
     throw new Error("Balancer Vault requires provider");
@@ -177,5 +230,6 @@ module.exports = {
   verifiedOverlap,
   combinations3,
   verifyPool,
+  discoverVerifiedCandidates,
   createVault
 };

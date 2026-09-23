@@ -72,3 +72,18 @@ test("verifiedOverlap deduplicates trusted addresses", () => {
     ["USDC_E", "WETH"]
   );
 });
+
+test("verified discovery requires a pinned block", async () => {
+  const {
+    discoverVerifiedCandidates
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  await assert.rejects(
+    () =>
+      discoverVerifiedCandidates({
+        provider: {},
+        blockTag: null
+      }),
+    /requires pinned blockTag/
+  );
+});
