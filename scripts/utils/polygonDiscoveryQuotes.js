@@ -15,7 +15,7 @@ function makeV2Router(address, provider) {
   return new ethers.Contract(address, V2_ROUTER_ABI, provider);
 }
 
-async function getV2Quote(venueName, path, amountIn, provider) {
+async function getV2Quote(venueName, path, amountIn, provider, blockTag = null) {
   const venue = venues[venueName];
 
   if (!venue || venue.type !== "V2") {
@@ -27,7 +27,8 @@ async function getV2Quote(venueName, path, amountIn, provider) {
 
   try {
     const router = makeV2Router(venue.router, provider);
-    const amounts = await router.getAmountsOut(amountIn, path);
+    const callOverrides = blockTag == null ? {} : { blockTag };
+    const amounts = await router.getAmountsOut(amountIn, path, callOverrides);
     const amountOut = amounts[amounts.length - 1];
 
     return {
@@ -42,9 +43,9 @@ async function getV2Quote(venueName, path, amountIn, provider) {
   }
 }
 
-async function getQuote(venueName, path, amountIn, provider) {
+async function getQuote(venueName, path, amountIn, provider, blockTag = null) {
   if (venueName === "UNISWAP_V3") {
-    const quote = await getUniswapV3Quote(path, amountIn, provider);
+    const quote = await getUniswapV3Quote(path, amountIn, provider, blockTag);
 
     if (!quote || !quote.amountOut || quote.amountOut.lte(0)) {
       return null;
@@ -59,7 +60,7 @@ async function getQuote(venueName, path, amountIn, provider) {
     };
   }
 
-  return getV2Quote(venueName, path, amountIn, provider);
+  return getV2Quote(venueName, path, amountIn, provider, blockTag);
 }
 
 module.exports = {

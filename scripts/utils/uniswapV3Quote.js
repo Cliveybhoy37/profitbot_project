@@ -31,7 +31,7 @@ function selectBestQuote(quotes) {
   }, null);
 }
 
-async function getUniswapV3Quote(path, amountIn, provider) {
+async function getUniswapV3Quote(path, amountIn, provider, blockTag = null) {
   if (!Array.isArray(path) || path.length !== 2) return null;
   if (!provider || !amountIn || amountIn.lte(0)) return null;
 
@@ -43,7 +43,8 @@ async function getUniswapV3Quote(path, amountIn, provider) {
 
   for (const fee of FEE_TIERS) {
     try {
-      const pool = await factory.getPool(tokenIn, tokenOut, fee);
+      const callOverrides = blockTag == null ? {} : { blockTag };
+      const pool = await factory.getPool(tokenIn, tokenOut, fee, callOverrides);
       if (pool === ethers.constants.AddressZero) continue;
 
       const amountOut = await quoter.callStatic.quoteExactInputSingle(
@@ -51,7 +52,8 @@ async function getUniswapV3Quote(path, amountIn, provider) {
         tokenOut,
         fee,
         amountIn,
-        0
+        0,
+        callOverrides
       );
 
       quotes.push({

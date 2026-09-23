@@ -64,7 +64,8 @@ async function main() {
               venueOut,
               [base.address, intermediate.address],
               amountIn,
-              provider
+              provider,
+              startBlock
             );
 
             if (!first || first.amountOut.lte(0)) continue;
@@ -73,7 +74,8 @@ async function main() {
               venueBack,
               [intermediate.address, base.address],
               first.amountOut,
-              provider
+              provider,
+              startBlock
             );
 
             if (!second || second.amountOut.lte(0)) continue;
@@ -107,11 +109,18 @@ async function main() {
 
   const endBlock = await provider.getBlockNumber();
 
-  results.sort((a, b) => b.grossBps - a.grossBps);
+  results.sort((a, b) => {
+    const left = a.grossDelta.mul(b.amountIn);
+    const right = b.grossDelta.mul(a.amountIn);
+
+    if (left.eq(right)) return 0;
+    return left.gt(right) ? -1 : 1;
+  });
 
   console.log(`Attempted venue routes: ${attempted}`);
   console.log(`Completed round trips: ${completed}`);
-  console.log(`Block range observed: ${startBlock} -> ${endBlock}\n`);
+  console.log(`Quote snapshot block: ${startBlock}`);
+  console.log(`Wall-clock scan ended at block: ${endBlock}\n`);
 
   const top = results.slice(0, 20);
 
