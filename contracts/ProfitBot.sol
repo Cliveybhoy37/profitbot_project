@@ -76,6 +76,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
             && path2[path2.length - 1] == asset, "Route not closed");
         require(minOut1 > 0 && minOut2 > 0, "Zero minimum output");
 
+        uint256 startingAsset = IERC20(asset).balanceOf(address(this)) - amount;
         IERC20(asset).approve(address(uniswapRouter), amount);
         address intermediate = path1[path1.length - 1];
         uint256 beforeIntermediate = IERC20(intermediate).balanceOf(address(this));
@@ -90,7 +91,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
         );
         uint256 totalDebt = amount + premium;
         uint256 finalAmount = IERC20(asset).balanceOf(address(this));
-        require(finalAmount > totalDebt, "No token profit after repayment");
+        require(finalAmount > startingAsset + totalDebt, "No incremental token profit");
         emit ProfitEvaluated(finalAmount, totalDebt);
         IERC20(asset).approve(address(POOL), totalDebt);
         return true;

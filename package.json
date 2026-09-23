@@ -2,7 +2,7 @@
   "name": "profitbot_project",
   "version": "1.0.0",
   "scripts": {
-    "test": "node --test test/*.test.js && npx hardhat test test/ProfitBot.js",
+    "test": "node --test test/*.test.js && npx hardhat test test/ProfitBot.js test/execution.js",
     "manual:flashloan": "node scripts/manualTrigger.js",
     "scan:routes": "node scripts/autoScanner.js"
   },
@@ -23,5 +23,10 @@
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "hardhat": "^2.20.2"
+  },
+  "overrides": {
+    "@ethersproject/providers": {
+      "ws": "^8.21.0"
+    }
   }
 }

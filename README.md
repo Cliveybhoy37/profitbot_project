@@ -21,3 +21,5 @@ Historical scripts and vendored Balancer sources are preserved for review. This 
 Legacy transaction and deployment scripts are disabled at entry until individually audited. Historical files remain in version control.
 
 Dependency PR decisions and the historical environment-file risk are documented in `docs/dependency-pr-review.md`.
+
+Local Hardhat mock simulation now tests two-hop loan repayment, swap slippage revert, and rejection of losses despite existing contract funds. It is not a Polygon fork or a real deployed-contract test.

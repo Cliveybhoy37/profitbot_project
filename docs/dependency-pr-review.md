@@ -32,3 +32,5 @@ Additional remote branch `lib/balancer-v2/undici-5.29.0` has no common ancestor 
 Root `npm audit --omit=dev` at this checkpoint reports 19 findings (1 critical, 2 high, 4 moderate, 12 low); high/critical packages include `form-data`, `axios`, and `ws`. This counts transitive dependencies and is not evidence of exploitable bot behavior. Fixes require incremental root dependency updates and tests; a suggested `ws` fix involves a major ethers change and must not be applied blindly.
 
 After focused axios 1.20.0 and form-data 4.0.6 upgrades, `npm audit --omit=dev` reports 16 findings (0 critical, 1 high, 3 moderate, 12 low). Remaining high is `ws`, which requires separate dependency-tree review; no ethers major upgrade was applied.
+
+A scoped npm override now resolves `ws` under `@ethersproject/providers` to 8.21.3 while retaining ethers v5. After `npm ci` and the complete test suite, `npm audit --omit=dev` reports 15 findings (0 critical, 0 high, 1 moderate, 14 low). The separate Hardhat development dependency still uses ws 7.5.10; this is not part of the production-only audit. Review the full dependency tree again before production use.
