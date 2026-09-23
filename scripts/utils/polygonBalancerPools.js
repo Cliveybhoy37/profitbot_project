@@ -33,6 +33,19 @@ module.exports = Object.freeze({
     ])
   }),
 
+  TRUSTBAR: Object.freeze({
+    name: "Trustbar Bitcoin Weth Usdc Pool",
+    address: "0x702605f43471183158938c1a3e5f5a359d7b31ba",
+    poolId:
+      "0x702605f43471183158938c1a3e5f5a359d7b31ba00010000000000000000004a",
+    type: "WEIGHTED",
+    tokens: Object.freeze([
+      "WBTC",
+      "USDC_E",
+      "WETH"
+    ])
+  }),
+
   STABLE_POOL: Object.freeze({
     name: "Balancer Polygon Stable Pool",
     address: "0x06df3b2bbb68adc8b0e302443692037ed9f91b42",
