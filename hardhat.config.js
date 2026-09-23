@@ -4,7 +4,7 @@ require("@nomiclabs/hardhat-ethers");
 
 // ── optional local main-net fork ─────────────────────────────
 const USE_FORK = process.env.USE_FORK_BLOCK === "true";
-const POLYGON_SNAPSHOT = 72_000_000;   // change if you prefer a newer block
+const POLYGON_SNAPSHOT = Number(process.env.POLYGON_FORK_BLOCK || 72_000_000);
 
 module.exports = {
   defaultNetwork: "hardhat",
