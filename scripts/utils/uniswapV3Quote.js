@@ -1,77 +1,84 @@
-// scripts/utils/uniswapV3Quote.js
-// ————————————————————————————————————————————
-// Single-hop price lookup for Uniswap V3 on Polygon
-// ————————————————————————————————————————————
+"use strict";
+
+// Read-only single-hop Uniswap V3 quoting for Polygon.
 
 const { Contract, ethers } = require("ethers");
-const path                 = require("path");
 
-/*  ← Pull the ABI directly from the NPM package
- *     • robust across OS / working-directory changes
- *     • automatically stays in sync with the official repo
- */
-const QuoterV2ABI = require(
-  "@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json"
-).abi;
-
-const { tokenMap } = require("../../helpers/tokenMap");
-
-// ⇢ Polygon addresses
-const QUOTER_ADDRESS  = "0x91ae842A5Ffd8d12023116943e72A606179294f3";
+const QUOTER_ADDRESS = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6";
 const FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
+const FEE_TIERS = [500, 3000, 10000];
 
-const factoryAbi = [
-  "function getPool(address tokenA, address tokenB, uint24 fee) external view returns (address)"
+const QUOTER_ABI = [
+  "function quoteExactInputSingle(address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96) returns (uint256 amountOut)"
 ];
 
-let quoter, factory;
+const FACTORY_ABI = [
+  "function getPool(address tokenA,address tokenB,uint24 fee) view returns (address pool)"
+];
 
-// Initialise (lazy-load singletons)
-function init(provider) {
-  if (!quoter)  quoter  = new Contract(QUOTER_ADDRESS,  QuoterV2ABI, provider);
-  if (!factory) factory = new Contract(FACTORY_ADDRESS, factoryAbi,     provider);
-  return { quoter, factory };
+function selectBestQuote(quotes) {
+  if (!Array.isArray(quotes) || quotes.length === 0) return null;
+
+  return quotes.reduce((best, quote) => {
+    if (!best) return quote;
+
+    const greater =
+      quote.amountOut && typeof quote.amountOut.gt === "function"
+        ? quote.amountOut.gt(best.amountOut)
+        : quote.amountOut > best.amountOut;
+
+    return greater ? quote : best;
+  }, null);
 }
 
-/**
- *  getUniswapV3Quote(path, amountIn, provider)
- *  ------------------------------------------
- *  • path      : [tokenIn, tokenOut] addresses
- *  • amountIn  : BigNumber
- *  • provider  : ethers.js provider
- *  → returns   : { dex, amountOut }
- */
-const getUniswapV3Quote = async (path, amountIn, provider) => {
-  if (path.length !== 2) return null;
+async function getUniswapV3Quote(path, amountIn, provider) {
+  if (!Array.isArray(path) || path.length !== 2) return null;
+  if (!provider || !amountIn || amountIn.lte(0)) return null;
 
   const [tokenIn, tokenOut] = path;
-  const FEE_TIERS = [500, 3000, 10000];              // 0.05 %, 0.3 %, 1 %
+  const quoter = new Contract(QUOTER_ADDRESS, QUOTER_ABI, provider);
+  const factory = new Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
 
-  const { quoter, factory } = init(provider);
+  const quotes = [];
 
   for (const fee of FEE_TIERS) {
     try {
       const pool = await factory.getPool(tokenIn, tokenOut, fee);
-      if (pool === ethers.constants.AddressZero) continue;   // no pool at this tier
+      if (pool === ethers.constants.AddressZero) continue;
 
-      const amountOut = await quoter.callStatic.quoteExactInputSingle({
+      const amountOut = await quoter.callStatic.quoteExactInputSingle(
         tokenIn,
         tokenOut,
         fee,
         amountIn,
-        sqrtPriceLimitX96: 0
-      });
+        0
+      );
 
-      return { dex: `UniswapV3 (fee ${fee})`, amountOut };
-    } catch {
-      // pool exists but reverted (e.g. 0 liquidity) — soft skip
-      continue;
+      quotes.push({
+        dex: "UniswapV3",
+        amountOut,
+        fee,
+        pool
+      });
+    } catch (_) {
+      // Missing, empty or reverting pools are not viable candidates.
     }
   }
 
-  // Nothing worked
-  return { dex: "UniswapV3", amountOut: ethers.BigNumber.from(0) };
+  const best = selectBestQuote(quotes);
+
+  return best || {
+    dex: "UniswapV3",
+    amountOut: ethers.constants.Zero,
+    fee: null,
+    pool: null
+  };
+}
+
+module.exports = {
+  getUniswapV3Quote,
+  selectBestQuote,
+  QUOTER_ADDRESS,
+  FACTORY_ADDRESS,
+  FEE_TIERS
 };
-
-module.exports = { getUniswapV3Quote };
-
