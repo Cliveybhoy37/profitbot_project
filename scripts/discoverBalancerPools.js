@@ -190,6 +190,14 @@ async function verifyPool(pool, blockTag, vault) {
         result.lastChangeBlock.toString()
       );
 
+      const blocksSinceChange =
+        block - result.lastChangeBlock.toNumber();
+
+      console.log(
+        "Blocks since last change:",
+        blocksSinceChange
+      );
+
       if (!result.apiMatchesChain) {
         console.log("REJECTED: API/Vault token mismatch");
         continue;
