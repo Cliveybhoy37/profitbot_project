@@ -6,34 +6,12 @@
 require("dotenv").config();
 const { ethers } = require("ethers");
 const { getQuote } = require("./utils/polygonDiscoveryQuotes");
-const {
-  getBalancerQuote,
-  TRICRYPTO_POOL_ID
-} = require("./utils/polygonBalancerQuotes");
+const { getBalancerQuote } = require("./utils/polygonBalancerQuotes");
+const TOKENS = require("./utils/polygonScannerTokens");
+const POOLS = require("./utils/polygonBalancerPools");
 
 const provider =
   new ethers.providers.JsonRpcProvider(process.env.ALCHEMY_POLYGON);
-
-const TOKENS = {
-  USDC_E: {
-    address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-    decimals: 6
-  },
-  WETH: {
-    address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-    decimals: 18
-  },
-  WBTC: {
-    address: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
-    decimals: 8
-  }
-};
-
-const BALANCER_ASSETS = [
-  TOKENS.WBTC.address,
-  TOKENS.USDC_E.address,
-  TOKENS.WETH.address
-];
 
 const VENUES = [
   "BALANCER_V2",
@@ -42,11 +20,45 @@ const VENUES = [
   "UNISWAP_V3"
 ];
 
+// Select with:
+// BALANCER_POOL=TRICRYPTO node scripts/discoverBalancerTriangles.js
+// BALANCER_POOL=BASE_POOL node scripts/discoverBalancerTriangles.js
+const poolKey = process.env.BALANCER_POOL || "TRICRYPTO";
+const selectedPool = POOLS[poolKey];
+
+if (!selectedPool) {
+  throw new Error(
+    `Unknown BALANCER_POOL ${poolKey}. Available: ${Object.keys(POOLS).join(", ")}`
+  );
+}
+
+if (!selectedPool.poolId) {
+  throw new Error(`Balancer pool ${poolKey} has no verified poolId`);
+}
+
+if (selectedPool.tokens.length !== 3) {
+  throw new Error(
+    `Balancer pool ${poolKey} must expose exactly 3 scanner tokens`
+  );
+}
+
+const BALANCER_ASSETS =
+  selectedPool.tokens.map(symbol => TOKENS[symbol].address);
+
+const START_TOKEN = "USDC_E";
+
+if (!selectedPool.tokens.includes(START_TOKEN)) {
+  throw new Error(`${poolKey} does not contain ${START_TOKEN}`);
+}
+
+const OTHER_TOKENS =
+  selectedPool.tokens.filter(symbol => symbol !== START_TOKEN);
+
 async function quote(venue, tokenIn, tokenOut, amountIn, blockTag) {
   if (venue === "BALANCER_V2") {
     return getBalancerQuote({
       provider,
-      poolId: TRICRYPTO_POOL_ID,
+      poolId: selectedPool.poolId,
       assets: BALANCER_ASSETS,
       tokenIn,
       tokenOut,
@@ -140,21 +152,34 @@ function bps(delta, startAmount) {
   }
 
   const block = await provider.getBlockNumber();
-  const startAmount = ethers.utils.parseUnits("10", 6);
+
+  const startAmount = ethers.utils.parseUnits(
+    "10",
+    TOKENS[START_TOKEN].decimals
+  );
 
   console.log("Polygon snapshot block:", block);
+  console.log("Balancer pool:", poolKey);
+  console.log("Pool address:", selectedPool.address);
+  console.log("Pool ID:", selectedPool.poolId);
+  console.log("Tokens:", selectedPool.tokens.join(", "));
   console.log("Start: 10 USDC_E");
   console.log("Live execution: OFF\n");
 
   const directions = [
-    ["USDC_E", "WETH", "WBTC"],
-    ["USDC_E", "WBTC", "WETH"]
+    [START_TOKEN, OTHER_TOKENS[0], OTHER_TOKENS[1]],
+    [START_TOKEN, OTHER_TOKENS[1], OTHER_TOKENS[0]]
   ];
 
   let all = [];
 
   for (const order of directions) {
-    console.log("Scanning:", order.join(" -> "), "-> USDC_E");
+    console.log(
+      "Scanning:",
+      order.join(" -> "),
+      "->",
+      START_TOKEN
+    );
 
     const results = await scanDirection(
       order,
@@ -186,14 +211,20 @@ function bps(delta, startAmount) {
 
     console.log(
       "Final:",
-      ethers.utils.formatUnits(r.finalAmount, 6),
-      "USDC_E"
+      ethers.utils.formatUnits(
+        r.finalAmount,
+        TOKENS[START_TOKEN].decimals
+      ),
+      START_TOKEN
     );
 
     console.log(
       "Gross:",
-      ethers.utils.formatUnits(r.grossDelta, 6),
-      "USDC_E",
+      ethers.utils.formatUnits(
+        r.grossDelta,
+        TOKENS[START_TOKEN].decimals
+      ),
+      START_TOKEN,
       `(${bps(r.grossDelta, startAmount)} bps)`
     );
 
