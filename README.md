@@ -1,75 +1,15 @@
-# 📈 ProfitBot Project
+# ProfitBot (existing Polygon prototype)
 
-Modular Polygon Flashloan Arbitrage Bot — multi-hop, multi-DEX routing with Aave v4 integration and real-time profitability scans.
+This repository contains a Solidity Aave V3 flash loan receiver, DEX quote helpers, route files, and multiple historical scanners. It is **not validated for live arbitrage**. Live submission in `scripts/autoScanner.js` and `scripts/scanAndExecute.js` is disabled pending contract, quote, fee and fork simulation verification. `bot.js` and `scripts/simulateProfit.js` are disabled because their outputs were random.
 
----
+## Cloud checks
 
-## 🚀 Installation
+GitHub Actions runs on Node 22 with `npm ci`, deterministic unit tests, syntax checks and Hardhat compilation. Locally in a modern isolated environment, run `npm ci && npm test && npx hardhat compile`. No wallet or RPC credentials are needed for these checks. Never commit `.env` files or wallet secrets.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Cliveybhoy37/profitbot_project.git
-   cd profitbot_project
-Set up your Python environment:
+## Architecture and known limits
 
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-⚙️ Usage
-Run the bot with:
+`arb_routes.json` and `scripts/arb_routes.json` feed separate scanners. The quote helper checks V2 routers and falls back to 0x/ParaSwap, but `ProfitBot.sol` executes only a fixed Uniswap V2 style router followed by a fixed Sushi V2 style router, or a single Balancer swap. A successful API quote is therefore not proof of an executable route. The Balancer single swap cannot by itself return a different borrowed asset for loan repayment. Aave V3 flash loan premium must be read from the configured Pool for live estimates; hard-coded values are unsafe.
 
-node bot.js
-Configuration files:
+Quote comparisons must use the borrow token's decimals and include DEX pool fees and price impact at the actual size, flash loan premium, gas converted into borrow token units using current prices, slippage, and a successful transaction simulation at current state. `scripts/utils/netProfit.js` provides a deterministic final arithmetic gate and rejection reasons but is not wired to unverified scanner data. No live candidate is approved by the current pipeline.
 
-arb_routes.json — token pair routing
-
-helpers/ — Aave, Balancer, and DEX helper modules
-
-.env — private config (excluded via .gitignore)
-
-Make sure to set environment variables for:
-
-Your RPC URL
-
-Aave provider addresses
-
-Target DEXes and slippage thresholds
-
-🔍 Architecture
-Multi-hop flashloan routes via Aave v4
-
-DEX scanning for profitable trades (Uniswap, Sushi, Balancer)
-
-Route planning & execution
-
-Real-time profit/loss logging
-
-🤝 Contributing
-Contributions are welcome!
-
-Fork the repo
-
-Create a feature branch (git checkout -b feature-X)
-
-Submit a pull request with a detailed description
-
-Please use Issues for bugs and feature requests.
-
-🛡 License
-MIT — feel free to use, modify, and build commercially.
-
-🌐 Chain Support
-Chain	Flashloans	Tested	Notes
-Polygon	✅	✅	Fast, cheap gas
-Ethereum	✅	⚠️	Expensive gas
-Arbitrum	🔜	🚧	Planned support soon
-
----
-
-### ✅ What you can do next
-
-1. **Publish a release**: Go to *Releases → Create a new release*, tag `v1.0.0`, and optionally attach snapshots or docs.  
-2. **Add CI/CD**: Set up GitHub Actions (e.g., `.github/workflows/ci.yml`) for auto-tests or linting.  
-3. **Collaborate**: Invite collaborators via *Settings → Manage access*, and consider adding issue templates for smoother contributions.
-4, <!-- CI check update timestamp: 2025-06-23 -->
- 
+Historical scripts and vendored Balancer sources are preserved for review. This branch does not claim supported live Aave, Balancer, Uniswap, Sushi, 0x or ParaSwap routes. Do not run other legacy transaction scripts with funded wallets.

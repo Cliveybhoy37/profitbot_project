@@ -3,17 +3,19 @@ require("dotenv").config();
 
 const { ethers } = require("ethers");
 const fs = require("fs");
-const fetch = (...a) => import("node-fetch").then(({ default: f }) => f(...a));
+const fetch = globalThis.fetch;
 const { getBestQuote } = require("./utils/multiDexQuote");
 const { fetchPolygonGas } = require("./utils/fetchPolygonGas");
 const { toWeiSafe } = require("./utils/formatters");
-const tokenMap = require("../helpers/tokenMap");
+const { tokenMap } = require("../helpers/tokenMap");
 
 const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+const signer = false /* Execution disabled pending verified route, cost and contract simulation */
+  ? new ethers.Wallet(process.env.PRIVATE_KEY, provider)
+  : null;
 
 const abi = JSON.parse(fs.readFileSync("./artifacts/contracts/ProfitBot.sol/ProfitBot.json")).abi;
-const bot = new ethers.Contract(process.env.PROFITBOT_ADDRESS, abi, signer);
+const bot = new ethers.Contract(process.env.PROFITBOT_ADDRESS, abi, signer || provider);
 
 const aaveOracle = new ethers.Contract(
   process.env.AAVE_ORACLE_POLYGON,
@@ -93,7 +95,7 @@ async function getMaticPx() {
       continue;
     }
 
-    if (A === C) {
+    if (A !== C) {
       console.log(`⛔  Route ${A}→${B}→${C} is a round-trip — skip`);
       continue;
     }
@@ -149,6 +151,8 @@ async function getMaticPx() {
         ) * await getMaticPx();
 
         const netUsd = deltaUsd - gasUsd;
+        // Quote costs, flashloan premium and slippage are not fully verified here.
+        console.warn("⛔ Candidate unverified: flashloan fee, execution fees, price impact and slippage require validation");
 
         // 🔧 ENHANCED PROFIT DEBUG LOG
         console.log(`🔧 GAS: $${gasUsd.toFixed(3)}, GROSS_PROFIT: $${deltaUsd.toFixed(3)}, NET_PROFIT: $${netUsd.toFixed(3)}`);
@@ -167,7 +171,7 @@ async function getMaticPx() {
           [tA.address, amtIn, p1, p2, min1, min2]
         );
 
-        if (process.env.DRY_RUN === "true") {
+        if (!signer) {
           try {
             const estGas = await bot.estimateGas.initiateFlashloan(tA.address, amtIn, params);
             const usd = parseFloat(ethers.utils.formatEther(estGas.mul(feeData.maxFeePerGas))) * await getMaticPx();

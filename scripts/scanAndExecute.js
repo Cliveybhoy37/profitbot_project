@@ -8,12 +8,13 @@ const { isParaswapSupported } = require("../utils/paraswapTokens");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const provider = new ethers.providers.JsonRpcProvider(process.env.POLYGON_RPC);
-const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+const LIVE_ENABLED = false /* Execution disabled pending verified route, cost and contract simulation */;
+const signer = LIVE_ENABLED ? new ethers.Wallet(process.env.PRIVATE_KEY, provider) : null;
 
-const IS_DRY_RUN = process.env.DRY_RUN === "true";
+const IS_DRY_RUN = !LIVE_ENABLED;
 const PROFITBOT_ADDRESS = process.env.PROFITBOT_ADDRESS_POLYGON;
 const abi = JSON.parse(fs.readFileSync("./artifacts/contracts/ProfitBot.sol/ProfitBot.json")).abi;
-const contract = new ethers.Contract(PROFITBOT_ADDRESS, abi, signer);
+const contract = new ethers.Contract(PROFITBOT_ADDRESS, abi, signer || provider);
 
 const MIN_USD_PROFIT = parseFloat(process.env.MIN_USD_PROFIT || "0");
 const rawRoutes = JSON.parse(fs.readFileSync("./arb_routes.json"));
@@ -121,7 +122,7 @@ async function scanRoutes() {
         continue;
       }
 
-      if (quote1.amountOut.lt(MIN_LIQUIDITY_OUTPUT)) {
+      if (quote1.amountOut.lt(ethers.utils.parseUnits("10", await getDecimals(path1[1])))) {
         console.log(`🛑 Skipping illiquid path: quote1.out = ${formatToken(quote1.amountOut, decimals)} < 10`);
         continue;
       }
@@ -143,7 +144,7 @@ async function scanRoutes() {
 
       const finalUSD = parseFloat(ethers.utils.formatUnits(finalOut, decimals));
       const totalUSD = parseFloat(ethers.utils.formatUnits(totalCost, decimals));
-      const netProfitUSD = finalUSD - totalUSD - gasCostUSD;
+      const netProfitUSD = finalUSD - totalUSD - gasCostUSD; // Only valid for USD-pegged loan assets; execution stays disabled until full cost validation.
 
       const label = `${token0} → ${token1} → ${token2} [${size}]`;
       console.log(`🔎 [${label}] via ${quote1.dex} + ${quote2.dex}`);
@@ -182,6 +183,7 @@ async function scanRoutes() {
         );
 
         try {
+          if (minOut1.isZero() || minOut2.isZero()) throw new Error("Zero minimum output is unsafe");
           await contract.callStatic.initiateFlashloan(tokenAddr, amount, params, {
             gasLimit: 1_000_000,
           });

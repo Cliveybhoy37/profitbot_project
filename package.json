@@ -2,7 +2,7 @@
   "name": "profitbot_project",
   "version": "1.0.0",
   "scripts": {
-    "test": "echo \"No tests configured\"",
+    "test": "node --test test/netProfit.test.js",
     "manual:flashloan": "node scripts/manualTrigger.js",
     "scan:routes": "node scripts/autoScanner.js"
   },

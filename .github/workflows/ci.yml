@@ -1,40 +1,26 @@
-name: ProfitBot CI
-
+name: ProfitBot checks
 on:
   push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
-
+permissions:
+  contents: read
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v3
-
-      - name: 🚫 Reject env files
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Reject tracked environment files
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.env($|\.)'; then
-            echo "::error ::🚨 Detected .env file(s) in commit—this is not allowed."
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '\.env\.example$'; then
+            echo 'Tracked environment file found' >&2
             exit 1
           fi
-
-      - name:   Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: 📦 Install dependencies
-        run: npm install
-
-      - name:   Syntax check for bot.js
-        run: node --check bot.js
-
-      - name: 🔍 Simulate dry run (no private .env interaction)
-        run: echo "Dry run would occur here" && ls -R .
-
-      - name:   Success
-        run: echo "CI checks passed!"
-
+      - run: npm ci
+      - run: npm test
+      - run: node --check scripts/autoScanner.js
+      - run: node --check scripts/scanAndExecute.js
+      - run: npx hardhat compile

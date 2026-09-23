@@ -21,8 +21,8 @@ module.exports = {
       })
     },
 
-    polygon:  { url: process.env.POLYGON_RPC,  accounts: [process.env.PRIVATE_KEY] },
-    arbitrum: { url: process.env.ARBITRUM_RPC, accounts: [process.env.PRIVATE_KEY] },
+    ...(process.env.POLYGON_RPC ? { polygon: { url: process.env.POLYGON_RPC, accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [] } } : {}),
+    ...(process.env.ARBITRUM_RPC ? { arbitrum: { url: process.env.ARBITRUM_RPC, accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [] } } : {}),
     localhost:{ url: "http://127.0.0.1:8545" }
   },
 
