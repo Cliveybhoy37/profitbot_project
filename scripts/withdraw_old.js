@@ -1,3 +1,4 @@
+throw new Error("Legacy transaction script disabled pending audited simulation and owner review");
 const hre = require("hardhat");
 const { ethers } = hre;
 require("dotenv").config();

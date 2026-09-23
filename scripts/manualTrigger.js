@@ -1,3 +1,4 @@
+throw new Error("Legacy transaction script disabled pending audited simulation and owner review");
 // scripts/manualTrigger.js
 // Flash-loan one-shot
 //   node scripts/manualTrigger.js --in DAI --mid WETH --out DAI --amount 5

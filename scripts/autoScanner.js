@@ -1,195 +1,88 @@
-// scripts/autoScanner.js
+"use strict";
+// Read-only Polygon scanner for the exact two-router path in ProfitBot.sol.
 require("dotenv").config();
-
+const fs = require("node:fs");
 const { ethers } = require("ethers");
-const fs = require("fs");
-const fetch = globalThis.fetch;
-const { getBestQuote } = require("./utils/multiDexQuote");
-const { fetchPolygonGas } = require("./utils/fetchPolygonGas");
-const { toWeiSafe } = require("./utils/formatters");
-const { tokenMap } = require("../helpers/tokenMap");
+const { evaluate } = require("./utils/netProfit");
 
-const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-const signer = false /* Execution disabled pending verified route, cost and contract simulation */
-  ? new ethers.Wallet(process.env.PRIVATE_KEY, provider)
-  : null;
+const ERC20 = ["function decimals() view returns (uint8)"];
+const ROUTER = ["function getAmountsOut(uint256,address[]) view returns (uint256[])"];
+const PROVIDER = ["function getPool() view returns (address)"];
+const POOL = ["function FLASHLOAN_PREMIUM_TOTAL() view returns (uint128)"];
+const ORACLE = ["function getAssetPrice(address) view returns (uint256)"];
+const BOT = ["function initiateFlashloan(address,uint256,bytes)"];
+const required = name => {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is required for read-only scanning`);
+  return value;
+};
+const rejection = (route, reason) => console.log(JSON.stringify({ route, accepted: false, reason }));
+const minOutput = (value, bps) => value.mul(10000 - bps).div(10000);
 
-const abi = JSON.parse(fs.readFileSync("./artifacts/contracts/ProfitBot.sol/ProfitBot.json")).abi;
-const bot = new ethers.Contract(process.env.PROFITBOT_ADDRESS, abi, signer || provider);
-
-const aaveOracle = new ethers.Contract(
-  process.env.AAVE_ORACLE_POLYGON,
-  ["function getAssetPrice(address) view returns (uint256)"],
-  provider
-);
-
-const MIN_TRADE_USD = parseFloat(process.env.MIN_TRADE_USD || "0");
-
-const addressToSymbol = Object.fromEntries(
-  Object.entries(tokenMap)
-    .filter(([, i]) => i && i.address)
-    .map(([sym, i]) => [i.address.toLowerCase(), sym])
-);
-
-const routesFile = process.env.ROUTES_FILE || "./scripts/arb_routes.json";
-const PAIRS = JSON.parse(fs.readFileSync(routesFile));
-
-const AMT_SIZES = process.env.AMT_SIZES
-  ? process.env.AMT_SIZES.split(",").map(s => s.trim())
-  : ["250", "500", "1000", "2500", "5000"];
-
-const MIN_USD_PFT = parseFloat(process.env.MIN_USD_PFT || "0.05");
-
-async function build1559(overrideTipGwei) {
-  const tipGwei = overrideTipGwei
-    ? ethers.BigNumber.from(overrideTipGwei)
-    : ethers.BigNumber.from(await fetchPolygonGas().then(g => g.proposeGas));
-
-  const blk = await provider.getBlock("latest");
-  const base = blk.baseFeePerGas;
-  if (base.gt(ethers.utils.parseUnits("90", "gwei")))
-    throw new Error("BASE_FEE_TOO_HIGH");
-
-  const priority = ethers.utils.parseUnits(tipGwei.toString(), "gwei");
-  const maxFee = base.add(priority).add(ethers.utils.parseUnits("5", "gwei"));
-
-  return { maxFeePerGas: maxFee, maxPriorityFeePerGas: priority };
-}
-
-async function usdValue(addr, amount) {
-  const pxRaw = await aaveOracle.getAssetPrice(addr);  // Aave returns price in 8 decimals
-  const sym = addressToSymbol[addr.toLowerCase()];
-  const decs = tokenMap[sym]?.decimals || 18;
-
-  const px = ethers.utils.parseUnits("1", decs).mul(pxRaw).div(1e8);
-  const valueUsd = parseFloat(ethers.utils.formatUnits(amount.mul(px).div(ethers.utils.parseUnits("1", decs)), decs));
-
-  console.log(`🧪 usdValue debug:
-    Token: ${sym}
-    Address: ${addr}
-    Amount (raw): ${amount.toString()}
-    Price (raw px): ${pxRaw.toString()}
-    Decimals: ${decs}
-    USD Value: $${valueUsd}
-  `);
-
-  return valueUsd;
-}
-
-async function getMaticPx() {
-  if (global.maticPx) return global.maticPx;
-  try {
-    const j = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=usd")
-      .then(r => r.json());
-    global.maticPx = j["matic-network"].usd || 0.8;
-  } catch {
-    global.maticPx = 0.8;
-  }
-  return global.maticPx;
-}
-
-(async () => {
-  for (const [A, B, C] of PAIRS) {
-    if (!tokenMap[A] || !tokenMap[B] || !tokenMap[C]) {
-      console.warn(`⚠️  Missing token: ${A}/${B}/${C}`);
-      continue;
-    }
-
-    if (A !== C) {
-      console.log(`⛔  Route ${A}→${B}→${C} is a round-trip — skip`);
-      continue;
-    }
-
-    const tA = tokenMap[A], tB = tokenMap[B], tC = tokenMap[C];
-    const p1 = [tA.address, tB.address];
-    const p2 = [tB.address, tC.address];
-
-    for (const size of AMT_SIZES) {
-      const amtIn = toWeiSafe(size, tA.decimals);
-
-      try {
-        const q1 = await getBestQuote(p1, amtIn, provider);
-        if (q1.routeSummary) console.log(`🔍 Hop-1 route: ${A} → ${B} via ${q1.routeSummary}`);
-
-        const q2 = await getBestQuote(p2, q1.amountOut, provider);
-        if (q2.routeSummary) console.log(`🔍 Hop-2 route: ${B} → ${C} via ${q2.routeSummary}`);
-
-        if (q1.amountOut.isZero() || q2.amountOut.isZero())
-          throw new Error("zero quote");
-        if (q1.amountOut.lt(toWeiSafe("0.000001", tB.decimals)))
-          throw new Error("tiny quote");
-
-        if (q1.dex && q2.dex && q1.dex === q2.dex) {
-          console.log(`🔸 ${A}/${B}/${C} same-DEX ${q1.dex} – skip`);
-          continue;
-        }
-
-        const inUsd = await usdValue(tA.address, amtIn);
-        const outUsd = await usdValue(tC.address, q2.amountOut);
-        const deltaUsd = outUsd - inUsd;
-
-        if (deltaUsd < MIN_TRADE_USD) {
-          console.log(`🧹 Profit $${deltaUsd.toFixed(2)} below MIN_TRADE_USD ($${MIN_TRADE_USD}) — skip`);
-          continue;
-        }
-
-        let feeData;
-        try {
-          feeData = await build1559(process.env.GAS_OVERRIDE_GWEI);
-        } catch (e) {
-          if (e.message === "BASE_FEE_TOO_HIGH") {
-            console.log("⛽  baseFee > 90 gwei — skip");
-            continue;
-          }
-          throw e;
-        }
-
-        const gasUsd = parseFloat(
-          ethers.utils.formatEther(
-            ethers.BigNumber.from(500_000).mul(feeData.maxFeePerGas)
-          )
-        ) * await getMaticPx();
-
-        const netUsd = deltaUsd - gasUsd;
-        // Quote costs, flashloan premium and slippage are not fully verified here.
-        console.warn("⛔ Candidate unverified: flashloan fee, execution fees, price impact and slippage require validation");
-
-        // 🔧 ENHANCED PROFIT DEBUG LOG
-        console.log(`🔧 GAS: $${gasUsd.toFixed(3)}, GROSS_PROFIT: $${deltaUsd.toFixed(3)}, NET_PROFIT: $${netUsd.toFixed(3)}`);
-
-        if (netUsd < MIN_USD_PFT) {
-          console.log(`🧹 Profit $${netUsd.toFixed(2)} below MIN_USD_PFT ($${MIN_USD_PFT}) — skip`);
-          continue;
-        }
-
-        const hopSlip = ["DAI", "USDC", "USDT", "MAI"].includes(A) ? 1 : 1.5;
-        const min1 = q1.amountOut.mul(100 - hopSlip).div(100);
-        const min2 = q2.amountOut.mul(100 - hopSlip).div(100);
-
-        const params = ethers.utils.defaultAbiCoder.encode(
-          ["address", "uint256", "address[]", "address[]", "uint256", "uint256"],
-          [tA.address, amtIn, p1, p2, min1, min2]
-        );
-
-        if (!signer) {
-          try {
-            const estGas = await bot.estimateGas.initiateFlashloan(tA.address, amtIn, params);
-            const usd = parseFloat(ethers.utils.formatEther(estGas.mul(feeData.maxFeePerGas))) * await getMaticPx();
-            console.log(`⛽  ${estGas.toString()} @ ${feeData.maxFeePerGas.toString()} (~$${usd.toFixed(2)})`);
-          } catch (err) {
-            console.warn("⚠️  gas-estimate failed:", err.reason || err.message);
-          }
-        } else {
-          const tx = await bot.initiateFlashloan(tA.address, amtIn, params, feeData);
-          console.log(`🚀 Tx: ${tx.hash}`);
-          await tx.wait();
-          console.log("✅ Tx confirmed.");
-        }
-
-      } catch (e) {
-        console.warn(`❌  ${A}→${B}→${C} failed: ${e.message}`);
+async function main() {
+  const rpc = new ethers.providers.JsonRpcProvider(required("POLYGON_RPC"));
+  const [chain, block] = await Promise.all([rpc.getNetwork(), rpc.getBlock("latest")]);
+  if (chain.chainId !== 137) throw new Error("Polygon chain ID 137 required");
+  if (!block || Date.now() - block.timestamp * 1000 > 120000) throw new Error("Stale Polygon block");
+  const uni = new ethers.Contract(required("UNISWAP_ROUTER_POLYGON"), ROUTER, rpc);
+  const sushi = new ethers.Contract(required("SUSHISWAP_ROUTER_POLYGON"), ROUTER, rpc);
+  const botAddress = required("PROFITBOT_ADDRESS_POLYGON");
+  const bot = new ethers.Contract(botAddress, BOT, rpc);
+  const provider = new ethers.Contract(required("AAVE_PROVIDER_POLYGON"), PROVIDER, rpc);
+  const poolAddress = await provider.getPool();
+  const premiumBps = await new ethers.Contract(poolAddress, POOL, rpc).FLASHLOAN_PREMIUM_TOTAL();
+  const oracle = new ethers.Contract(required("AAVE_ORACLE_POLYGON"), ORACLE, rpc);
+  const native = required("WMATIC_POLYGON");
+  const [nativePrice, feeData] = await Promise.all([oracle.getAssetPrice(native), rpc.getFeeData()]);
+  if (nativePrice.isZero() || !feeData.maxFeePerGas) throw new Error("Missing native price or gas fee");
+  const slip = Number(process.env.SLIPPAGE_BPS || 50);
+  if (!Number.isInteger(slip) || slip < 1 || slip > 1000) throw new Error("SLIPPAGE_BPS must be 1..1000");
+  const routes = JSON.parse(fs.readFileSync(process.env.ROUTES_FILE || "./arb_routes.json", "utf8"));
+  const minProfit = process.env.MIN_PROFIT_BPS || "10";
+  if (!/^\d+$/.test(minProfit)) throw new Error("Invalid MIN_PROFIT_BPS");
+  for (const route of routes) {
+    try {
+      if (!Array.isArray(route) || route.length !== 3 || route[0] !== route[2] || route[0] === route[1]) {
+        rejection(route, "invalid closed route"); continue;
       }
-    }
+      const [a, b] = route;
+      const tokenA = required(`${a}_POLYGON`), tokenB = required(`${b}_POLYGON`);
+      if (!ethers.utils.isAddress(tokenA) || !ethers.utils.isAddress(tokenB) || tokenA.toLowerCase() === tokenB.toLowerCase())
+        throw new Error("Invalid token addresses");
+      const decimals = await new ethers.Contract(tokenA, ERC20, rpc).decimals();
+      const size = ethers.utils.parseUnits(process.env.LOAN_SIZE || "10", decimals);
+      const q1 = (await uni.getAmountsOut(size, [tokenA, tokenB]))[1];
+      if (q1.isZero()) { rejection(route, "insufficient first-hop liquidity"); continue; }
+      const min1 = minOutput(q1, slip);
+      // Quote hop two with the worst allowed hop-one output.
+      const q2 = (await sushi.getAmountsOut(min1, [tokenB, tokenA]))[1];
+      const min2 = minOutput(q2, slip);
+      if (min1.isZero() || min2.isZero()) { rejection(route, "insufficient second-hop liquidity"); continue; }
+      const tokenPrice = await oracle.getAssetPrice(tokenA);
+      if (tokenPrice.isZero()) { rejection(route, "missing token price"); continue; }
+      const premium = size.mul(premiumBps).add(9999).div(10000);
+      const params = ethers.utils.defaultAbiCoder.encode(
+        ["address", "uint256", "address[]", "address[]", "uint256", "uint256"],
+        [tokenA, size, [tokenA, tokenB], [tokenB, tokenA], min1, min2]);
+      let gas;
+      try { gas = await bot.estimateGas.initiateFlashloan(tokenA, size, params); }
+      catch (e) { rejection(route, `simulation failed: ${e.reason || e.code || "contract revert"}`); continue; }
+      // Round gas cost upward in borrowed token smallest units; Aave prices share one base currency.
+      const nativeWei = gas.mul(feeData.maxFeePerGas);
+      const gasInToken = nativeWei.mul(nativePrice).mul(ethers.BigNumber.from(10).pow(decimals))
+        .add(tokenPrice.mul(ethers.constants.WeiPerEther).sub(1))
+        .div(tokenPrice.mul(ethers.constants.WeiPerEther));
+      const result = evaluate({ input: BigInt(size.toString()), quotedOutput: BigInt(q2.toString()),
+        flashloanFee: BigInt(premium.toString()), gasInToken: BigInt(gasInToken.toString()),
+        slippageBps: slip, quoteAgeMs: Date.now() - block.timestamp * 1000, maxQuoteAgeMs: 120000,
+        executable: true, simulationPassed: true });
+      const threshold = BigInt(size.toString()) * BigInt(minProfit) / 10000n;
+      console.log(JSON.stringify({ route, accepted: false, estimatedPositive: result.accepted && result.net > threshold,
+        netRaw: result.net.toString(), gasRaw: gasInToken.toString(), premiumRaw: premium.toString(),
+        reasons: result.reasons.concat(result.net <= threshold ? ["below minimum net profit"] : [], ["deployed contract version not verified"]),
+        note: "read-only estimate; no transaction submitted" }));
+    } catch (e) { rejection(route, e.reason || e.message); }
   }
-})();
-
+}
+if (require.main === module) main().catch(e => { console.error(e.message); process.exitCode = 1; });
+module.exports = { main, minOutput };

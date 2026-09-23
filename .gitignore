@@ -135,3 +135,7 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .env*
+
+# Generated Hardhat outputs (historically tracked files remain in Git)
+/artifacts/
+/cache/

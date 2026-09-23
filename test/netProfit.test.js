@@ -17,3 +17,8 @@ test('nonprofitable and malformed quotes are rejected', () => {
   assert.equal(evaluate({ ...base, quotedOutput: 100_000_000n }).accepted, false);
   assert.throws(() => evaluate({ ...base, quotedOutput: NaN }), TypeError);
 });
+test('non-18-decimal borrowed token arithmetic remains in raw units', () => {
+  const result = evaluate({ ...base, input: 1_000_000n, quotedOutput: 1_020_000n,
+    flashloanFee: 900n, gasInToken: 2_000n, slippageBps: 50 });
+  assert.equal(result.net, 12_000n);
+});

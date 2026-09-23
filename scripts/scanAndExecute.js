@@ -1,3 +1,4 @@
+throw new Error("Unsafe legacy scanner disabled; use read-only scripts/autoScanner.js");
 require("dotenv").config();
 const { ethers } = require("ethers");
 const fs = require("fs");

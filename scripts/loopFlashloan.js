@@ -1,3 +1,4 @@
+throw new Error("Legacy transaction script disabled pending audited simulation and owner review");
 // scripts/loopFlashloan.js
 
 require("dotenv").config();

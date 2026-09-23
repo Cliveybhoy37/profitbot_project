@@ -66,65 +66,34 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
         require(msg.sender == address(POOL), "Only callable by Aave pool");
         require(initiator == address(this), "Only initiated internally");
 
-        try this.decodeBalancerParams(params) returns (
-            string memory route,
-            address tokenIn,
-            address tokenOut,
-            bytes32 poolId,
-            uint256 minOut1,
-            uint256 minOut2
-        ) {
-            if (keccak256(bytes(route)) == keccak256("balancer")) {
-                emit DebugText("Balancer route detected");
-                uint256 amountOut = _balancerSwapSingle(poolId, tokenIn, tokenOut, amount, minOut1);
-                emit SwapResult(amountOut);
+        (address token, uint256 loanAmount, address[] memory path1,
+         address[] memory path2, uint256 minOut1, uint256 minOut2) =
+            abi.decode(params, (address, uint256, address[], address[], uint256, uint256));
 
-                uint256 totalDebt = amount + premium;
-                uint256 finalAmount = IERC20(asset).balanceOf(address(this));
-                emit ProfitEvaluated(finalAmount, totalDebt);
-                IERC20(asset).approve(address(POOL), totalDebt);
-                return true;
-            }
-        } catch {
-            emit DebugText("Fallback to Uniswap/Sushi path");
+        require(token == asset && loanAmount == amount, "Loan mismatch");
+        require(path1.length >= 2 && path2.length >= 2, "Invalid paths");
+        require(path1[0] == asset && path1[path1.length - 1] == path2[0]
+            && path2[path2.length - 1] == asset, "Route not closed");
+        require(minOut1 > 0 && minOut2 > 0, "Zero minimum output");
 
-            (
-                address token,
-                uint256 loanAmount,
-                address[] memory path1,
-                address[] memory path2,
-                uint256 minOut1,
-                uint256 minOut2
-            ) = abi.decode(params, (address, uint256, address[], address[], uint256, uint256));
-
-            emit DebugText("Swapping via Uniswap...");
-            IERC20(token).approve(address(uniswapRouter), loanAmount);
-            uint256 beforeIntermediate = IERC20(path1[path1.length - 1]).balanceOf(address(this));
-
-            uniswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                loanAmount, minOut1, path1, address(this), block.timestamp
-            );
-
-            uint256 afterIntermediate = IERC20(path1[path1.length - 1]).balanceOf(address(this));
-            uint256 interAmount = afterIntermediate - beforeIntermediate;
-
-            // ✅ NEW: Slippage check logs
-            emit DebugText(string(abi.encodePacked("Expected minOut1: ", Strings.toString(minOut1))));
-            emit DebugText(string(abi.encodePacked("Actual out: ", Strings.toString(interAmount))));
-
-            emit DebugText("Swapping via Sushi...");
-            IERC20(path1[path1.length - 1]).approve(address(sushiSwapRouter), interAmount);
-
-            sushiSwapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                interAmount, minOut2, path2, address(this), block.timestamp
-            );
-
-            uint256 totalDebt = amount + premium;
-            uint256 finalAmount = IERC20(asset).balanceOf(address(this));
-            emit ProfitEvaluated(finalAmount, totalDebt);
-            IERC20(asset).approve(address(POOL), totalDebt);
-            return true;
-        }
+        IERC20(asset).approve(address(uniswapRouter), amount);
+        address intermediate = path1[path1.length - 1];
+        uint256 beforeIntermediate = IERC20(intermediate).balanceOf(address(this));
+        uniswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            amount, minOut1, path1, address(this), block.timestamp
+        );
+        uint256 interAmount = IERC20(intermediate).balanceOf(address(this)) - beforeIntermediate;
+        require(interAmount >= minOut1, "First output below minimum");
+        IERC20(intermediate).approve(address(sushiSwapRouter), interAmount);
+        sushiSwapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            interAmount, minOut2, path2, address(this), block.timestamp
+        );
+        uint256 totalDebt = amount + premium;
+        uint256 finalAmount = IERC20(asset).balanceOf(address(this));
+        require(finalAmount > totalDebt, "No token profit after repayment");
+        emit ProfitEvaluated(finalAmount, totalDebt);
+        IERC20(asset).approve(address(POOL), totalDebt);
+        return true;
     }
 
     function _balancerSwapSingle(

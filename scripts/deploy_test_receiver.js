@@ -1,3 +1,4 @@
+throw new Error("Legacy transaction script disabled pending audited simulation and owner review");
 // scripts/deploy_test_receiver.js
 const hre = require("hardhat");
 require("dotenv").config();
