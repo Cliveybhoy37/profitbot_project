@@ -12,6 +12,12 @@ const POOLS = require("./utils/polygonBalancerPools");
 const {
   buildScanTarget
 } = require("./utils/polygonBalancerScanTarget");
+const {
+  discoverVerifiedCandidates
+} = require("./utils/polygonBalancerDiscovery");
+const {
+  buildVerifiedScanTargets
+} = require("./utils/polygonBalancerTargetSelection");
 
 const provider =
   new ethers.providers.JsonRpcProvider(process.env.ALCHEMY_POLYGON);
@@ -48,12 +54,19 @@ const BALANCER_ASSETS = scanTarget.assets;
 const START_TOKEN = scanTarget.startToken;
 const OTHER_TOKENS = scanTarget.otherTokens;
 
-async function quote(venue, tokenIn, tokenOut, amountIn, blockTag) {
+async function quote(
+  scanTarget,
+  venue,
+  tokenIn,
+  tokenOut,
+  amountIn,
+  blockTag
+) {
   if (venue === "BALANCER_V2") {
     return getBalancerQuote({
       provider,
       poolId: scanTarget.poolId,
-      assets: BALANCER_ASSETS,
+      assets: scanTarget.assets,
       tokenIn,
       tokenOut,
       amountIn,
@@ -70,7 +83,7 @@ async function quote(venue, tokenIn, tokenOut, amountIn, blockTag) {
   );
 }
 
-async function testRoute(order, venues, startAmount, blockTag) {
+async function testRoute(scanTarget, order, venues, startAmount, blockTag) {
   let amount = startAmount;
   const legs = [];
 
@@ -81,6 +94,7 @@ async function testRoute(order, venues, startAmount, blockTag) {
 
     try {
       const q = await quote(
+        scanTarget,
         venue,
         TOKENS[from].address,
         TOKENS[to].address,
@@ -115,13 +129,14 @@ async function testRoute(order, venues, startAmount, blockTag) {
   };
 }
 
-async function scanDirection(order, startAmount, blockTag) {
+async function scanDirection(scanTarget, order, startAmount, blockTag) {
   const results = [];
 
   for (const v1 of VENUES) {
     for (const v2 of VENUES) {
       for (const v3 of VENUES) {
         const result = await testRoute(
+          scanTarget,
           order,
           [v1, v2, v3],
           startAmount,
@@ -189,6 +204,7 @@ function bps(delta, startAmount) {
       );
 
       const results = await scanDirection(
+        scanTarget,
         order,
         startAmount,
         block
