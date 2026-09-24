@@ -44,3 +44,75 @@ contract TestRouter {
         IERC20(path[path.length-1]).transfer(to,out);
     }
 }
+
+contract TestV3Router {
+    struct ExactInputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        uint24 fee;
+        address recipient;
+        uint256 deadline;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+        uint160 sqrtPriceLimitX96;
+    }
+
+    uint256 public ratioBps;
+
+    constructor(uint256 ratio_) {
+        ratioBps = ratio_;
+    }
+
+    function exactInputSingle(
+        ExactInputSingleParams calldata params
+    ) external payable returns (uint256 amountOut) {
+        amountOut = params.amountIn * ratioBps / 10000;
+        require(amountOut >= params.amountOutMinimum, "slippage");
+        IERC20(params.tokenIn).transferFrom(
+            msg.sender,
+            address(this),
+            params.amountIn
+        );
+        IERC20(params.tokenOut).transfer(params.recipient, amountOut);
+    }
+}
+
+import { IVault } from "../lib/balancer-v2/pkg/interfaces/contracts/vault/IVault.sol";
+
+contract TestBalancerVault {
+    uint256 public ratioBps;
+
+    constructor(uint256 ratio_) {
+        ratioBps = ratio_;
+    }
+
+    function swap(
+        IVault.SingleSwap memory singleSwap,
+        IVault.FundManagement memory funds,
+        uint256 limit,
+        uint256 deadline
+    ) external payable returns (uint256 amountOut) {
+        require(
+            singleSwap.kind == IVault.SwapKind.GIVEN_IN,
+            "unsupported swap kind"
+        );
+        require(block.timestamp <= deadline, "expired");
+
+        amountOut = singleSwap.amount * ratioBps / 10000;
+        require(amountOut >= limit, "slippage");
+
+        address tokenIn = address(singleSwap.assetIn);
+        address tokenOut = address(singleSwap.assetOut);
+
+        IERC20(tokenIn).transferFrom(
+            funds.sender,
+            address(this),
+            singleSwap.amount
+        );
+
+        IERC20(tokenOut).transfer(
+            funds.recipient,
+            amountOut
+        );
+    }
+}

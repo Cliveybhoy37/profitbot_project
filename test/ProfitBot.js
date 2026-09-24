@@ -7,7 +7,7 @@ describe('ProfitBot callback validation', function () {
     const provider = await (await ethers.getContractFactory('TestAddressProvider')).deploy();
     await provider.deployed();
     bot = await (await ethers.getContractFactory('ProfitBot')).deploy(
-      provider.address, other.address, owner.address, other.address);
+      provider.address, other.address, owner.address, other.address, other.address);
     await bot.deployed();
   });
   it('rejects callback not originating at Aave pool', async function () {
@@ -17,13 +17,23 @@ describe('ProfitBot callback validation', function () {
     } catch (e) { assert.match(e.message, /Only callable by Aave pool/); }
   });
   it('rejects zero minimum outputs before any swap', async function () {
-    const abi = ethers.utils.defaultAbiCoder;
-    const path1 = [owner.address, other.address], path2 = [other.address, owner.address];
-    const params = abi.encode(['address','uint256','address[]','address[]','uint256','uint256'],
-      [owner.address, 100, path1, path2, 0, 1]);
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const params = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [0, owner.address, other.address, 0, ethers.constants.HashZero],
+        [1, other.address, bot.address, 1, ethers.constants.HashZero],
+        [0, bot.address, owner.address, 1, ethers.constants.HashZero]
+      ]]
+    );
+
     try {
       await bot.executeOperation(owner.address, 100, 1, bot.address, params);
       assert.fail('expected revert');
-    } catch (e) { assert.match(e.message, /Zero minimum output/); }
+    } catch (e) {
+      assert.match(e.message, /Zero minimum output/);
+    }
   });
 });
