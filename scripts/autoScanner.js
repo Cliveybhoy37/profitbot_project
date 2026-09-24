@@ -4,12 +4,15 @@ require("dotenv").config();
 const fs = require("node:fs");
 const { ethers } = require("ethers");
 const { evaluate } = require("./utils/netProfit");
+const {
+  resolveAaveEconomics,
+  readTokenPrices,
+  calculateFlashloanFee,
+  calculateGasCostInToken
+} = require("./utils/polygonAaveEconomics");
 
 const ERC20 = ["function decimals() view returns (uint8)"];
 const ROUTER = ["function getAmountsOut(uint256,address[]) view returns (uint256[])"];
-const PROVIDER = ["function getPool() view returns (address)"];
-const POOL = ["function FLASHLOAN_PREMIUM_TOTAL() view returns (uint128)"];
-const ORACLE = ["function getAssetPrice(address) view returns (uint256)"];
 const BOT = ["function initiateFlashloan(address,uint256,bytes)"];
 const required = name => {
   const value = process.env[name];
@@ -28,13 +31,14 @@ async function main() {
   const sushi = new ethers.Contract(required("SUSHISWAP_ROUTER_POLYGON"), ROUTER, rpc);
   const botAddress = required("PROFITBOT_ADDRESS_POLYGON");
   const bot = new ethers.Contract(botAddress, BOT, rpc);
-  const provider = new ethers.Contract(required("AAVE_PROVIDER_POLYGON"), PROVIDER, rpc);
-  const poolAddress = await provider.getPool();
-  const premiumBps = await new ethers.Contract(poolAddress, POOL, rpc).FLASHLOAN_PREMIUM_TOTAL();
-  const oracle = new ethers.Contract(required("AAVE_ORACLE_POLYGON"), ORACLE, rpc);
+
+  const aave = await resolveAaveEconomics(rpc);
   const native = required("WMATIC_POLYGON");
-  const [nativePrice, feeData] = await Promise.all([oracle.getAssetPrice(native), rpc.getFeeData()]);
-  if (nativePrice.isZero() || !feeData.maxFeePerGas) throw new Error("Missing native price or gas fee");
+  const feeData = await rpc.getFeeData();
+
+  if (!feeData.maxFeePerGas) {
+    throw new Error("Missing max fee per gas");
+  }
   const slip = Number(process.env.SLIPPAGE_BPS || 50);
   if (!Number.isInteger(slip) || slip < 1 || slip > 1000) throw new Error("SLIPPAGE_BPS must be 1..1000");
   const routes = JSON.parse(fs.readFileSync(process.env.ROUTES_FILE || "./arb_routes.json", "utf8"));
@@ -58,22 +62,39 @@ async function main() {
       const q2 = (await sushi.getAmountsOut(min1, [tokenB, tokenA]))[1];
       const min2 = minOutput(q2, slip);
       if (min1.isZero() || min2.isZero()) { rejection(route, "insufficient second-hop liquidity"); continue; }
-      const tokenPrice = await oracle.getAssetPrice(tokenA);
-      if (tokenPrice.isZero()) { rejection(route, "missing token price"); continue; }
-      const premium = size.mul(premiumBps).add(9999).div(10000);
+      const prices = await readTokenPrices({
+        provider: rpc,
+        oracleAddress: aave.oracleAddress,
+        nativeToken: native,
+        token: tokenA
+      });
+
+      if (prices.nativePrice === 0n || prices.tokenPrice === 0n) {
+        rejection(route, "missing token price");
+        continue;
+      }
+
+      const amountRaw = BigInt(size.toString());
+      const premium = calculateFlashloanFee(
+        amountRaw,
+        aave.premiumBps
+      );
       const params = ethers.utils.defaultAbiCoder.encode(
         ["address", "uint256", "address[]", "address[]", "uint256", "uint256"],
         [tokenA, size, [tokenA, tokenB], [tokenB, tokenA], min1, min2]);
       let gas;
       try { gas = await bot.estimateGas.initiateFlashloan(tokenA, size, params); }
       catch (e) { rejection(route, `simulation failed: ${e.reason || e.code || "contract revert"}`); continue; }
-      // Round gas cost upward in borrowed token smallest units; Aave prices share one base currency.
-      const nativeWei = gas.mul(feeData.maxFeePerGas);
-      const gasInToken = nativeWei.mul(nativePrice).mul(ethers.BigNumber.from(10).pow(decimals))
-        .add(tokenPrice.mul(ethers.constants.WeiPerEther).sub(1))
-        .div(tokenPrice.mul(ethers.constants.WeiPerEther));
-      const result = evaluate({ input: BigInt(size.toString()), quotedOutput: BigInt(q2.toString()),
-        flashloanFee: BigInt(premium.toString()), gasInToken: BigInt(gasInToken.toString()),
+      const gasInToken = calculateGasCostInToken({
+        gasUnits: BigInt(gas.toString()),
+        maxFeePerGasWei: BigInt(feeData.maxFeePerGas.toString()),
+        nativePrice: prices.nativePrice,
+        tokenPrice: prices.tokenPrice,
+        tokenDecimals: decimals
+      });
+
+      const result = evaluate({ input: amountRaw, quotedOutput: BigInt(q2.toString()),
+        flashloanFee: premium, gasInToken,
         slippageBps: slip, quoteAgeMs: Date.now() - block.timestamp * 1000, maxQuoteAgeMs: 120000,
         executable: true, simulationPassed: true });
       const threshold = BigInt(size.toString()) * BigInt(minProfit) / 10000n;
