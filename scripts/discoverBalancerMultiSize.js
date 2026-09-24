@@ -175,6 +175,8 @@ async function scanTargetAtBlock(
     [startToken, otherTokens[1], otherTokens[0]]
   ];
 
+  const summaries = [];
+
   for (const size of startSizes) {
     const startAmount = ethers.utils.parseUnits(
       size,
@@ -252,7 +254,30 @@ async function scanTargetAtBlock(
       "/",
       all.length
     );
+
+    const best = all[0] || null;
+
+    summaries.push({
+      targetName: target.name,
+      poolId: target.poolId,
+      tokens: target.tokens,
+      size,
+      startToken,
+      completedRoutes: all.length,
+      grossPositiveRoutes: profitable.length,
+      bestGrossBps: best
+        ? bps(best.grossDelta, startAmount)
+        : null,
+      bestRoute: best
+        ? {
+            order: best.order,
+            venues: best.venues
+          }
+        : null
+    });
   }
+
+  return summaries;
 }
 
 async function discoverDynamicScanTargets(blockTag) {
@@ -350,11 +375,36 @@ async function discoverDynamicScanTargets(blockTag) {
     scanTargets = [scanTarget];
   }
 
+  const scanSummaries = [];
+
   for (const target of scanTargets) {
-    await scanTargetAtBlock(
+    const summaries = await scanTargetAtBlock(
       target,
       START_SIZES,
       block
+    );
+
+    scanSummaries.push(...summaries);
+  }
+
+  console.log("\n========================================");
+  console.log("CROSS-TARGET SUMMARY");
+  console.log("========================================");
+
+  for (const summary of scanSummaries) {
+    console.log(
+      summary.targetName,
+      "|",
+      summary.tokens.join("/"),
+      "| size",
+      summary.size,
+      summary.startToken,
+      "| best",
+      summary.bestGrossBps === null
+        ? "N/A"
+        : `${summary.bestGrossBps} bps`,
+      "| positive",
+      `${summary.grossPositiveRoutes}/${summary.completedRoutes}`
     );
   }
 
