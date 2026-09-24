@@ -1,0 +1,70 @@
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+
+const {
+  ceilDiv,
+  flashloanFeeRaw,
+  nativeGasCostInTokenRaw
+} = require("../scripts/utils/polygonNetEconomics");
+
+test("ceilDiv rounds costs upward", () => {
+  assert.equal(ceilDiv(10n, 5n), 2n);
+  assert.equal(ceilDiv(11n, 5n), 3n);
+  assert.equal(ceilDiv(0n, 5n), 0n);
+});
+
+test("flashloan fee uses basis points and rounds upward", () => {
+  assert.equal(flashloanFeeRaw(100_000_000n, 5n), 50_000n);
+  assert.equal(flashloanFeeRaw(1n, 5n), 1n);
+});
+
+test("native gas converts to 6-decimal borrowed-token raw units", () => {
+  const result = nativeGasCostInTokenRaw({
+    gasUnits: 500_000n,
+    maxFeePerGasWei: 30_000_000_000n,
+    nativePrice: 25_000_000n,
+    tokenPrice: 100_000_000n,
+    tokenDecimals: 6
+  });
+
+  assert.equal(result, 3_750n);
+});
+
+test("gas conversion rejects invalid token pricing", () => {
+  assert.throws(
+    () =>
+      nativeGasCostInTokenRaw({
+        gasUnits: 500_000n,
+        maxFeePerGasWei: 30_000_000_000n,
+        nativePrice: 25_000_000n,
+        tokenPrice: 0n,
+        tokenDecimals: 6
+      }),
+    TypeError
+  );
+});
+
+test("Aave economics wrapper preserves conservative flashloan fee calculation", () => {
+  const {
+    calculateFlashloanFee
+  } = require("../scripts/utils/polygonAaveEconomics");
+
+  assert.equal(calculateFlashloanFee(100_000_000n, 5n), 50_000n);
+});
+
+test("Aave economics wrapper preserves conservative gas calculation", () => {
+  const {
+    calculateGasCostInToken
+  } = require("../scripts/utils/polygonAaveEconomics");
+
+  assert.equal(
+    calculateGasCostInToken({
+      gasUnits: 500_000n,
+      maxFeePerGasWei: 30_000_000_000n,
+      nativePrice: 25_000_000n,
+      tokenPrice: 100_000_000n,
+      tokenDecimals: 6
+    }),
+    3_750n
+  );
+});
