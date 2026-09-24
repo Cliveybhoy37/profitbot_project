@@ -5,6 +5,7 @@ const {
   ceilDiv,
   flashloanFeeRaw,
   flashloanAdjustedResearchEconomics,
+  maxAffordableGasUnits,
   nativeGasCostInTokenRaw
 } = require("../scripts/utils/polygonNetEconomics");
 
@@ -56,6 +57,40 @@ test("research economics requires budget strictly above flashloan premium", () =
   assert.equal(result.coversFlashloanFee, false);
 });
 
+test("gas budget converts to maximum affordable whole gas units", () => {
+  const result = maxAffordableGasUnits({
+    tokenBudget: 3_750n,
+    maxFeePerGasWei: 30_000_000_000n,
+    nativePrice: 25_000_000n,
+    tokenPrice: 100_000_000n,
+    tokenDecimals: 6
+  });
+
+  assert.equal(result, 500_000n);
+});
+
+test("affordable gas floors below an unaffordable boundary", () => {
+  const gasUnits = maxAffordableGasUnits({
+    tokenBudget: 3_749n,
+    maxFeePerGasWei: 30_000_000_000n,
+    nativePrice: 25_000_000n,
+    tokenPrice: 100_000_000n,
+    tokenDecimals: 6
+  });
+
+  assert.ok(gasUnits < 500_000n);
+
+  const cost = nativeGasCostInTokenRaw({
+    gasUnits,
+    maxFeePerGasWei: 30_000_000_000n,
+    nativePrice: 25_000_000n,
+    tokenPrice: 100_000_000n,
+    tokenDecimals: 6
+  });
+
+  assert.ok(cost <= 3_749n);
+});
+
 test("native gas converts to 6-decimal borrowed-token raw units", () => {
   const result = nativeGasCostInTokenRaw({
     gasUnits: 500_000n,
@@ -88,6 +123,23 @@ test("Aave economics wrapper preserves conservative flashloan fee calculation", 
   } = require("../scripts/utils/polygonAaveEconomics");
 
   assert.equal(calculateFlashloanFee(100_000_000n, 5n), 50_000n);
+});
+
+test("Aave economics wrapper preserves affordable gas calculation", () => {
+  const {
+    calculateMaxAffordableGasUnits
+  } = require("../scripts/utils/polygonAaveEconomics");
+
+  assert.equal(
+    calculateMaxAffordableGasUnits({
+      tokenBudget: 3_750n,
+      maxFeePerGasWei: 30_000_000_000n,
+      nativePrice: 25_000_000n,
+      tokenPrice: 100_000_000n,
+      tokenDecimals: 6
+    }),
+    500_000n
+  );
 });
 
 test("Aave economics wrapper preserves conservative gas calculation", () => {

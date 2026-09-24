@@ -49,6 +49,48 @@ function flashloanAdjustedResearchEconomics({
   };
 }
 
+function maxAffordableGasUnits({
+  tokenBudget,
+  maxFeePerGasWei,
+  nativePrice,
+  tokenPrice,
+  tokenDecimals
+}) {
+  requireNonNegativeBigInt(tokenBudget, "tokenBudget");
+  requireNonNegativeBigInt(maxFeePerGasWei, "maxFeePerGasWei");
+  requireNonNegativeBigInt(nativePrice, "nativePrice");
+  requireNonNegativeBigInt(tokenPrice, "tokenPrice");
+
+  if (
+    !Number.isInteger(tokenDecimals) ||
+    tokenDecimals < 0 ||
+    tokenDecimals > 255
+  ) {
+    throw new TypeError("tokenDecimals must be an integer from 0 to 255");
+  }
+
+  if (maxFeePerGasWei === 0n) {
+    throw new TypeError("maxFeePerGasWei must be greater than zero");
+  }
+
+  if (nativePrice === 0n) {
+    throw new TypeError("nativePrice must be greater than zero");
+  }
+
+  if (tokenPrice === 0n) {
+    throw new TypeError("tokenPrice must be greater than zero");
+  }
+
+  const tokenScale = 10n ** BigInt(tokenDecimals);
+  const weiPerNative = 10n ** 18n;
+
+  return (
+    tokenBudget * tokenPrice * weiPerNative
+  ) / (
+    maxFeePerGasWei * nativePrice * tokenScale
+  );
+}
+
 function nativeGasCostInTokenRaw({
   gasUnits,
   maxFeePerGasWei,
@@ -87,5 +129,6 @@ module.exports = {
   ceilDiv,
   flashloanFeeRaw,
   flashloanAdjustedResearchEconomics,
+  maxAffordableGasUnits,
   nativeGasCostInTokenRaw
 };

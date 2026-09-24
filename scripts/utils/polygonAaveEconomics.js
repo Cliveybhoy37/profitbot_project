@@ -1,7 +1,7 @@
 "use strict";
 
 const { ethers } = require("ethers");
-const { flashloanFeeRaw, nativeGasCostInTokenRaw } = require("./polygonNetEconomics");
+const { flashloanFeeRaw, maxAffordableGasUnits, nativeGasCostInTokenRaw } = require("./polygonNetEconomics");
 
 const POOL_ADDRESSES_PROVIDER_POLYGON =
   "0xa97684ead0e402dc232d5a977953df7ecbab3cdb";
@@ -94,6 +94,22 @@ function calculateFlashloanFee(amount, premiumBps) {
   return flashloanFeeRaw(amount, premiumBps);
 }
 
+function calculateMaxAffordableGasUnits({
+  tokenBudget,
+  maxFeePerGasWei,
+  nativePrice,
+  tokenPrice,
+  tokenDecimals
+}) {
+  return maxAffordableGasUnits({
+    tokenBudget,
+    maxFeePerGasWei,
+    nativePrice,
+    tokenPrice,
+    tokenDecimals
+  });
+}
+
 function calculateGasCostInToken({
   gasUnits,
   maxFeePerGasWei,
@@ -115,5 +131,6 @@ module.exports = {
   resolveAaveEconomics,
   readTokenPrices,
   calculateFlashloanFee,
+  calculateMaxAffordableGasUnits,
   calculateGasCostInToken
 };

@@ -19,7 +19,9 @@ const {
   buildVerifiedScanTargets
 } = require("./utils/polygonBalancerTargetSelection");
 const {
-  resolveAaveEconomics
+  resolveAaveEconomics,
+  readTokenPrices,
+  calculateMaxAffordableGasUnits
 } = require("./utils/polygonAaveEconomics");
 const {
   flashloanAdjustedResearchEconomics
@@ -210,8 +212,15 @@ async function scanTargetAtBlock(
   target,
   startSizes,
   blockTag,
-  premiumBps
+  researchGasContext
 ) {
+  const {
+    premiumBps,
+    maxFeePerGasWei,
+    nativePrice,
+    tokenPrice
+  } = researchGasContext;
+
   const startToken = target.startToken;
   const otherTokens = target.otherTokens;
 
@@ -269,6 +278,17 @@ async function scanTargetAtBlock(
         finalAmount: BigInt(result.finalAmount.toString()),
         premiumBps
       });
+
+      result.researchEconomics.maxAffordableGasUnits =
+        result.researchEconomics.gasBudget > 0n
+          ? calculateMaxAffordableGasUnits({
+              tokenBudget: result.researchEconomics.gasBudget,
+              maxFeePerGasWei,
+              nativePrice,
+              tokenPrice,
+              tokenDecimals: TOKENS[startToken].decimals
+            })
+          : 0n;
     }
 
     console.log("\nTOP 5 ROUTES FOR", size, startToken, "\n");
@@ -321,6 +341,12 @@ async function scanTargetAtBlock(
         startToken,
         "| covers premium:",
         r.researchEconomics.coversFlashloanFee
+      );
+
+      console.log(
+        "Break-even gas capacity:",
+        r.researchEconomics.maxAffordableGasUnits.toString(),
+        "gas units"
       );
 
       console.log("---");
@@ -421,6 +447,23 @@ async function discoverDynamicScanTargets(blockTag) {
 
   const block = await provider.getBlockNumber();
   const aave = await resolveAaveEconomics(provider);
+  const [feeData, prices] = await Promise.all([
+    provider.getFeeData(),
+    readTokenPrices({
+      provider,
+      oracleAddress: aave.oracleAddress,
+      nativeToken: TOKENS.WPOL.address,
+      token: TOKENS.USDC_E.address
+    })
+  ]);
+
+  if (!feeData.maxFeePerGas) {
+    throw new Error("Missing max fee per gas");
+  }
+
+  if (prices.nativePrice === 0n || prices.tokenPrice === 0n) {
+    throw new Error("Missing Aave oracle price");
+  }
 
   // Research notionals only. All sizes use the same pinned Polygon block.
   // Override without editing:
@@ -474,7 +517,12 @@ async function discoverDynamicScanTargets(blockTag) {
       target,
       START_SIZES,
       block,
-      aave.premiumBps
+      {
+        premiumBps: aave.premiumBps,
+        maxFeePerGasWei: BigInt(feeData.maxFeePerGas.toString()),
+        nativePrice: prices.nativePrice,
+        tokenPrice: prices.tokenPrice
+      }
     );
 
     scanSummaries.push(...summaries);
@@ -504,8 +552,9 @@ async function discoverDynamicScanTargets(blockTag) {
   }
 
   console.log(
-    "\nWARNING: premium-covering is research-only and does not include",
-    "gas, slippage allowance, or execution compatibility."
+    "\nWARNING: break-even gas capacity is research-only and is not",
+    "an execution gas estimate. It does not establish profitability",
+    "after actual gas, slippage allowance, or execution compatibility."
   );
 
   console.log("Live execution: OFF");
