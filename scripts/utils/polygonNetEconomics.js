@@ -24,6 +24,31 @@ function flashloanFeeRaw(amount, premiumBps) {
   return ceilDiv(amount * premiumBps, 10_000n);
 }
 
+function flashloanAdjustedResearchEconomics({
+  startAmount,
+  finalAmount,
+  premiumBps
+}) {
+  requireNonNegativeBigInt(startAmount, "startAmount");
+  requireNonNegativeBigInt(finalAmount, "finalAmount");
+  requireNonNegativeBigInt(premiumBps, "premiumBps");
+
+  if (startAmount === 0n) {
+    throw new TypeError("startAmount must be greater than zero");
+  }
+
+  const grossDelta = finalAmount - startAmount;
+  const flashloanFee = flashloanFeeRaw(startAmount, premiumBps);
+  const gasBudget = grossDelta - flashloanFee;
+
+  return {
+    grossDelta,
+    flashloanFee,
+    gasBudget,
+    coversFlashloanFee: gasBudget > 0n
+  };
+}
+
 function nativeGasCostInTokenRaw({
   gasUnits,
   maxFeePerGasWei,
@@ -61,5 +86,6 @@ function nativeGasCostInTokenRaw({
 module.exports = {
   ceilDiv,
   flashloanFeeRaw,
+  flashloanAdjustedResearchEconomics,
   nativeGasCostInTokenRaw
 };

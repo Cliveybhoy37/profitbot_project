@@ -18,6 +18,12 @@ const {
 const {
   buildVerifiedScanTargets
 } = require("./utils/polygonBalancerTargetSelection");
+const {
+  resolveAaveEconomics
+} = require("./utils/polygonAaveEconomics");
+const {
+  flashloanAdjustedResearchEconomics
+} = require("./utils/polygonNetEconomics");
 
 const provider =
   new ethers.providers.JsonRpcProvider(process.env.ALCHEMY_POLYGON);
@@ -203,7 +209,8 @@ function bps(delta, startAmount) {
 async function scanTargetAtBlock(
   target,
   startSizes,
-  blockTag
+  blockTag,
+  premiumBps
 ) {
   const startToken = target.startToken;
   const otherTokens = target.otherTokens;
@@ -256,6 +263,14 @@ async function scanTargetAtBlock(
       return a.finalAmount.gt(b.finalAmount) ? -1 : 1;
     });
 
+    for (const result of all) {
+      result.researchEconomics = flashloanAdjustedResearchEconomics({
+        startAmount: BigInt(startAmount.toString()),
+        finalAmount: BigInt(result.finalAmount.toString()),
+        premiumBps
+      });
+    }
+
     console.log("\nTOP 5 ROUTES FOR", size, startToken, "\n");
 
     for (const r of all.slice(0, 5)) {
@@ -288,14 +303,44 @@ async function scanTargetAtBlock(
         `(${bps(r.grossDelta, startAmount)} bps)`
       );
 
+      console.log(
+        "Aave premium:",
+        ethers.utils.formatUnits(
+          r.researchEconomics.flashloanFee.toString(),
+          TOKENS[startToken].decimals
+        ),
+        startToken
+      );
+
+      console.log(
+        "Gas/cost budget after premium:",
+        ethers.utils.formatUnits(
+          r.researchEconomics.gasBudget.toString(),
+          TOKENS[startToken].decimals
+        ),
+        startToken,
+        "| covers premium:",
+        r.researchEconomics.coversFlashloanFee
+      );
+
       console.log("---");
     }
 
     const profitable = all.filter(r => r.grossDelta.gt(0));
+    const premiumCovering = all.filter(
+      r => r.researchEconomics.coversFlashloanFee
+    );
 
     console.log(
       "Gross-positive routes:",
       profitable.length,
+      "/",
+      all.length
+    );
+
+    console.log(
+      "Premium-covering routes:",
+      premiumCovering.length,
       "/",
       all.length
     );
@@ -310,6 +355,7 @@ async function scanTargetAtBlock(
       startToken,
       completedRoutes: all.length,
       grossPositiveRoutes: profitable.length,
+      premiumCoveringRoutes: premiumCovering.length,
       bestGrossBps: best
         ? bps(best.grossDelta, startAmount)
         : null,
@@ -374,6 +420,7 @@ async function discoverDynamicScanTargets(blockTag) {
   }
 
   const block = await provider.getBlockNumber();
+  const aave = await resolveAaveEconomics(provider);
 
   // Research notionals only. All sizes use the same pinned Polygon block.
   // Override without editing:
@@ -426,7 +473,8 @@ async function discoverDynamicScanTargets(blockTag) {
     const summaries = await scanTargetAtBlock(
       target,
       START_SIZES,
-      block
+      block,
+      aave.premiumBps
     );
 
     scanSummaries.push(...summaries);
@@ -448,14 +496,16 @@ async function discoverDynamicScanTargets(blockTag) {
       summary.bestGrossBps === null
         ? "N/A"
         : `${summary.bestGrossBps} bps`,
-      "| positive",
-      `${summary.grossPositiveRoutes}/${summary.completedRoutes}`
+      "| gross-positive",
+      `${summary.grossPositiveRoutes}/${summary.completedRoutes}`,
+      "| premium-covering",
+      `${summary.premiumCoveringRoutes}/${summary.completedRoutes}`
     );
   }
 
   console.log(
-    "\nWARNING: gross-positive does not include Aave premium, gas,",
-    "slippage allowance, or execution compatibility."
+    "\nWARNING: premium-covering is research-only and does not include",
+    "gas, slippage allowance, or execution compatibility."
   );
 
   console.log("Live execution: OFF");

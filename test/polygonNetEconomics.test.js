@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const {
   ceilDiv,
   flashloanFeeRaw,
+  flashloanAdjustedResearchEconomics,
   nativeGasCostInTokenRaw
 } = require("../scripts/utils/polygonNetEconomics");
 
@@ -16,6 +17,43 @@ test("ceilDiv rounds costs upward", () => {
 test("flashloan fee uses basis points and rounds upward", () => {
   assert.equal(flashloanFeeRaw(100_000_000n, 5n), 50_000n);
   assert.equal(flashloanFeeRaw(1n, 5n), 1n);
+});
+
+test("research economics reports budget remaining after flashloan premium", () => {
+  const result = flashloanAdjustedResearchEconomics({
+    startAmount: 100_000_000n,
+    finalAmount: 100_200_000n,
+    premiumBps: 5n
+  });
+
+  assert.equal(result.grossDelta, 200_000n);
+  assert.equal(result.flashloanFee, 50_000n);
+  assert.equal(result.gasBudget, 150_000n);
+  assert.equal(result.coversFlashloanFee, true);
+});
+
+test("research economics rejects gross-positive route that cannot cover premium", () => {
+  const result = flashloanAdjustedResearchEconomics({
+    startAmount: 100_000_000n,
+    finalAmount: 100_040_000n,
+    premiumBps: 5n
+  });
+
+  assert.equal(result.grossDelta, 40_000n);
+  assert.equal(result.flashloanFee, 50_000n);
+  assert.equal(result.gasBudget, -10_000n);
+  assert.equal(result.coversFlashloanFee, false);
+});
+
+test("research economics requires budget strictly above flashloan premium", () => {
+  const result = flashloanAdjustedResearchEconomics({
+    startAmount: 100_000_000n,
+    finalAmount: 100_050_000n,
+    premiumBps: 5n
+  });
+
+  assert.equal(result.gasBudget, 0n);
+  assert.equal(result.coversFlashloanFee, false);
 });
 
 test("native gas converts to 6-decimal borrowed-token raw units", () => {
