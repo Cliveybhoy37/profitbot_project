@@ -8,6 +8,19 @@ const QUOTER_ADDRESS = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6";
 const FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
 const FEE_TIERS = [500, 3000, 10000];
 
+const poolCache = new Map();
+
+function poolCacheKey(tokenA, tokenB, fee, blockTag) {
+  const pair = [tokenA.toLowerCase(), tokenB.toLowerCase()].sort();
+
+  return [
+    blockTag == null ? "latest" : blockTag,
+    pair[0],
+    pair[1],
+    fee
+  ].join(":");
+}
+
 const QUOTER_ABI = [
   "function quoteExactInputSingle(address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint160 sqrtPriceLimitX96) returns (uint256 amountOut)"
 ];
@@ -44,7 +57,29 @@ async function getUniswapV3Quote(path, amountIn, provider, blockTag = null) {
   for (const fee of FEE_TIERS) {
     try {
       const callOverrides = blockTag == null ? {} : { blockTag };
-      const pool = await factory.getPool(tokenIn, tokenOut, fee, callOverrides);
+      const cacheKey =
+        blockTag == null
+          ? null
+          : poolCacheKey(tokenIn, tokenOut, fee, blockTag);
+
+      let pool =
+        cacheKey == null
+          ? undefined
+          : poolCache.get(cacheKey);
+
+      if (pool === undefined) {
+        pool = await factory.getPool(
+          tokenIn,
+          tokenOut,
+          fee,
+          callOverrides
+        );
+
+        if (cacheKey != null) {
+          poolCache.set(cacheKey, pool);
+        }
+      }
+
       if (pool === ethers.constants.AddressZero) continue;
 
       const amountOut = await quoter.callStatic.quoteExactInputSingle(
