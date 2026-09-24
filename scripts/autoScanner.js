@@ -22,6 +22,41 @@ const required = name => {
 const rejection = (route, reason) => console.log(JSON.stringify({ route, accepted: false, reason }));
 const minOutput = (value, bps) => value.mul(10000 - bps).div(10000);
 
+function evaluateScannerEconomics({
+  input,
+  quotedOutput,
+  flashloanFee,
+  gasInToken,
+  slippageBps,
+  quoteAgeMs,
+  maxQuoteAgeMs,
+  minProfitBps
+}) {
+  if (typeof minProfitBps !== "bigint" || minProfitBps < 0n) {
+    throw new TypeError("minProfitBps must be a non-negative bigint");
+  }
+
+  const result = evaluate({
+    input,
+    quotedOutput,
+    flashloanFee,
+    gasInToken,
+    slippageBps,
+    quoteAgeMs,
+    maxQuoteAgeMs,
+    executable: true,
+    simulationPassed: true
+  });
+
+  const threshold = input * minProfitBps / 10000n;
+
+  return {
+    ...result,
+    threshold,
+    estimatedPositive: result.accepted && result.net > threshold
+  };
+}
+
 async function main() {
   const rpc = new ethers.providers.JsonRpcProvider(required("POLYGON_RPC"));
   const [chain, block] = await Promise.all([rpc.getNetwork(), rpc.getBlock("latest")]);
@@ -93,17 +128,22 @@ async function main() {
         tokenDecimals: decimals
       });
 
-      const result = evaluate({ input: amountRaw, quotedOutput: BigInt(q2.toString()),
-        flashloanFee: premium, gasInToken,
-        slippageBps: slip, quoteAgeMs: Date.now() - block.timestamp * 1000, maxQuoteAgeMs: 120000,
-        executable: true, simulationPassed: true });
-      const threshold = BigInt(size.toString()) * BigInt(minProfit) / 10000n;
-      console.log(JSON.stringify({ route, accepted: false, estimatedPositive: result.accepted && result.net > threshold,
+      const result = evaluateScannerEconomics({
+        input: amountRaw,
+        quotedOutput: BigInt(q2.toString()),
+        flashloanFee: premium,
+        gasInToken,
+        slippageBps: slip,
+        quoteAgeMs: Date.now() - block.timestamp * 1000,
+        maxQuoteAgeMs: 120000,
+        minProfitBps: BigInt(minProfit)
+      });
+      console.log(JSON.stringify({ route, accepted: false, estimatedPositive: result.estimatedPositive,
         netRaw: result.net.toString(), gasRaw: gasInToken.toString(), premiumRaw: premium.toString(),
-        reasons: result.reasons.concat(result.net <= threshold ? ["below minimum net profit"] : [], ["deployed contract version not verified"]),
+        reasons: result.reasons.concat(result.net <= result.threshold ? ["below minimum net profit"] : [], ["deployed contract version not verified"]),
         note: "read-only estimate; no transaction submitted" }));
     } catch (e) { rejection(route, e.reason || e.message); }
   }
 }
 if (require.main === module) main().catch(e => { console.error(e.message); process.exitCode = 1; });
-module.exports = { main, minOutput };
+module.exports = { main, minOutput, evaluateScannerEconomics };
