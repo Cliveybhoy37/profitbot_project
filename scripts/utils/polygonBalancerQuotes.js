@@ -10,6 +10,19 @@ const VAULT_ABI = [
   "function queryBatchSwap(uint8 kind,(bytes32 poolId,uint256 assetInIndex,uint256 assetOutIndex,uint256 amount,bytes userData)[] swaps,address[] assets,(address sender,bool fromInternalBalance,address recipient,bool toInternalBalance) funds) returns (int256[] assetDeltas)"
 ];
 
+function exceedsWeightedMaxInRatio(amountIn, balanceIn) {
+  if (!ethers.BigNumber.isBigNumber(amountIn)) {
+    throw new Error("amountIn must be BigNumber");
+  }
+
+  if (!ethers.BigNumber.isBigNumber(balanceIn)) {
+    throw new Error("balanceIn must be BigNumber");
+  }
+
+  const maxAmountIn = balanceIn.mul(3).div(10);
+  return amountIn.gt(maxAmountIn);
+}
+
 async function getBalancerQuote({
   provider,
   poolId = TRICRYPTO_POOL_ID,
@@ -17,7 +30,9 @@ async function getBalancerQuote({
   tokenIn,
   tokenOut,
   amountIn,
-  blockTag
+  blockTag,
+  poolType = null,
+  balances = null
 }) {
   if (!provider) throw new Error("provider required");
   if (!Array.isArray(assets) || assets.length < 2) {
@@ -39,6 +54,21 @@ async function getBalancerQuote({
   }
   if (assetInIndex === assetOutIndex) {
     throw new Error("tokenIn and tokenOut must differ");
+  }
+
+  if (
+    poolType === "WEIGHTED" &&
+    Array.isArray(balances) &&
+    balances.length === normalized.length
+  ) {
+    const balanceIn = balances[assetInIndex];
+
+    if (
+      ethers.BigNumber.isBigNumber(balanceIn) &&
+      exceedsWeightedMaxInRatio(amountIn, balanceIn)
+    ) {
+      throw new Error("Balancer weighted MAX_IN_RATIO precheck");
+    }
   }
 
   const vault = new ethers.Contract(
@@ -87,5 +117,6 @@ async function getBalancerQuote({
 module.exports = {
   BALANCER_VAULT,
   TRICRYPTO_POOL_ID,
+  exceedsWeightedMaxInRatio,
   getBalancerQuote
 };

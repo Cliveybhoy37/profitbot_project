@@ -7,6 +7,7 @@ const { ethers } = require("ethers");
 const {
   BALANCER_VAULT,
   TRICRYPTO_POOL_ID,
+  exceedsWeightedMaxInRatio,
   getBalancerQuote
 } = require("../scripts/utils/polygonBalancerQuotes");
 
@@ -58,5 +59,35 @@ test("Balancer quote rejects zero input", async () => {
       amountIn: ethers.constants.Zero
     }),
     /positive amountIn required/
+  );
+});
+
+test("WeightedPool MAX_IN_RATIO allows amounts through exact 30% boundary", () => {
+  const balanceIn = ethers.BigNumber.from(1000);
+
+  assert.equal(
+    exceedsWeightedMaxInRatio(
+      ethers.BigNumber.from(299),
+      balanceIn
+    ),
+    false
+  );
+
+  assert.equal(
+    exceedsWeightedMaxInRatio(
+      ethers.BigNumber.from(300),
+      balanceIn
+    ),
+    false
+  );
+});
+
+test("WeightedPool MAX_IN_RATIO rejects one raw unit above 30%", () => {
+  assert.equal(
+    exceedsWeightedMaxInRatio(
+      ethers.BigNumber.from(301),
+      ethers.BigNumber.from(1000)
+    ),
+    true
   );
 });

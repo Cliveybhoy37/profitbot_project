@@ -9,7 +9,9 @@ function buildScanTarget({
   poolId,
   tokens,
   tokenRegistry,
-  startToken = "USDC_E"
+  startToken = "USDC_E",
+  poolType = null,
+  balances = null
 }) {
   if (!poolId || typeof poolId !== "string") {
     throw new Error("Balancer scan target requires a poolId");
@@ -42,6 +44,14 @@ function buildScanTarget({
   const otherTokens =
     uniqueTokens.filter(symbol => symbol !== startToken);
 
+  if (balances !== null) {
+    if (!Array.isArray(balances) || balances.length !== 3) {
+      throw new Error(
+        "Balancer scan target balances must contain exactly 3 entries"
+      );
+    }
+  }
+
   return Object.freeze({
     name: name || "Dynamic verified Balancer target",
     address: address || null,
@@ -51,7 +61,12 @@ function buildScanTarget({
       uniqueTokens.map(symbol => tokenRegistry[symbol].address)
     ),
     startToken,
-    otherTokens: Object.freeze(otherTokens)
+    otherTokens: Object.freeze(otherTokens),
+    poolType,
+    balances:
+      balances === null
+        ? null
+        : Object.freeze([...balances])
   });
 }
 

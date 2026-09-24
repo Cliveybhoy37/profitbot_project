@@ -92,6 +92,25 @@ function combinations3(items) {
   return result;
 }
 
+function mapBalancesByAddress(tokens, balances) {
+  if (!Array.isArray(tokens) || !Array.isArray(balances)) {
+    throw new Error("Balancer tokens and balances must be arrays");
+  }
+
+  if (tokens.length !== balances.length) {
+    throw new Error("Balancer token/balance length mismatch");
+  }
+
+  return Object.freeze(
+    Object.fromEntries(
+      tokens.map((address, index) => [
+        address.toLowerCase(),
+        balances[index]
+      ])
+    )
+  );
+}
+
 async function verifyPool({
   pool,
   blockTag,
@@ -147,11 +166,17 @@ async function verifyPool({
     )
   ];
 
+  const balancesByAddress = mapBalancesByAddress(
+    onChain.tokens,
+    onChain.balances
+  );
+
   return {
     poolId,
     apiMatchesChain,
     verifiedTokens,
     triangles: combinations3(verifiedTokens),
+    balancesByAddress,
     lastChangeBlock: onChain.lastChangeBlock
   };
 }
@@ -229,6 +254,7 @@ module.exports = {
   fetchPools,
   verifiedOverlap,
   combinations3,
+  mapBalancesByAddress,
   verifyPool,
   discoverVerifiedCandidates,
   createVault

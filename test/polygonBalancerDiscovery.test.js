@@ -6,7 +6,8 @@ const assert = require("node:assert/strict");
 const TOKENS = require("../scripts/utils/polygonScannerTokens");
 const {
   verifiedOverlap,
-  combinations3
+  combinations3,
+  mapBalancesByAddress
 } = require("../scripts/utils/polygonBalancerDiscovery");
 
 test("combinations3 creates one triangle from three tokens", () => {
@@ -85,5 +86,43 @@ test("verified discovery requires a pinned block", async () => {
         blockTag: null
       }),
     /requires pinned blockTag/
+  );
+});
+
+test("mapBalancesByAddress preserves token balance alignment", () => {
+  const balances = [111, 222, 333];
+
+  const result = mapBalancesByAddress(
+    [
+      TOKENS.WBTC.address,
+      TOKENS.USDC_E.address,
+      TOKENS.WETH.address
+    ],
+    balances
+  );
+
+  assert.equal(
+    result[TOKENS.WBTC.address.toLowerCase()],
+    111
+  );
+  assert.equal(
+    result[TOKENS.USDC_E.address.toLowerCase()],
+    222
+  );
+  assert.equal(
+    result[TOKENS.WETH.address.toLowerCase()],
+    333
+  );
+  assert.equal(Object.isFrozen(result), true);
+});
+
+test("mapBalancesByAddress rejects token balance length mismatch", () => {
+  assert.throws(
+    () =>
+      mapBalancesByAddress(
+        [TOKENS.USDC_E.address, TOKENS.WETH.address],
+        [111]
+      ),
+    /token\/balance length mismatch/
   );
 });

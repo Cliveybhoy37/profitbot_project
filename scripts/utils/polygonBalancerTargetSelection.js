@@ -45,7 +45,15 @@ function buildVerifiedScanTargets({
         poolId: verification.poolId,
         tokens: triangle,
         tokenRegistry,
-        startToken
+        startToken,
+        poolType: candidate.type,
+        balances: verification.balancesByAddress
+          ? triangle.map(symbol =>
+              verification.balancesByAddress[
+                tokenRegistry[symbol].address.toLowerCase()
+              ]
+            )
+          : null
       })
     );
 }

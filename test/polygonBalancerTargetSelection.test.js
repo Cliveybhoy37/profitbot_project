@@ -109,3 +109,37 @@ test("malformed verified triangle is rejected by scan-target validation", () => 
     /duplicate tokens/
   );
 });
+
+test("aligns verified balances to each selected triangle", () => {
+  const balancesByAddress = {
+    [TOKENS.WBTC.address.toLowerCase()]: 111,
+    [TOKENS.USDC_E.address.toLowerCase()]: 222,
+    [TOKENS.WETH.address.toLowerCase()]: 333,
+    [TOKENS.DAI.address.toLowerCase()]: 444
+  };
+
+  const targets = buildVerifiedScanTargets({
+    candidate: candidate(),
+    verification: verification({ balancesByAddress }),
+    tokenRegistry: TOKENS
+  });
+
+  assert.deepEqual(
+    targets.map(target => target.balances),
+    [
+      [111, 222, 333],
+      [111, 222, 444],
+      [222, 333, 444]
+    ]
+  );
+
+  assert.deepEqual(
+    targets.map(target => target.poolType),
+    ["WEIGHTED", "WEIGHTED", "WEIGHTED"]
+  );
+
+  assert.equal(
+    targets.every(target => Object.isFrozen(target.balances)),
+    true
+  );
+});

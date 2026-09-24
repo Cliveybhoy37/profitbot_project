@@ -110,7 +110,9 @@ async function quote(
       tokenIn,
       tokenOut,
       amountIn,
-      blockTag
+      blockTag,
+      poolType: scanTarget.poolType,
+      balances: scanTarget.balances
     });
   } else {
     result = await getQuote(
