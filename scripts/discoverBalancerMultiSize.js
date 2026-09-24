@@ -164,7 +164,11 @@ async function testRoute(scanTarget, order, venues, startAmount, blockTag) {
         to,
         venue,
         amountIn: amount,
-        amountOut: q.amountOut
+        amountOut: q.amountOut,
+        type: q.type || null,
+        fee: q.fee ?? null,
+        pool: q.pool || null,
+        poolId: q.poolId || null
       });
 
       amount = q.amountOut;
