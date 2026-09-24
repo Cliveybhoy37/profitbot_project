@@ -54,6 +54,31 @@ const BALANCER_ASSETS = scanTarget.assets;
 const START_TOKEN = scanTarget.startToken;
 const OTHER_TOKENS = scanTarget.otherTokens;
 
+const quoteCache = new Map();
+
+function quoteCacheKey(
+  scanTarget,
+  venue,
+  tokenIn,
+  tokenOut,
+  amountIn,
+  blockTag
+) {
+  const poolScope =
+    venue === "BALANCER_V2"
+      ? scanTarget.poolId
+      : "GLOBAL";
+
+  return [
+    blockTag,
+    poolScope,
+    venue,
+    tokenIn.toLowerCase(),
+    tokenOut.toLowerCase(),
+    amountIn.toString()
+  ].join(":");
+}
+
 async function quote(
   scanTarget,
   venue,
@@ -62,8 +87,23 @@ async function quote(
   amountIn,
   blockTag
 ) {
+  const key = quoteCacheKey(
+    scanTarget,
+    venue,
+    tokenIn,
+    tokenOut,
+    amountIn,
+    blockTag
+  );
+
+  if (quoteCache.has(key)) {
+    return quoteCache.get(key);
+  }
+
+  let result;
+
   if (venue === "BALANCER_V2") {
-    return getBalancerQuote({
+    result = await getBalancerQuote({
       provider,
       poolId: scanTarget.poolId,
       assets: scanTarget.assets,
@@ -72,15 +112,18 @@ async function quote(
       amountIn,
       blockTag
     });
+  } else {
+    result = await getQuote(
+      venue,
+      [tokenIn, tokenOut],
+      amountIn,
+      provider,
+      blockTag
+    );
   }
 
-  return getQuote(
-    venue,
-    [tokenIn, tokenOut],
-    amountIn,
-    provider,
-    blockTag
-  );
+  quoteCache.set(key, result);
+  return result;
 }
 
 async function testRoute(scanTarget, order, venues, startAmount, blockTag) {
