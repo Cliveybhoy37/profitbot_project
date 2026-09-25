@@ -26,7 +26,11 @@ function requireAddress(value, name) {
   }
 }
 
-async function resolveAaveEconomics(provider, providerAddress = POOL_ADDRESSES_PROVIDER_POLYGON) {
+async function resolveAaveEconomics(
+  provider,
+  providerAddress = POOL_ADDRESSES_PROVIDER_POLYGON,
+  blockTag
+) {
   if (!provider) throw new Error("provider required");
   requireAddress(providerAddress, "providerAddress");
 
@@ -36,9 +40,11 @@ async function resolveAaveEconomics(provider, providerAddress = POOL_ADDRESSES_P
     provider
   );
 
+  const callOverrides = blockTag === undefined ? {} : { blockTag };
+
   const [poolAddress, oracleAddress] = await Promise.all([
-    addressesProvider.getPool(),
-    addressesProvider.getPriceOracle()
+    addressesProvider.getPool(callOverrides),
+    addressesProvider.getPriceOracle(callOverrides)
   ]);
 
   requireAddress(poolAddress, "poolAddress");
@@ -48,8 +54,8 @@ async function resolveAaveEconomics(provider, providerAddress = POOL_ADDRESSES_P
   const oracle = new ethers.Contract(oracleAddress, ORACLE_ABI, provider);
 
   const [premiumBps, baseCurrencyUnit] = await Promise.all([
-    pool.FLASHLOAN_PREMIUM_TOTAL(),
-    oracle.BASE_CURRENCY_UNIT()
+    pool.FLASHLOAN_PREMIUM_TOTAL(callOverrides),
+    oracle.BASE_CURRENCY_UNIT(callOverrides)
   ]);
 
   return {
@@ -65,7 +71,8 @@ async function readTokenPrices({
   provider,
   oracleAddress,
   nativeToken,
-  token
+  token,
+  blockTag
 }) {
   if (!provider) throw new Error("provider required");
 
@@ -79,9 +86,11 @@ async function readTokenPrices({
     provider
   );
 
+  const callOverrides = blockTag === undefined ? {} : { blockTag };
+
   const [nativePrice, tokenPrice] = await Promise.all([
-    oracle.getAssetPrice(nativeToken),
-    oracle.getAssetPrice(token)
+    oracle.getAssetPrice(nativeToken, callOverrides),
+    oracle.getAssetPrice(token, callOverrides)
   ]);
 
   return {

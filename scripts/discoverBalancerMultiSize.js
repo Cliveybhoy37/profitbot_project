@@ -452,14 +452,15 @@ async function discoverDynamicScanTargets(blockTag) {
   const block = process.env.SCAN_BLOCK
     ? Number(process.env.SCAN_BLOCK)
     : await provider.getBlockNumber();
-  const aave = await resolveAaveEconomics(provider);
+  const aave = await resolveAaveEconomics(provider, undefined, block);
   const [feeData, prices] = await Promise.all([
     provider.getFeeData(),
     readTokenPrices({
       provider,
       oracleAddress: aave.oracleAddress,
       nativeToken: TOKENS.WPOL.address,
-      token: TOKENS.USDC_E.address
+      token: TOKENS.USDC_E.address,
+      blockTag: block
     })
   ]);
 
