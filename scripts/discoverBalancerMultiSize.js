@@ -449,7 +449,9 @@ async function discoverDynamicScanTargets(blockTag) {
     throw new Error("ALCHEMY_POLYGON required");
   }
 
-  const block = await provider.getBlockNumber();
+  const block = process.env.SCAN_BLOCK
+    ? Number(process.env.SCAN_BLOCK)
+    : await provider.getBlockNumber();
   const aave = await resolveAaveEconomics(provider);
   const [feeData, prices] = await Promise.all([
     provider.getFeeData(),

@@ -12,7 +12,6 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 137,
-      hardfork: "merge",
       ...(USE_FORK && {
         forking: {
           url: process.env.ALCHEMY_POLYGON,
