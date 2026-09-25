@@ -5,6 +5,9 @@
 
 require("dotenv").config();
 const { ethers } = require("ethers");
+const {
+  medianEffectiveGasPriceWei
+} = require("./utils/polygonGasEconomics");
 const { getQuote } = require("./utils/polygonDiscoveryQuotes");
 const { getBalancerQuote } = require("./utils/polygonBalancerQuotes");
 const TOKENS = require("./utils/polygonScannerTokens");
@@ -61,6 +64,45 @@ const scanTarget = buildScanTarget({
 const BALANCER_ASSETS = scanTarget.assets;
 const START_TOKEN = scanTarget.startToken;
 const OTHER_TOKENS = scanTarget.otherTokens;
+
+async function resolveResearchGasPriceWei(block) {
+  if (process.env.SCAN_GAS_PRICE_GWEI) {
+    return {
+      gasPriceWei: ethers.utils.parseUnits(
+        process.env.SCAN_GAS_PRICE_GWEI,
+        "gwei"
+      ).toBigInt(),
+      source: "explicit SCAN_GAS_PRICE_GWEI"
+    };
+  }
+
+  if (process.env.SCAN_BLOCK) {
+    const historicalBlock = await provider.getBlockWithTransactions(block);
+    const gasPricesWei = historicalBlock.transactions.map((tx) => {
+      if (!tx.gasPrice) {
+        throw new Error("Historical transaction missing effective gas price");
+      }
+
+      return tx.gasPrice.toBigInt();
+    });
+
+    return {
+      gasPriceWei: medianEffectiveGasPriceWei(gasPricesWei),
+      source: "pinned-block upper-middle effective gas price"
+    };
+  }
+
+  const feeData = await provider.getFeeData();
+
+  if (!feeData.maxFeePerGas) {
+    throw new Error("Missing max fee per gas");
+  }
+
+  return {
+    gasPriceWei: feeData.maxFeePerGas.toBigInt(),
+    source: "live provider maxFeePerGas"
+  };
+}
 
 const quoteCache = new Map();
 
@@ -453,8 +495,8 @@ async function discoverDynamicScanTargets(blockTag) {
     ? Number(process.env.SCAN_BLOCK)
     : await provider.getBlockNumber();
   const aave = await resolveAaveEconomics(provider, undefined, block);
-  const [feeData, prices] = await Promise.all([
-    provider.getFeeData(),
+  const [gasPrice, prices] = await Promise.all([
+    resolveResearchGasPriceWei(block),
     readTokenPrices({
       provider,
       oracleAddress: aave.oracleAddress,
@@ -464,8 +506,8 @@ async function discoverDynamicScanTargets(blockTag) {
     })
   ]);
 
-  if (!feeData.maxFeePerGas) {
-    throw new Error("Missing max fee per gas");
+  if (gasPrice.gasPriceWei <= 0n) {
+    throw new Error("Invalid research gas price");
   }
 
   if (prices.nativePrice === 0n || prices.tokenPrice === 0n) {
@@ -483,6 +525,12 @@ async function discoverDynamicScanTargets(blockTag) {
   const dynamicMode = process.env.BALANCER_DYNAMIC === "true";
 
   console.log("Polygon snapshot block:", block);
+  console.log("Research gas price source:", gasPrice.source);
+  console.log(
+    "Research gas price:",
+    ethers.utils.formatUnits(gasPrice.gasPriceWei, "gwei"),
+    "gwei"
+  );
   console.log(
     "Balancer scan mode:",
     dynamicMode ? "DYNAMIC VERIFIED" : "CURATED"
@@ -526,7 +574,7 @@ async function discoverDynamicScanTargets(blockTag) {
       block,
       {
         premiumBps: aave.premiumBps,
-        maxFeePerGasWei: BigInt(feeData.maxFeePerGas.toString()),
+        maxFeePerGasWei: gasPrice.gasPriceWei,
         nativePrice: prices.nativePrice,
         tokenPrice: prices.tokenPrice
       }
