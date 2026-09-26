@@ -64,6 +64,19 @@ describe('Three-leg venue execution', function () {
     assert((await loan.balanceOf(pool.address)).gt(unit.mul(100)));
   });
 
+  it('preserves a pre-existing loan-asset balance and adds only incremental profit', async function () {
+    const existingBalance = unit.mul(5);
+    const expectedProfit = ethers.utils.parseUnits('0.2091', 18);
+
+    await loan.mint(bot.address, existingBalance);
+    await bot.initiateFlashloan(loan.address, unit, params());
+
+    assert.equal(
+      (await loan.balanceOf(bot.address)).toString(),
+      existingBalance.add(expectedProfit).toString()
+    );
+  });
+
   it('rejects routes that do not contain exactly three legs', async function () {
     const legType =
       'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
