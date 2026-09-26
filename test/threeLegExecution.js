@@ -219,6 +219,33 @@ describe('Three-leg venue execution', function () {
   });
 
 
+  it('rejects a V3 leg with a fee above uint24 max', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+    const oversizedFeeData = ethers.utils.hexZeroPad(ethers.utils.hexlify(2 ** 24), 32);
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, oversizedFeeData],
+        [1, bridge.address, middle.address, unit, ethers.constants.HashZero],
+        [2, middle.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Invalid V3 fee/);
+    }
+
+    assert(failed);
+  });
+
+
   it('rejects a Balancer leg with a zero pool id', async function () {
     const legType =
       'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
