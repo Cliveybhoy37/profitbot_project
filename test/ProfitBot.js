@@ -4,7 +4,7 @@ describe('ProfitBot callback validation', function () {
   let bot, owner, other;
   beforeEach(async function () {
     [owner, other] = await ethers.getSigners();
-    const provider = await (await ethers.getContractFactory('TestAddressProvider')).deploy();
+    const provider = await (await ethers.getContractFactory('TestAddressProvider')).deploy(owner.address);
     await provider.deployed();
     bot = await (await ethers.getContractFactory('ProfitBot')).deploy(
       provider.address, other.address, owner.address, other.address, other.address);
@@ -34,6 +34,22 @@ describe('ProfitBot callback validation', function () {
       assert.fail('expected revert');
     } catch (e) {
       assert.match(e.message, /Zero minimum output/);
+    }
+  });
+
+  it('rejects an Aave provider that returns a zero pool address', async function () {
+    const provider = await (await ethers.getContractFactory('TestAddressProvider')).deploy(
+      ethers.constants.AddressZero
+    );
+    await provider.deployed();
+
+    try {
+      await (await ethers.getContractFactory('ProfitBot')).deploy(
+        provider.address, other.address, owner.address, other.address, other.address
+      );
+      assert.fail('expected revert');
+    } catch (e) {
+      assert.match(e.message, /Invalid Aave pool/);
     }
   });
 });

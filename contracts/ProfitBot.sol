@@ -57,7 +57,9 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
         require(_balancerVault != address(0), "Invalid Balancer vault");
 
         ADDRESSES_PROVIDER = IPoolAddressesProvider(_provider);
-        POOL = IPool(ADDRESSES_PROVIDER.getPool());
+        address pool = ADDRESSES_PROVIDER.getPool();
+        require(pool != address(0), "Invalid Aave pool");
+        POOL = IPool(pool);
         quickSwapRouter = IUniswapV2Router02(_quickSwapRouter);
         uniswapV3Router = ISwapRouter(_uniswapV3Router);
         sushiSwapRouter = IUniswapV2Router02(_sushiSwapRouter);
