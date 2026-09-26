@@ -113,6 +113,23 @@ describe('Three-leg venue execution', function () {
     );
   });
 
+  it('rejects an empty decoded route', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const emptyParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[]]
+    );
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, emptyParams);
+      assert.fail('expected revert');
+    } catch (e) {
+      assert.match(e.message, /Exactly three legs required/);
+    }
+  });
+
   it('rejects routes that do not contain exactly three legs', async function () {
     const legType =
       'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
