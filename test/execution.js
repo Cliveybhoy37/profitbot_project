@@ -129,4 +129,48 @@ describe('Three-router loan simulation', function () {
       (await token.balanceOf(losingBotWithLossRouter.address)).eq(unit.mul(10))
     );
   });
+
+  it('rejects a route that only breaks even after the flashloan premium', async () => {
+    const Router = await ethers.getContractFactory('TestRouter');
+    const breakEvenRouter = await Router.deploy(10009);
+    await bridge.mint(second.address, unit.mul(100));
+    await token.mint(breakEvenRouter.address, unit.mul(100));
+
+    const Provider = await ethers.getContractFactory('TestProvider');
+    const provider = await Provider.deploy(pool.address);
+
+    const Bot = await ethers.getContractFactory('ProfitBot');
+    const breakEvenBot = await Bot.deploy(
+      provider.address,
+      second.address,
+      breakEvenRouter.address,
+      owner.address,
+      owner.address
+    );
+
+    const breakEvenParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [0, token.address, bridge.address, unit, ethers.constants.HashZero],
+        [0, bridge.address, middle.address, unit, ethers.constants.HashZero],
+        [1, middle.address, token.address, unit, ethers.constants.HashZero]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await breakEvenBot.initiateFlashloan(
+        token.address,
+        unit,
+        breakEvenParams
+      );
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /No incremental token profit/);
+    }
+
+    assert(failed);
+    assert((await token.balanceOf(breakEvenBot.address)).isZero());
+  });
 });
