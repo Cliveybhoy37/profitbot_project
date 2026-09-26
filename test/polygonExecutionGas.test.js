@@ -112,7 +112,7 @@ test("matches historical fork-measured Balancer route", () => {
   );
 
   assert.deepEqual(result, {
-    gasUnits: 478_582n,
+    gasUnits: 478_622n,
     source: "measured Polygon fork Balancer execution at block 93974759"
   });
 });

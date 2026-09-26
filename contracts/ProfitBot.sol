@@ -188,7 +188,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
                     sqrtPriceLimitX96: 0
                 })
             );
-        } else {
+        } else if (leg.venue == Venue.BALANCER_V2) {
             amountOut = _balancerSwapSingle(
                 leg.venueData,
                 leg.tokenIn,
@@ -196,6 +196,8 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
                 amountIn,
                 leg.minAmountOut
             );
+        } else {
+            revert("Unsupported venue");
         }
     }
 
