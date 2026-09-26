@@ -241,7 +241,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
     function withdrawToken(address token) public onlyOwner {
         uint256 balance = IERC20(token).balanceOf(address(this));
         require(balance > 0, "No balance to withdraw");
-        IERC20(token).transfer(owner(), balance);
+        IERC20(token).safeTransfer(owner(), balance);
     }
 
     function withdrawEther() public onlyOwner {

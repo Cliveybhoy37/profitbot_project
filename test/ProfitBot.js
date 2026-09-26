@@ -52,4 +52,28 @@ describe('ProfitBot callback validation', function () {
       assert.match(e.message, /Invalid Aave pool/);
     }
   });
+  it('withdraws a standard ERC20 balance to the owner', async function () {
+    const token = await (await ethers.getContractFactory('TestToken')).deploy('Withdrawal Token');
+    await token.deployed();
+    await token.mint(bot.address, 100);
+
+    await bot.withdrawToken(token.address);
+
+    assert.equal((await token.balanceOf(bot.address)).toString(), '0');
+    assert.equal((await token.balanceOf(owner.address)).toString(), '100');
+  });
+
+  it('rejects a token withdrawal when transfer returns false', async function () {
+    const token = await (await ethers.getContractFactory('TestFalseReturnToken')).deploy();
+    await token.deployed();
+    await token.mint(bot.address, 100);
+
+    try {
+      await bot.withdrawToken(token.address);
+      assert.fail('expected revert');
+    } catch (e) {
+      assert.match(e.message, /SafeERC20: ERC20 operation did not succeed/);
+    }
+  });
+
 });

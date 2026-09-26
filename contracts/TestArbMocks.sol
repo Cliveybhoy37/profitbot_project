@@ -116,3 +116,15 @@ contract TestBalancerVault {
         );
     }
 }
+
+contract TestFalseReturnToken {
+    mapping(address => uint256) public balanceOf;
+
+    function mint(address recipient, uint256 amount) external {
+        balanceOf[recipient] += amount;
+    }
+
+    function transfer(address, uint256) external pure returns (bool) {
+        return false;
+    }
+}
