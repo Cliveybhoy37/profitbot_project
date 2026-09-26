@@ -40,6 +40,15 @@ describe('ProfitBot callback validation', function () {
     }
   });
 
+  it('rejects a zero flashloan amount before calling the pool', async function () {
+    try {
+      await bot.initiateFlashloan(owner.address, 0, '0x');
+      assert.fail('expected revert');
+    } catch (e) {
+      assert.match(e.message, /Invalid flashloan amount/);
+    }
+  });
+
   it('rejects zero minimum outputs before any swap', async function () {
     const legType =
       'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
