@@ -16,7 +16,7 @@ test("matches historical fork-measured three-leg route", () => {
   }, 1_000_000n, 94_374_759);
 
   assert.deepEqual(result, {
-    gasUnits: 481_396n,
+    gasUnits: 481_300n,
     source: "measured Polygon fork execution at block 94374759"
   });
 });
@@ -112,7 +112,7 @@ test("matches historical fork-measured Balancer route", () => {
   );
 
   assert.deepEqual(result, {
-    gasUnits: 480_589n,
+    gasUnits: 480_493n,
     source: "measured Polygon fork Balancer execution at block 93974759"
   });
 });

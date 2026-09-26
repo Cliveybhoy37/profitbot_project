@@ -236,17 +236,6 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
         amountOut = balancerVault.swap(singleSwap, funds, minAmountOut, block.timestamp);
     }
 
-    function decodeBalancerParams(bytes calldata params) external pure returns (
-        string memory route,
-        address tokenIn,
-        address tokenOut,
-        bytes32 poolId,
-        uint256 minOut1,
-        uint256 minOut2
-    ) {
-        return abi.decode(params, (string, address, address, bytes32, uint256, uint256));
-    }
-
     function withdrawToken(address token) public onlyOwner {
         uint256 balance = IERC20(token).balanceOf(address(this));
         require(balance > 0, "No balance to withdraw");

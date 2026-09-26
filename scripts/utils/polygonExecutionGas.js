@@ -8,7 +8,7 @@ const HISTORICAL_ROUTES = [
     poolIds: [null, null, null],
     loanAmount: 1_000_000n,
     blockTag: 94_374_759,
-    gasUnits: 481_396n,
+    gasUnits: 481_300n,
     source: "measured Polygon fork execution at block 94374759"
   },
   {
@@ -22,7 +22,7 @@ const HISTORICAL_ROUTES = [
     ],
     loanAmount: 1_000_000n,
     blockTag: 93_974_759,
-    gasUnits: 480_589n,
+    gasUnits: 480_493n,
     source: "measured Polygon fork Balancer execution at block 93974759"
   }
 ];
