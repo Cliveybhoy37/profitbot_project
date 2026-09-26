@@ -13,7 +13,7 @@ test("matches historical fork-measured three-leg route", () => {
       { venue: "SUSHISWAP_V2", fee: null },
       { venue: "UNISWAP_V3", fee: 500 }
     ]
-  });
+  }, 1_000_000n);
 
   assert.deepEqual(result, {
     gasUnits: 479_395n,
@@ -56,6 +56,22 @@ test("returns null for malformed leg metadata", () => {
       { venue: "UNISWAP_V3", fee: 500 }
     ]
   });
+
+  assert.equal(result, null);
+});
+
+test("does not extrapolate measured gas to a different loan amount", () => {
+  const result = findMeasuredExecutionGas(
+    {
+      order: ["USDC_E", "WBTC", "WPOL"],
+      legs: [
+        { venue: "UNISWAP_V3", fee: 500 },
+        { venue: "SUSHISWAP_V2", fee: null },
+        { venue: "UNISWAP_V3", fee: 500 }
+      ]
+    },
+    2_000_000n
+  );
 
   assert.equal(result, null);
 });

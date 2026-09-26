@@ -340,7 +340,10 @@ async function scanTargetAtBlock(
             })
           : 0n;
 
-      const measuredGas = findMeasuredExecutionGas(result);
+      const measuredGas = findMeasuredExecutionGas(
+        result,
+        BigInt(startAmount.toString())
+      );
 
       result.researchEconomics.executionGas = measuredGas
         ? {

@@ -4,17 +4,19 @@ const HISTORICAL_ROUTE = {
   order: ["USDC_E", "WBTC", "WPOL"],
   venues: ["UNISWAP_V3", "SUSHISWAP_V2", "UNISWAP_V3"],
   fees: [500, null, 500],
+  loanAmount: 1_000_000n,
   gasUnits: 479_395n,
   source: "measured Polygon fork execution at block 94374759"
 };
 
-function findMeasuredExecutionGas(route) {
+function findMeasuredExecutionGas(route, loanAmount) {
   if (
     !route ||
     !Array.isArray(route.order) ||
     !Array.isArray(route.legs) ||
     route.order.length !== 3 ||
-    route.legs.length !== 3
+    route.legs.length !== 3 ||
+    loanAmount !== HISTORICAL_ROUTE.loanAmount
   ) {
     return null;
   }
