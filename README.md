@@ -23,3 +23,21 @@ Legacy transaction and deployment scripts are disabled at entry until individual
 Dependency PR decisions and the historical environment-file risk are documented in `docs/dependency-pr-review.md`.
 
 Local Hardhat mock simulation now tests two-hop loan repayment, swap slippage revert, and rejection of losses despite existing contract funds. It is not a Polygon fork or a real deployed-contract test.
+
+## Historical Polygon fork regressions
+
+Historical execution evidence is block-specific. Run each regression separately against its validated Polygon snapshot; do not run both routes against one fork block.
+
+V3 -> Sushi V2 -> V3 at block 94374759:
+
+```bash
+USE_FORK_BLOCK=true POLYGON_FORK_BLOCK=94374759 npx hardhat test test/polygonForkThreeLegExecution.js --grep "USDC.e -> WBTC -> WPOL"
+```
+
+V3 -> Balancer V2 -> V3 at block 93974759:
+
+```bash
+USE_FORK_BLOCK=true POLYGON_FORK_BLOCK=93974759 npx hardhat test test/polygonForkThreeLegExecution.js --grep "Balancer USDC.e -> WETH -> WPOL"
+```
+
+These fork tests require `ALCHEMY_POLYGON` to be configured locally. Never commit RPC credentials or other secrets.
