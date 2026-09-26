@@ -16,6 +16,21 @@ describe('ProfitBot callback validation', function () {
       assert.fail('expected revert');
     } catch (e) { assert.match(e.message, /Only callable by Aave pool/); }
   });
+  it('rejects callback not initiated by the bot', async function () {
+    try {
+      await bot.executeOperation(
+        owner.address,
+        100,
+        1,
+        other.address,
+        '0x'
+      );
+      assert.fail('expected revert');
+    } catch (e) {
+      assert.match(e.message, /Only initiated internally/);
+    }
+  });
+
   it('rejects zero minimum outputs before any swap', async function () {
     const legType =
       'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
