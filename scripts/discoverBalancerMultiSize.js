@@ -342,7 +342,8 @@ async function scanTargetAtBlock(
 
       const measuredGas = findMeasuredExecutionGas(
         result,
-        BigInt(startAmount.toString())
+        BigInt(startAmount.toString()),
+        blockTag
       );
 
       result.researchEconomics.executionGas = measuredGas
