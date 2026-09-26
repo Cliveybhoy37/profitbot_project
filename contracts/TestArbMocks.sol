@@ -128,3 +128,18 @@ contract TestFalseReturnToken {
         return false;
     }
 }
+
+contract TestGasConsumingOwner {
+    uint256 public received;
+
+    receive() external payable {
+        received += msg.value;
+    }
+
+    function withdrawEtherFrom(address bot) external {
+        (bool success, ) = bot.call(
+            abi.encodeWithSignature("withdrawEther()")
+        );
+        require(success, "withdraw failed");
+    }
+}

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@aave/core-v3/contracts/flashloan/interfaces/IFlashLoanSimpleReceiver.sol";
@@ -245,7 +246,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
     }
 
     function withdrawEther() public onlyOwner {
-        payable(owner()).transfer(address(this).balance);
+        Address.sendValue(payable(owner()), address(this).balance);
     }
 
     function withdrawAll(address[] calldata tokens) external onlyOwner {

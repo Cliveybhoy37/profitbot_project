@@ -76,4 +76,18 @@ describe('ProfitBot callback validation', function () {
     }
   });
 
+  it('withdraws Ether to a contract owner with a gas-consuming receive function', async function () {
+    const receiver = await (await ethers.getContractFactory('TestGasConsumingOwner')).deploy();
+    await receiver.deployed();
+
+    const amount = ethers.utils.parseEther('1');
+    await owner.sendTransaction({ to: bot.address, value: amount });
+    await bot.transferOwnership(receiver.address);
+
+    await receiver.withdrawEtherFrom(bot.address);
+
+    assert.equal((await receiver.received()).toString(), amount.toString());
+    assert.equal((await ethers.provider.getBalance(bot.address)).toString(), '0');
+  });
+
 });
