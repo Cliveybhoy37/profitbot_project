@@ -62,6 +62,23 @@ describe('Three-leg venue execution', function () {
 
     assert((await loan.balanceOf(bot.address)).gt(0));
     assert((await loan.balanceOf(pool.address)).gt(unit.mul(100)));
+
+    assert.equal(
+      (await loan.allowance(bot.address, v3.address)).toString(),
+      '0'
+    );
+    assert.equal(
+      (await bridge.allowance(bot.address, sushi.address)).toString(),
+      '0'
+    );
+    assert.equal(
+      (await middle.allowance(bot.address, v3.address)).toString(),
+      '0'
+    );
+    assert.equal(
+      (await loan.allowance(bot.address, pool.address)).toString(),
+      '0'
+    );
   });
 
   it('preserves a pre-existing loan-asset balance and adds only incremental profit', async function () {
@@ -360,6 +377,10 @@ describe('Three-leg venue execution', function () {
 
     assert((await loan.balanceOf(bot.address)).gt(0));
     assert((await bridge.balanceOf(balancer.address)).gt(0));
+    assert.equal(
+      (await bridge.allowance(bot.address, balancer.address)).toString(),
+      '0'
+    );
     assert((await loan.balanceOf(pool.address)).gt(unit.mul(100)));
   });
 
