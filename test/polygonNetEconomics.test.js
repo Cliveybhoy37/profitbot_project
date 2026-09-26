@@ -158,3 +158,23 @@ test("Aave economics wrapper preserves conservative gas calculation", () => {
     3_750n
   );
 });
+
+test("historical measured fork gas exceeds route gas budget", () => {
+  const {
+    calculateGasCostInToken
+  } = require("../scripts/utils/polygonAaveEconomics");
+
+  const gasCost = calculateGasCostInToken({
+    gasUnits: 479_395n,
+    maxFeePerGasWei: 322_494_674_775n,
+    nativePrice: 10_779_530n,
+    tokenPrice: 99_987_533n,
+    tokenDecimals: 6
+  });
+
+  const gasBudget = 1_637n;
+
+  assert.equal(gasCost, 16_668n);
+  assert.ok(gasCost > gasBudget);
+  assert.equal(gasBudget - gasCost, -15_031n);
+});

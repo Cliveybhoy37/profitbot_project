@@ -24,11 +24,15 @@ const {
 const {
   resolveAaveEconomics,
   readTokenPrices,
-  calculateMaxAffordableGasUnits
+  calculateMaxAffordableGasUnits,
+  calculateGasCostInToken
 } = require("./utils/polygonAaveEconomics");
 const {
   flashloanAdjustedResearchEconomics
 } = require("./utils/polygonNetEconomics");
+const {
+  findMeasuredExecutionGas
+} = require("./utils/polygonExecutionGas");
 
 const provider =
   new ethers.providers.JsonRpcProvider(process.env.ALCHEMY_POLYGON);
@@ -335,6 +339,30 @@ async function scanTargetAtBlock(
               tokenDecimals: TOKENS[startToken].decimals
             })
           : 0n;
+
+      const measuredGas = findMeasuredExecutionGas(result);
+
+      result.researchEconomics.executionGas = measuredGas
+        ? {
+            gasUnits: measuredGas.gasUnits,
+            source: measuredGas.source,
+            gasCost: calculateGasCostInToken({
+              gasUnits: measuredGas.gasUnits,
+              maxFeePerGasWei,
+              nativePrice,
+              tokenPrice,
+              tokenDecimals: TOKENS[startToken].decimals
+            })
+          }
+        : null;
+
+      if (result.researchEconomics.executionGas) {
+        const executionGas = result.researchEconomics.executionGas;
+
+        executionGas.remainingBudget =
+          result.researchEconomics.gasBudget - executionGas.gasCost;
+        executionGas.affordable = executionGas.remainingBudget >= 0n;
+      }
     }
 
     console.log("\nTOP 5 ROUTES FOR", size, startToken, "\n");
@@ -394,6 +422,37 @@ async function scanTargetAtBlock(
         r.researchEconomics.maxAffordableGasUnits.toString(),
         "gas units"
       );
+
+      if (r.researchEconomics.executionGas) {
+        const executionGas = r.researchEconomics.executionGas;
+
+        console.log(
+          "Measured execution gas:",
+          executionGas.gasUnits.toString(),
+          "gas units",
+          "| source:",
+          executionGas.source
+        );
+
+        console.log(
+          "Measured execution gas cost:",
+          ethers.utils.formatUnits(
+            executionGas.gasCost.toString(),
+            TOKENS[startToken].decimals
+          ),
+          startToken,
+          "| remaining after gas:",
+          ethers.utils.formatUnits(
+            executionGas.remainingBudget.toString(),
+            TOKENS[startToken].decimals
+          ),
+          startToken,
+          "| affordable:",
+          executionGas.affordable
+        );
+      } else {
+        console.log("Execution gas evidence: unavailable");
+      }
 
       console.log("---");
     }
