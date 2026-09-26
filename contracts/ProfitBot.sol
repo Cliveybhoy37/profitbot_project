@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@aave/core-v3/contracts/flashloan/interfaces/IFlashLoanSimpleReceiver.sol";
 import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
 import "@aave/core-v3/contracts/interfaces/IPool.sol";
@@ -13,6 +14,8 @@ import { IVault } from "../lib/balancer-v2/pkg/interfaces/contracts/vault/IVault
 import { IAsset } from "../lib/balancer-v2/pkg/interfaces/contracts/vault/IAsset.sol";
 
 contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
+    using SafeERC20 for IERC20;
+
     enum Venue {
         QUICKSWAP_V2,
         SUSHISWAP_V2,
@@ -139,7 +142,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
         );
 
         emit ProfitEvaluated(finalAmount, totalDebt);
-        IERC20(asset).approve(address(POOL), totalDebt);
+        IERC20(asset).forceApprove(address(POOL), totalDebt);
         return true;
     }
 
@@ -155,7 +158,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
                 ? quickSwapRouter
                 : sushiSwapRouter;
 
-            IERC20(leg.tokenIn).approve(address(router), amountIn);
+            IERC20(leg.tokenIn).forceApprove(address(router), amountIn);
 
             address[] memory path = new address[](2);
             path[0] = leg.tokenIn;
@@ -174,7 +177,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
             amountOut =
                 IERC20(leg.tokenOut).balanceOf(address(this)) - beforeOut;
         } else if (leg.venue == Venue.UNISWAP_V3) {
-            IERC20(leg.tokenIn).approve(address(uniswapV3Router), amountIn);
+            IERC20(leg.tokenIn).forceApprove(address(uniswapV3Router), amountIn);
 
             amountOut = uniswapV3Router.exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
@@ -227,7 +230,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
         });
 
         emit DebugText("Approving tokenIn for Balancer Vault");
-        IERC20(tokenIn).approve(address(balancerVault), amountIn);
+        IERC20(tokenIn).forceApprove(address(balancerVault), amountIn);
 
         emit DebugText("Calling balancerVault.swap()");
         amountOut = balancerVault.swap(singleSwap, funds, minAmountOut, block.timestamp);
