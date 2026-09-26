@@ -94,6 +94,25 @@ describe('Three-leg venue execution', function () {
     );
   });
 
+  it('rejects malformed route parameters atomically', async function () {
+    const poolBalanceBefore = await loan.balanceOf(pool.address);
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, '0x1234');
+    } catch (e) {
+      failed = true;
+    }
+
+    assert(failed);
+    assert((await loan.balanceOf(bot.address)).isZero());
+    assert.equal(
+      (await loan.balanceOf(pool.address)).toString(),
+      poolBalanceBefore.toString()
+    );
+  });
+
   it('rejects routes that do not contain exactly three legs', async function () {
     const legType =
       'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
