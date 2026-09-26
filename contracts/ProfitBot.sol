@@ -72,6 +72,7 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
         uint256 amount,
         bytes calldata params
     ) external onlyOwner {
+        require(token != address(0), "Invalid flashloan token");
         POOL.flashLoanSimple(address(this), token, amount, params, 0);
     }
 
