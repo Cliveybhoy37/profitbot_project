@@ -13,6 +13,9 @@ describe("Polygon fork three-leg execution", function () {
   const WETH = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
   const WPOL = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
 
+  const ERC20_ALLOWANCE_ABI = [
+    "function allowance(address,address) view returns (uint256)"
+  ];
   const LOAN_AMOUNT = ethers.BigNumber.from("1000000");
   const LEG1_OUT = ethers.BigNumber.from("1181");
   const LEG2_OUT = ethers.BigNumber.from("9321029991304088712");
@@ -28,6 +31,14 @@ describe("Polygon fork three-leg execution", function () {
     ethers.utils.hexlify(500),
     32
   );
+
+  async function getAavePool() {
+    const provider = await ethers.getContractAt(
+      ["function getPool() view returns (address)"],
+      AAVE_PROVIDER
+    );
+    return provider.getPool();
+  }
 
   function encodeRoute() {
     const legType =
@@ -69,9 +80,15 @@ describe("Polygon fork three-leg execution", function () {
     await bot.deployed();
 
     const usdc = await ethers.getContractAt(
-      ["function balanceOf(address) view returns (uint256)"],
+      [
+        "function balanceOf(address) view returns (uint256)",
+        "function allowance(address,address) view returns (uint256)"
+      ],
       USDC_E
     );
+    const wbtc = await ethers.getContractAt(ERC20_ALLOWANCE_ABI, WBTC);
+    const wpol = await ethers.getContractAt(ERC20_ALLOWANCE_ABI, WPOL);
+    const aavePool = await getAavePool();
 
     const before = await usdc.balanceOf(bot.address);
 
@@ -89,6 +106,10 @@ describe("Polygon fork three-leg execution", function () {
     console.log("bot USDC.e after:", after.toString());
 
     assert.equal(after.sub(before).toString(), "1637");
+    assert((await usdc.allowance(bot.address, UNISWAP_V3_ROUTER)).isZero());
+    assert((await wbtc.allowance(bot.address, SUSHISWAP_ROUTER)).isZero());
+    assert((await wpol.allowance(bot.address, UNISWAP_V3_ROUTER)).isZero());
+    assert((await usdc.allowance(bot.address, aavePool)).isZero());
   });
 
   it("executes the historical Balancer USDC.e -> WETH -> WPOL -> USDC.e route", async function () {
@@ -103,9 +124,15 @@ describe("Polygon fork three-leg execution", function () {
     await bot.deployed();
 
     const usdc = await ethers.getContractAt(
-      ["function balanceOf(address) view returns (uint256)"],
+      [
+        "function balanceOf(address) view returns (uint256)",
+        "function allowance(address,address) view returns (uint256)"
+      ],
       USDC_E
     );
+    const weth = await ethers.getContractAt(ERC20_ALLOWANCE_ABI, WETH);
+    const wpol = await ethers.getContractAt(ERC20_ALLOWANCE_ABI, WPOL);
+    const aavePool = await getAavePool();
 
     const before = await usdc.balanceOf(bot.address);
 
@@ -123,5 +150,9 @@ describe("Polygon fork three-leg execution", function () {
     console.log("Balancer bot USDC.e after:", after.toString());
 
     assert.equal(after.sub(before).toString(), "2083");
+    assert((await usdc.allowance(bot.address, UNISWAP_V3_ROUTER)).isZero());
+    assert((await weth.allowance(bot.address, BALANCER_VAULT)).isZero());
+    assert((await wpol.allowance(bot.address, UNISWAP_V3_ROUTER)).isZero());
+    assert((await usdc.allowance(bot.address, aavePool)).isZero());
   });
 });
