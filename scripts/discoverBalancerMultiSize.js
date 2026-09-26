@@ -464,6 +464,9 @@ async function scanTargetAtBlock(
     const premiumCovering = all.filter(
       r => r.researchEconomics.coversFlashloanFee
     );
+    const premiumCoveringBalancer = premiumCovering.filter(
+      r => r.venues.includes("BALANCER_V2")
+    );
 
     console.log(
       "Gross-positive routes:",
@@ -479,6 +482,13 @@ async function scanTargetAtBlock(
       all.length
     );
 
+    console.log(
+      "Premium-covering Balancer routes:",
+      premiumCoveringBalancer.length,
+      "/",
+      all.length
+    );
+
     const best = all[0] || null;
 
     summaries.push({
@@ -490,6 +500,7 @@ async function scanTargetAtBlock(
       completedRoutes: all.length,
       grossPositiveRoutes: profitable.length,
       premiumCoveringRoutes: premiumCovering.length,
+      premiumCoveringBalancerRoutes: premiumCoveringBalancer.length,
       bestGrossBps: best
         ? bps(best.grossDelta, startAmount)
         : null,
@@ -664,7 +675,9 @@ async function discoverDynamicScanTargets(blockTag) {
       "| gross-positive",
       `${summary.grossPositiveRoutes}/${summary.completedRoutes}`,
       "| premium-covering",
-      `${summary.premiumCoveringRoutes}/${summary.completedRoutes}`
+      `${summary.premiumCoveringRoutes}/${summary.completedRoutes}`,
+      "| premium-covering-balancer",
+      `${summary.premiumCoveringBalancerRoutes}/${summary.completedRoutes}`
     );
   }
 
