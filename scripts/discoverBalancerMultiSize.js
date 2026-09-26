@@ -537,6 +537,14 @@ async function discoverDynamicScanTargets(blockTag) {
       continue;
     }
 
+    if (!item.verification.apiMatchesChain) {
+      console.log(
+        "Skipping API/Vault mismatch:",
+        item.candidate.name
+      );
+      continue;
+    }
+
     const verifiedTargets = buildVerifiedScanTargets({
       candidate: item.candidate,
       verification: item.verification,

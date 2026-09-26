@@ -30,8 +30,7 @@ async function fetchPools() {
   const query = `
     query {
       poolGetPools(
-        where: { chainIn: [POLYGON] }
-        first: 100
+        where: { chainIn: [POLYGON], protocolVersionIn: [2] }
       ) {
         address
         name
