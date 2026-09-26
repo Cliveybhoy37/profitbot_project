@@ -354,6 +354,41 @@ describe('Three-leg venue execution', function () {
   });
 
 
+  it('rejects a fee-on-transfer flashloan asset', async function () {
+    const FeeToken = await ethers.getContractFactory('TestFeeOnTransferToken');
+    const feeToken = await FeeToken.deploy();
+
+    await feeToken.mint(pool.address, unit.mul(100));
+
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const feeTokenParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, feeToken.address, bridge.address, unit, feeData],
+        [1, bridge.address, middle.address, unit, ethers.constants.HashZero],
+        [2, middle.address, feeToken.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(
+        feeToken.address,
+        unit,
+        feeTokenParams
+      );
+    } catch (e) {
+      failed = true;
+    }
+
+    assert(failed);
+    assert((await feeToken.balanceOf(bot.address)).isZero());
+  });
+
+
   it('executes V3 -> Balancer V2 -> V3', async function () {
     const legType =
       'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';

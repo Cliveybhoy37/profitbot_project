@@ -9,6 +9,24 @@ contract TestToken is ERC20 {
     constructor(string memory name_) ERC20(name_, name_) {}
     function mint(address recipient, uint256 amount) external { _mint(recipient, amount); }
 }
+contract TestFeeOnTransferToken is ERC20 {
+    constructor() ERC20("FeeToken", "FEE") {}
+
+    function mint(address recipient, uint256 amount) external {
+        _mint(recipient, amount);
+    }
+
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override {
+        uint256 fee = amount / 100;
+        super._transfer(sender, recipient, amount - fee);
+        _burn(sender, fee);
+    }
+}
+
 contract TestPool {
     uint256 public premium = 9;
     function flashLoanSimple(address receiver, address asset, uint256 amount, bytes calldata params, uint16) external {
