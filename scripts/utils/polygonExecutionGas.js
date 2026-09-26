@@ -1,14 +1,31 @@
 "use strict";
 
-const HISTORICAL_ROUTE = {
-  order: ["USDC_E", "WBTC", "WPOL"],
-  venues: ["UNISWAP_V3", "SUSHISWAP_V2", "UNISWAP_V3"],
-  fees: [500, null, 500],
-  loanAmount: 1_000_000n,
-  blockTag: 94_374_759,
-  gasUnits: 479_395n,
-  source: "measured Polygon fork execution at block 94374759"
-};
+const HISTORICAL_ROUTES = [
+  {
+    order: ["USDC_E", "WBTC", "WPOL"],
+    venues: ["UNISWAP_V3", "SUSHISWAP_V2", "UNISWAP_V3"],
+    fees: [500, null, 500],
+    poolIds: [null, null, null],
+    loanAmount: 1_000_000n,
+    blockTag: 94_374_759,
+    gasUnits: 479_395n,
+    source: "measured Polygon fork execution at block 94374759"
+  },
+  {
+    order: ["USDC_E", "WETH", "WPOL"],
+    venues: ["UNISWAP_V3", "BALANCER_V2", "UNISWAP_V3"],
+    fees: [500, null, 500],
+    poolIds: [
+      null,
+      "0x32fc95287b14eaef3afa92cccc48c285ee3a280a000100000000000000000005",
+      null
+    ],
+    loanAmount: 1_000_000n,
+    blockTag: 93_974_759,
+    gasUnits: 478_582n,
+    source: "measured Polygon fork Balancer execution at block 93974759"
+  }
+];
 
 function findMeasuredExecutionGas(route, loanAmount, blockTag) {
   if (
@@ -16,32 +33,43 @@ function findMeasuredExecutionGas(route, loanAmount, blockTag) {
     !Array.isArray(route.order) ||
     !Array.isArray(route.legs) ||
     route.order.length !== 3 ||
-    route.legs.length !== 3 ||
-    loanAmount !== HISTORICAL_ROUTE.loanAmount ||
-    blockTag !== HISTORICAL_ROUTE.blockTag
+    route.legs.length !== 3
   ) {
     return null;
   }
 
-  const orderMatches = HISTORICAL_ROUTE.order.every(
-    (token, index) => route.order[index] === token
-  );
+  for (const evidence of HISTORICAL_ROUTES) {
+    if (
+      loanAmount !== evidence.loanAmount ||
+      blockTag !== evidence.blockTag
+    ) {
+      continue;
+    }
 
-  const legsMatch = HISTORICAL_ROUTE.venues.every(
-    (venue, index) =>
-      route.legs[index] &&
-      route.legs[index].venue === venue &&
-      (route.legs[index].fee ?? null) === HISTORICAL_ROUTE.fees[index]
-  );
+    const orderMatches = evidence.order.every(
+      (token, index) => route.order[index] === token
+    );
 
-  if (!orderMatches || !legsMatch) {
-    return null;
+    const legsMatch = evidence.venues.every((venue, index) => {
+      const leg = route.legs[index];
+
+      return (
+        leg &&
+        leg.venue === venue &&
+        (leg.fee ?? null) === evidence.fees[index] &&
+        (leg.poolId ?? null) === evidence.poolIds[index]
+      );
+    });
+
+    if (orderMatches && legsMatch) {
+      return {
+        gasUnits: evidence.gasUnits,
+        source: evidence.source
+      };
+    }
   }
 
-  return {
-    gasUnits: HISTORICAL_ROUTE.gasUnits,
-    source: HISTORICAL_ROUTE.source
-  };
+  return null;
 }
 
 module.exports = {

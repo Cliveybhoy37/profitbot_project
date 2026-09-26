@@ -631,6 +631,11 @@ async function discoverDynamicScanTargets(blockTag) {
 
     scanTargets = discovery.targets;
 
+    if (process.env.BALANCER_TARGET_NAME) {
+      scanTargets = scanTargets.filter(target => target.name === process.env.BALANCER_TARGET_NAME);
+      console.log("Dynamic target filter:", process.env.BALANCER_TARGET_NAME);
+    }
+
     const dynamicLimit = Number(
       process.env.BALANCER_DYNAMIC_LIMIT || 0
     );

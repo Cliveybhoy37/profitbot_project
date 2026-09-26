@@ -92,3 +92,48 @@ test("does not extrapolate measured gas to a different block", () => {
 
   assert.equal(result, null);
 });
+
+test("matches historical fork-measured Balancer route", () => {
+  const result = findMeasuredExecutionGas(
+    {
+      order: ["USDC_E", "WETH", "WPOL"],
+      legs: [
+        { venue: "UNISWAP_V3", fee: 500, poolId: null },
+        {
+          venue: "BALANCER_V2",
+          fee: null,
+          poolId: "0x32fc95287b14eaef3afa92cccc48c285ee3a280a000100000000000000000005"
+        },
+        { venue: "UNISWAP_V3", fee: 500, poolId: null }
+      ]
+    },
+    1_000_000n,
+    93_974_759
+  );
+
+  assert.deepEqual(result, {
+    gasUnits: 478_582n,
+    source: "measured Polygon fork Balancer execution at block 93974759"
+  });
+});
+
+test("does not extrapolate Balancer gas evidence to a different pool", () => {
+  const result = findMeasuredExecutionGas(
+    {
+      order: ["USDC_E", "WETH", "WPOL"],
+      legs: [
+        { venue: "UNISWAP_V3", fee: 500, poolId: null },
+        {
+          venue: "BALANCER_V2",
+          fee: null,
+          poolId: "0x03cd191f589d12b0582a99808cf19851e468e6b500010000000000000000000a"
+        },
+        { venue: "UNISWAP_V3", fee: 500, poolId: null }
+      ]
+    },
+    1_000_000n,
+    93_974_759
+  );
+
+  assert.equal(result, null);
+});
