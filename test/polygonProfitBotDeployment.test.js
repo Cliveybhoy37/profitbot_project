@@ -95,3 +95,25 @@ test("rejects a ProfitBot whose stored pool differs from its Aave provider pool"
     /Aave pool mismatch/
   );
 });
+
+test("reports which current ProfitBot getter is unavailable", async () => {
+  const {
+    readProfitBotConfiguration
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  const contract = {
+    ADDRESSES_PROVIDER: async () => EXPECTED.addressesProvider,
+    POOL: async () => EXPECTED.pool,
+    quickSwapRouter: async () => {
+      throw new Error("CALL_EXCEPTION");
+    },
+    sushiSwapRouter: async () => EXPECTED.sushiSwapRouter,
+    uniswapV3Router: async () => EXPECTED.uniswapV3Router,
+    balancerVault: async () => EXPECTED.balancerVault
+  };
+
+  await assert.rejects(
+    () => readProfitBotConfiguration(contract),
+    /Incompatible ProfitBot deployment: quickSwapRouter\(\) unavailable/
+  );
+});

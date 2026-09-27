@@ -52,14 +52,24 @@ function validateProfitBotPool(storedPool, providerPool) {
   return true;
 }
 
+async function readGetter(contract, getter) {
+  try {
+    return await contract[getter]();
+  } catch (_) {
+    throw new Error(
+      `Incompatible ProfitBot deployment: ${getter}() unavailable`
+    );
+  }
+}
+
 async function readProfitBotConfiguration(contract) {
   return {
-    addressesProvider: await contract.ADDRESSES_PROVIDER(),
-    pool: await contract.POOL(),
-    quickSwapRouter: await contract.quickSwapRouter(),
-    sushiSwapRouter: await contract.sushiSwapRouter(),
-    uniswapV3Router: await contract.uniswapV3Router(),
-    balancerVault: await contract.balancerVault()
+    addressesProvider: await readGetter(contract, "ADDRESSES_PROVIDER"),
+    pool: await readGetter(contract, "POOL"),
+    quickSwapRouter: await readGetter(contract, "quickSwapRouter"),
+    sushiSwapRouter: await readGetter(contract, "sushiSwapRouter"),
+    uniswapV3Router: await readGetter(contract, "uniswapV3Router"),
+    balancerVault: await readGetter(contract, "balancerVault")
   };
 }
 
