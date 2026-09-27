@@ -15,6 +15,12 @@ describe("Polygon fork ProfitBot deployment", function () {
       ...buildProfitBotConstructorArgs(config)
     );
     await bot.deployed();
+    const deploymentReceipt = await bot.deployTransaction.wait();
+
+    console.log(
+      "ProfitBot deployment gasUsed:",
+      deploymentReceipt.gasUsed.toString()
+    );
 
     const aaveProvider = await ethers.getContractAt(
       ["function getPool() view returns (address)"],
