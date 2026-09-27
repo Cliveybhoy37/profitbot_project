@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const { ethers } = require("ethers");
 const polygonProfitBotConfig = require("../scripts/utils/polygonProfitBotConfig");
 
 const {
@@ -267,5 +268,64 @@ test("rejects missing ProfitBot deployment bytecode", () => {
         polygonProfitBotConfig
       ),
     /ProfitBot deployment bytecode is missing/
+  );
+});
+
+test("estimates unsigned ProfitBot deployment gas for an explicit public address", async () => {
+  const {
+    estimateProfitBotDeploymentGas
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  const from = "0x1111111111111111111111111111111111111111";
+  const data = "0x60006000";
+  const expectedGas = ethers.BigNumber.from("1784117");
+
+  const provider = {
+    async estimateGas(transaction) {
+      assert.equal(transaction.from, from);
+      assert.equal(transaction.data, data);
+      assert.equal(transaction.to, undefined);
+      return expectedGas;
+    }
+  };
+
+  const gas = await estimateProfitBotDeploymentGas(
+    provider,
+    from,
+    data
+  );
+
+  assert.equal(gas.toString(), expectedGas.toString());
+});
+
+test("rejects unsafe ProfitBot deployment gas estimation inputs", async () => {
+  const {
+    estimateProfitBotDeploymentGas
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  const provider = {
+    async estimateGas() {
+      throw new Error("estimateGas should not be called");
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      estimateProfitBotDeploymentGas(
+        provider,
+        ethers.constants.AddressZero,
+        "0x60006000"
+      ),
+    /Valid nonzero deployment from address is required/
+  );
+
+  await assert.rejects(
+    () =>
+      estimateProfitBotDeploymentGas(
+        provider,
+        "0x1111111111111111111111111111111111111111",
+        "0x"
+      ),
+    /ProfitBot deployment data is required/
   );
 });

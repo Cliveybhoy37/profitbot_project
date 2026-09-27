@@ -182,12 +182,39 @@ function validateProfitBotConstructorAbi(abi) {
   return true;
 }
 
+async function estimateProfitBotDeploymentGas(provider, from, data) {
+  if (!provider || typeof provider.estimateGas !== "function") {
+    throw new Error("Deployment provider with estimateGas is required");
+  }
+
+  if (
+    !ethers.utils.isAddress(from) ||
+    from === ethers.constants.AddressZero
+  ) {
+    throw new Error("Valid nonzero deployment from address is required");
+  }
+
+  if (
+    typeof data !== "string" ||
+    data === "0x" ||
+    !ethers.utils.isHexString(data)
+  ) {
+    throw new Error("ProfitBot deployment data is required");
+  }
+
+  return provider.estimateGas({
+    from,
+    data
+  });
+}
+
 module.exports = {
   CONFIG_KEYS,
   validateProfitBotConfiguration,
   validateProfitBotPool,
   buildProfitBotConstructorArgs,
   buildProfitBotDeploymentData,
+  estimateProfitBotDeploymentGas,
   validateProfitBotConstructorAbi,
   validateDeploymentDependencies,
   readProfitBotConfiguration
