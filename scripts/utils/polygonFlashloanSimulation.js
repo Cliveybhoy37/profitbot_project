@@ -1,6 +1,14 @@
 "use strict";
 
 const { ethers } = require("ethers");
+const {
+  normalizeDiscoveredLegs,
+  validateLiveSlippageBps
+} = require("./polygonExecutionCandidate");
+const {
+  buildExecutionLegs,
+  encodeExecutionLegs
+} = require("./polygonExecutionRoute");
 
 const PROFITBOT_ABI = [
   "function initiateFlashloan(address token,uint256 amount,bytes params)"
@@ -28,6 +36,32 @@ function buildInitiateFlashloanCalldata(token, amount, params) {
     "initiateFlashloan",
     [token, amount, params]
   );
+}
+
+function buildFlashloanSimulationRequest({
+  candidate,
+  tokens,
+  amount,
+  slippageBps
+}) {
+  const liveSlippageBps = validateLiveSlippageBps(slippageBps);
+  const normalized = normalizeDiscoveredLegs(candidate, tokens);
+  const legs = buildExecutionLegs(normalized, liveSlippageBps);
+  const params = encodeExecutionLegs(legs);
+  const token = legs[0].tokenIn;
+  const data = buildInitiateFlashloanCalldata(
+    token,
+    amount,
+    params
+  );
+
+  return {
+    token,
+    amount,
+    legs,
+    params,
+    data
+  };
 }
 
 async function simulateInitiateFlashloan(provider, from, bot, data) {
@@ -67,5 +101,6 @@ async function simulateInitiateFlashloan(provider, from, bot, data) {
 module.exports = {
   PROFITBOT_ABI,
   buildInitiateFlashloanCalldata,
+  buildFlashloanSimulationRequest,
   simulateInitiateFlashloan
 };

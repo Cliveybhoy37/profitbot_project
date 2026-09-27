@@ -102,3 +102,120 @@ test("simulates initiateFlashloan with explicit from and bot addresses", async (
 
   assert.equal(result, "0x");
 });
+
+test("builds a guarded flashloan simulation request from a scanner candidate", () => {
+  const TOKENS = require("../scripts/utils/polygonScannerTokens");
+  const {
+    buildFlashloanSimulationRequest
+  } = require("../scripts/utils/polygonFlashloanSimulation");
+
+  const candidate = {
+    legs: [
+      {
+        from: "USDC_E",
+        to: "WBTC",
+        venue: "UNISWAP_V3",
+        amountOut: ethers.BigNumber.from("1181"),
+        fee: 500,
+        poolId: null
+      },
+      {
+        from: "WBTC",
+        to: "WPOL",
+        venue: "SUSHISWAP_V2",
+        amountOut: ethers.BigNumber.from("9321029991304088712"),
+        fee: null,
+        poolId: null
+      },
+      {
+        from: "WPOL",
+        to: "USDC_E",
+        venue: "UNISWAP_V3",
+        amountOut: ethers.BigNumber.from("1002137"),
+        fee: 500,
+        poolId: null
+      }
+    ]
+  };
+
+  const request = buildFlashloanSimulationRequest({
+    candidate,
+    tokens: TOKENS,
+    amount: ethers.BigNumber.from("1000000"),
+    slippageBps: 50
+  });
+
+  assert.equal(request.token, TOKENS.USDC_E.address);
+  assert.equal(request.amount.toString(), "1000000");
+  assert.equal(request.legs.length, 3);
+
+  assert.equal(request.legs[0].minAmountOut.toString(), "1175");
+  assert.equal(
+    request.legs[1].minAmountOut.toString(),
+    "9274424841347568268"
+  );
+  assert.equal(request.legs[2].minAmountOut.toString(), "997126");
+
+  assert.ok(ethers.utils.isHexString(request.params));
+  assert.ok(ethers.utils.isHexString(request.data));
+
+  const iface = new ethers.utils.Interface([
+    "function initiateFlashloan(address token,uint256 amount,bytes params)"
+  ]);
+
+  const decoded = iface.decodeFunctionData(
+    "initiateFlashloan",
+    request.data
+  );
+
+  assert.equal(decoded.token, TOKENS.USDC_E.address);
+  assert.equal(decoded.amount.toString(), "1000000");
+  assert.equal(decoded.params, request.params);
+});
+
+test("rejects zero slippage at the guarded simulation-request boundary", () => {
+  const TOKENS = require("../scripts/utils/polygonScannerTokens");
+  const {
+    buildFlashloanSimulationRequest
+  } = require("../scripts/utils/polygonFlashloanSimulation");
+
+  const candidate = {
+    legs: [
+      {
+        from: "USDC_E",
+        to: "WBTC",
+        venue: "UNISWAP_V3",
+        amountOut: ethers.BigNumber.from("1181"),
+        fee: 500,
+        poolId: null
+      },
+      {
+        from: "WBTC",
+        to: "WPOL",
+        venue: "SUSHISWAP_V2",
+        amountOut: ethers.BigNumber.from("9321029991304088712"),
+        fee: null,
+        poolId: null
+      },
+      {
+        from: "WPOL",
+        to: "USDC_E",
+        venue: "UNISWAP_V3",
+        amountOut: ethers.BigNumber.from("1002137"),
+        fee: 500,
+        poolId: null
+      }
+    ]
+  };
+
+  assert.throws(
+    () =>
+      buildFlashloanSimulationRequest({
+        candidate,
+        tokens: TOKENS,
+        amount: ethers.BigNumber.from("1000000"),
+        slippageBps: 0
+      }),
+    /Live slippageBps must be an integer from 1 to 1000/
+  );
+});
