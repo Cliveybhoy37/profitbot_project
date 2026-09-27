@@ -179,3 +179,41 @@ test("accepts deployment dependencies when all have bytecode", async () => {
     polygonProfitBotConfig.balancerVault
   ]);
 });
+
+test("validates the current ProfitBot constructor ABI", () => {
+  const {
+    validateProfitBotConstructorAbi
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  const currentAbi = [
+    {
+      type: "constructor",
+      inputs: [
+        { name: "_provider", type: "address" },
+        { name: "_quickSwapRouter", type: "address" },
+        { name: "_sushiSwapRouter", type: "address" },
+        { name: "_uniswapV3Router", type: "address" },
+        { name: "_balancerVault", type: "address" }
+      ]
+    }
+  ];
+
+  assert.equal(validateProfitBotConstructorAbi(currentAbi), true);
+
+  const staleAbi = [
+    {
+      type: "constructor",
+      inputs: [
+        { name: "_provider", type: "address" },
+        { name: "_uniswapRouter", type: "address" },
+        { name: "_sushiSwapRouter", type: "address" },
+        { name: "_balancerVault", type: "address" }
+      ]
+    }
+  ];
+
+  assert.throws(
+    () => validateProfitBotConstructorAbi(staleAbi),
+    /ProfitBot constructor ABI mismatch/
+  );
+});

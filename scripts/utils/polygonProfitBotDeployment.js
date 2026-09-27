@@ -123,11 +123,44 @@ async function readProfitBotConfiguration(contract) {
   };
 }
 
+function validateProfitBotConstructorAbi(abi) {
+  const expectedInputs = [
+    ["_provider", "address"],
+    ["_quickSwapRouter", "address"],
+    ["_sushiSwapRouter", "address"],
+    ["_uniswapV3Router", "address"],
+    ["_balancerVault", "address"]
+  ];
+
+  const constructor = Array.isArray(abi)
+    ? abi.find((entry) => entry && entry.type === "constructor")
+    : null;
+
+  const inputs = constructor && Array.isArray(constructor.inputs)
+    ? constructor.inputs
+    : [];
+
+  const matches =
+    inputs.length === expectedInputs.length &&
+    inputs.every(
+      (input, index) =>
+        input.name === expectedInputs[index][0] &&
+        input.type === expectedInputs[index][1]
+    );
+
+  if (!matches) {
+    throw new Error("ProfitBot constructor ABI mismatch");
+  }
+
+  return true;
+}
+
 module.exports = {
   CONFIG_KEYS,
   validateProfitBotConfiguration,
   validateProfitBotPool,
   buildProfitBotConstructorArgs,
+  validateProfitBotConstructorAbi,
   validateDeploymentDependencies,
   readProfitBotConfiguration
 };
