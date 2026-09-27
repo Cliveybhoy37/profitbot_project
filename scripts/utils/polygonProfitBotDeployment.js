@@ -52,6 +52,28 @@ function validateProfitBotPool(storedPool, providerPool) {
   return true;
 }
 
+function buildProfitBotConstructorArgs(config) {
+  if (!config) {
+    throw new Error("ProfitBot constructor configuration is required");
+  }
+
+  const keys = [
+    "addressesProvider",
+    "quickSwapRouter",
+    "sushiSwapRouter",
+    "uniswapV3Router",
+    "balancerVault"
+  ];
+
+  for (const key of keys) {
+    if (!ethers.utils.isAddress(config[key])) {
+      throw new Error(`Invalid ProfitBot constructor ${key}`);
+    }
+  }
+
+  return keys.map((key) => config[key]);
+}
+
 async function readGetter(contract, getter) {
   try {
     return await contract[getter]();
@@ -77,5 +99,6 @@ module.exports = {
   CONFIG_KEYS,
   validateProfitBotConfiguration,
   validateProfitBotPool,
+  buildProfitBotConstructorArgs,
   readProfitBotConfiguration
 };

@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const polygonProfitBotConfig = require("../scripts/utils/polygonProfitBotConfig");
 
 const {
   validateProfitBotConfiguration
@@ -115,5 +116,22 @@ test("reports which current ProfitBot getter is unavailable", async () => {
   await assert.rejects(
     () => readProfitBotConfiguration(contract),
     /Incompatible ProfitBot deployment: quickSwapRouter\(\) unavailable/
+  );
+});
+
+test("builds current ProfitBot constructor arguments in Solidity order", () => {
+  const {
+    buildProfitBotConstructorArgs
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  assert.deepStrictEqual(
+    buildProfitBotConstructorArgs(polygonProfitBotConfig),
+    [
+      polygonProfitBotConfig.addressesProvider,
+      polygonProfitBotConfig.quickSwapRouter,
+      polygonProfitBotConfig.sushiSwapRouter,
+      polygonProfitBotConfig.uniswapV3Router,
+      polygonProfitBotConfig.balancerVault
+    ]
   );
 });
