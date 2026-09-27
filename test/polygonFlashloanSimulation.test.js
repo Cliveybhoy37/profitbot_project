@@ -219,3 +219,58 @@ test("rejects zero slippage at the guarded simulation-request boundary", () => {
     /Live slippageBps must be an integer from 1 to 1000/
   );
 });
+
+test("hydrates JSON candidate amountOut strings without numeric precision loss", () => {
+  const {
+    hydrateFlashloanSimulationCandidate
+  } = require("../scripts/utils/polygonFlashloanSimulation");
+
+  const candidate = hydrateFlashloanSimulationCandidate({
+    legs: [
+      {
+        from: "USDC_E",
+        to: "WBTC",
+        venue: "UNISWAP_V3",
+        amountOut: "1181",
+        fee: 500,
+        poolId: null
+      },
+      {
+        from: "WBTC",
+        to: "WPOL",
+        venue: "SUSHISWAP_V2",
+        amountOut: "9321029991304088712",
+        fee: null,
+        poolId: null
+      },
+      {
+        from: "WPOL",
+        to: "USDC_E",
+        venue: "UNISWAP_V3",
+        amountOut: "1002137",
+        fee: 500,
+        poolId: null
+      }
+    ]
+  });
+
+  assert.equal(candidate.legs.length, 3);
+  assert.equal(candidate.legs[0].amountOut.toString(), "1181");
+  assert.equal(
+    candidate.legs[1].amountOut.toString(),
+    "9321029991304088712"
+  );
+  assert.equal(candidate.legs[2].amountOut.toString(), "1002137");
+
+  assert.throws(
+    () =>
+      hydrateFlashloanSimulationCandidate({
+        legs: [
+          { amountOut: 1181 },
+          { amountOut: "2" },
+          { amountOut: "3" }
+        ]
+      }),
+    /amountOut must be a positive decimal string/
+  );
+});
