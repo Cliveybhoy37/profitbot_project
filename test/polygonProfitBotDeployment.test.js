@@ -64,3 +64,15 @@ test("reads and normalizes the current ProfitBot deployment configuration", asyn
 
   assert.deepEqual(actual, EXPECTED);
 });
+
+test("exports the fork-tested Polygon constructor configuration", () => {
+  const config = require("../scripts/utils/polygonProfitBotConfig");
+
+  assert.deepEqual(config, {
+    addressesProvider: EXPECTED.addressesProvider,
+    quickSwapRouter: EXPECTED.quickSwapRouter,
+    sushiSwapRouter: EXPECTED.sushiSwapRouter,
+    uniswapV3Router: EXPECTED.uniswapV3Router,
+    balancerVault: EXPECTED.balancerVault
+  });
+});
