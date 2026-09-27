@@ -38,6 +38,46 @@ function buildInitiateFlashloanCalldata(token, amount, params) {
   );
 }
 
+function parseFlashloanSimulationCliValues({
+  loanAmount,
+  slippageBps
+}) {
+  if (
+    typeof loanAmount !== "string" ||
+    !/^[0-9]+$/.test(loanAmount)
+  ) {
+    throw new Error(
+      "Simulation loanAmount must be a positive decimal string"
+    );
+  }
+
+  const amount = ethers.BigNumber.from(loanAmount);
+
+  if (amount.lte(0)) {
+    throw new Error(
+      "Simulation loanAmount must be a positive decimal string"
+    );
+  }
+
+  if (
+    typeof slippageBps !== "string" ||
+    !/^[0-9]+$/.test(slippageBps)
+  ) {
+    throw new Error(
+      "Simulation slippageBps must be a decimal integer string"
+    );
+  }
+
+  const liveSlippageBps = validateLiveSlippageBps(
+    Number(slippageBps)
+  );
+
+  return {
+    amount,
+    slippageBps: liveSlippageBps
+  };
+}
+
 function hydrateFlashloanSimulationCandidate(candidate) {
   if (
     !candidate ||
@@ -138,6 +178,7 @@ async function simulateInitiateFlashloan(provider, from, bot, data) {
 module.exports = {
   PROFITBOT_ABI,
   buildInitiateFlashloanCalldata,
+  parseFlashloanSimulationCliValues,
   hydrateFlashloanSimulationCandidate,
   buildFlashloanSimulationRequest,
   simulateInitiateFlashloan

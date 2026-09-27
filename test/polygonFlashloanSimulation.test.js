@@ -274,3 +274,35 @@ test("hydrates JSON candidate amountOut strings without numeric precision loss",
     /amountOut must be a positive decimal string/
   );
 });
+
+test("parses explicit simulation CLI values without numeric precision loss", () => {
+  const {
+    parseFlashloanSimulationCliValues
+  } = require("../scripts/utils/polygonFlashloanSimulation");
+
+  const parsed = parseFlashloanSimulationCliValues({
+    loanAmount: "1000000",
+    slippageBps: "50"
+  });
+
+  assert.equal(parsed.amount.toString(), "1000000");
+  assert.equal(parsed.slippageBps, 50);
+
+  assert.throws(
+    () =>
+      parseFlashloanSimulationCliValues({
+        loanAmount: 1000000,
+        slippageBps: "50"
+      }),
+    /loanAmount must be a positive decimal string/
+  );
+
+  assert.throws(
+    () =>
+      parseFlashloanSimulationCliValues({
+        loanAmount: "1000000",
+        slippageBps: "0"
+      }),
+    /Live slippageBps must be an integer from 1 to 1000/
+  );
+});
