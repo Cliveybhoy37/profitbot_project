@@ -36,7 +36,19 @@ function validateProfitBotConfiguration(actual, expected) {
   return true;
 }
 
+async function readProfitBotConfiguration(contract) {
+  return {
+    addressesProvider: await contract.ADDRESSES_PROVIDER(),
+    pool: await contract.POOL(),
+    quickSwapRouter: await contract.quickSwapRouter(),
+    sushiSwapRouter: await contract.sushiSwapRouter(),
+    uniswapV3Router: await contract.uniswapV3Router(),
+    balancerVault: await contract.balancerVault()
+  };
+}
+
 module.exports = {
   CONFIG_KEYS,
-  validateProfitBotConfiguration
+  validateProfitBotConfiguration,
+  readProfitBotConfiguration
 };

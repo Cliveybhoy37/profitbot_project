@@ -45,3 +45,22 @@ test("rejects a deployment with a missing or mismatched dependency", () => {
     /uniswapV3Router/
   );
 });
+
+test("reads and normalizes the current ProfitBot deployment configuration", async () => {
+  const contract = {
+    ADDRESSES_PROVIDER: async () => EXPECTED.addressesProvider,
+    POOL: async () => EXPECTED.pool,
+    quickSwapRouter: async () => EXPECTED.quickSwapRouter,
+    sushiSwapRouter: async () => EXPECTED.sushiSwapRouter,
+    uniswapV3Router: async () => EXPECTED.uniswapV3Router,
+    balancerVault: async () => EXPECTED.balancerVault
+  };
+
+  const {
+    readProfitBotConfiguration
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  const actual = await readProfitBotConfiguration(contract);
+
+  assert.deepEqual(actual, EXPECTED);
+});
