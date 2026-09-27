@@ -6,8 +6,13 @@ const { ethers } = require("ethers");
 const config = require("./utils/polygonProfitBotConfig");
 const {
   buildProfitBotConstructorArgs,
+  validateProfitBotConstructorAbi,
   validateDeploymentDependencies
 } = require("./utils/polygonProfitBotDeployment");
+
+const profitBotArtifact = require(
+  "../artifacts/contracts/ProfitBot.sol/ProfitBot.json"
+);
 
 const AAVE_PROVIDER_ABI = [
   "function getPool() view returns (address)"
@@ -19,6 +24,8 @@ async function main() {
   if (!rpcUrl) {
     throw new Error("ALCHEMY_POLYGON is not configured");
   }
+
+  validateProfitBotConstructorAbi(profitBotArtifact.abi);
 
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
