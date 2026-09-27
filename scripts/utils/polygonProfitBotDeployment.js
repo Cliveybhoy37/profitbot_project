@@ -36,6 +36,22 @@ function validateProfitBotConfiguration(actual, expected) {
   return true;
 }
 
+function validateProfitBotPool(storedPool, providerPool) {
+  if (!ethers.utils.isAddress(storedPool)) {
+    throw new Error("Invalid ProfitBot pool");
+  }
+
+  if (!ethers.utils.isAddress(providerPool)) {
+    throw new Error("Invalid Aave provider pool");
+  }
+
+  if (storedPool.toLowerCase() !== providerPool.toLowerCase()) {
+    throw new Error("Aave pool mismatch");
+  }
+
+  return true;
+}
+
 async function readProfitBotConfiguration(contract) {
   return {
     addressesProvider: await contract.ADDRESSES_PROVIDER(),
@@ -50,5 +66,6 @@ async function readProfitBotConfiguration(contract) {
 module.exports = {
   CONFIG_KEYS,
   validateProfitBotConfiguration,
+  validateProfitBotPool,
   readProfitBotConfiguration
 };

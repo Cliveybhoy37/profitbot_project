@@ -76,3 +76,22 @@ test("exports the fork-tested Polygon constructor configuration", () => {
     balancerVault: EXPECTED.balancerVault
   });
 });
+
+test("rejects a ProfitBot whose stored pool differs from its Aave provider pool", () => {
+  const {
+    validateProfitBotPool
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  assert.doesNotThrow(() =>
+    validateProfitBotPool(EXPECTED.pool, EXPECTED.pool)
+  );
+
+  assert.throws(
+    () =>
+      validateProfitBotPool(
+        EXPECTED.pool,
+        "0x0000000000000000000000000000000000000001"
+      ),
+    /Aave pool mismatch/
+  );
+});
