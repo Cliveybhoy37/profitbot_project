@@ -74,6 +74,34 @@ function buildProfitBotConstructorArgs(config) {
   return keys.map((key) => config[key]);
 }
 
+async function validateDeploymentDependencies(provider, config) {
+  if (!provider || typeof provider.getCode !== "function") {
+    throw new Error("Deployment provider with getCode is required");
+  }
+
+  const keys = [
+    "addressesProvider",
+    "quickSwapRouter",
+    "sushiSwapRouter",
+    "uniswapV3Router",
+    "balancerVault"
+  ];
+
+  buildProfitBotConstructorArgs(config);
+
+  for (const key of keys) {
+    const code = await provider.getCode(config[key]);
+
+    if (code === "0x") {
+      throw new Error(
+        `ProfitBot deployment dependency ${key} has no bytecode`
+      );
+    }
+  }
+
+  return true;
+}
+
 async function readGetter(contract, getter) {
   try {
     return await contract[getter]();
@@ -100,5 +128,6 @@ module.exports = {
   validateProfitBotConfiguration,
   validateProfitBotPool,
   buildProfitBotConstructorArgs,
+  validateDeploymentDependencies,
   readProfitBotConfiguration
 };

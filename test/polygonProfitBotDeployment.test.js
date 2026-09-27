@@ -135,3 +135,47 @@ test("builds current ProfitBot constructor arguments in Solidity order", () => {
     ]
   );
 });
+
+test("rejects a deployment dependency with no bytecode", async () => {
+  const {
+    validateDeploymentDependencies
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  const provider = {
+    getCode: async (address) =>
+      address.toLowerCase() === polygonProfitBotConfig.balancerVault.toLowerCase()
+        ? "0x"
+        : "0x1234"
+  };
+
+  await assert.rejects(
+    () => validateDeploymentDependencies(provider, polygonProfitBotConfig),
+    /ProfitBot deployment dependency balancerVault has no bytecode/
+  );
+});
+
+test("accepts deployment dependencies when all have bytecode", async () => {
+  const {
+    validateDeploymentDependencies
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  const checked = [];
+  const provider = {
+    getCode: async (address) => {
+      checked.push(address);
+      return "0x1234";
+    }
+  };
+
+  await assert.doesNotReject(() =>
+    validateDeploymentDependencies(provider, polygonProfitBotConfig)
+  );
+
+  assert.deepStrictEqual(checked, [
+    polygonProfitBotConfig.addressesProvider,
+    polygonProfitBotConfig.quickSwapRouter,
+    polygonProfitBotConfig.sushiSwapRouter,
+    polygonProfitBotConfig.uniswapV3Router,
+    polygonProfitBotConfig.balancerVault
+  ]);
+});
