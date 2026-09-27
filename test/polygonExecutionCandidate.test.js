@@ -171,3 +171,28 @@ test("converts a scanner candidate into slippage-protected encoded execution leg
   assert.equal(decoded[2].venue, 2);
   assert.equal(decoded[2].tokenOut, TOKENS.USDC_E.address);
 });
+
+test("requires positive bounded slippage for live execution candidates", () => {
+  const {
+    validateLiveSlippageBps
+  } = require("../scripts/utils/polygonExecutionCandidate");
+
+  assert.equal(validateLiveSlippageBps(50), 50);
+  assert.equal(validateLiveSlippageBps(1), 1);
+  assert.equal(validateLiveSlippageBps(1000), 1000);
+
+  assert.throws(
+    () => validateLiveSlippageBps(0),
+    /Live slippageBps must be an integer from 1 to 1000/
+  );
+
+  assert.throws(
+    () => validateLiveSlippageBps(1001),
+    /Live slippageBps must be an integer from 1 to 1000/
+  );
+
+  assert.throws(
+    () => validateLiveSlippageBps(50.5),
+    /Live slippageBps must be an integer from 1 to 1000/
+  );
+});

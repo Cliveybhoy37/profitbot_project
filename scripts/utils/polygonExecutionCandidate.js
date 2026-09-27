@@ -26,6 +26,21 @@ function normalizeDiscoveredLegs(result, tokens) {
   });
 }
 
+function validateLiveSlippageBps(slippageBps) {
+  if (
+    !Number.isInteger(slippageBps) ||
+    slippageBps < 1 ||
+    slippageBps > 1000
+  ) {
+    throw new Error(
+      "Live slippageBps must be an integer from 1 to 1000"
+    );
+  }
+
+  return slippageBps;
+}
+
 module.exports = {
-  normalizeDiscoveredLegs
+  normalizeDiscoveredLegs,
+  validateLiveSlippageBps
 };
