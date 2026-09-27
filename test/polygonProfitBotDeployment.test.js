@@ -217,3 +217,55 @@ test("validates the current ProfitBot constructor ABI", () => {
     /ProfitBot constructor ABI mismatch/
   );
 });
+
+test("builds unsigned ProfitBot deployment data from current artifact", () => {
+  const {
+    buildProfitBotDeploymentData
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  const abi = [
+    {
+      type: "constructor",
+      stateMutability: "nonpayable",
+      inputs: [
+        { name: "_provider", type: "address" },
+        { name: "_quickSwapRouter", type: "address" },
+        { name: "_sushiSwapRouter", type: "address" },
+        { name: "_uniswapV3Router", type: "address" },
+        { name: "_balancerVault", type: "address" }
+      ]
+    }
+  ];
+
+  const artifact = {
+    abi,
+    bytecode: "0x60006000"
+  };
+
+  const data = buildProfitBotDeploymentData(
+    artifact,
+    polygonProfitBotConfig
+  );
+
+  assert.match(data, /^0x[0-9a-fA-F]+$/);
+  assert.ok(data.startsWith(artifact.bytecode));
+  assert.ok(data.length > artifact.bytecode.length);
+});
+
+test("rejects missing ProfitBot deployment bytecode", () => {
+  const {
+    buildProfitBotDeploymentData
+  } = require("../scripts/utils/polygonProfitBotDeployment");
+
+  assert.throws(
+    () =>
+      buildProfitBotDeploymentData(
+        {
+          abi: [],
+          bytecode: "0x"
+        },
+        polygonProfitBotConfig
+      ),
+    /ProfitBot deployment bytecode is missing/
+  );
+});

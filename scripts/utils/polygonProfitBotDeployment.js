@@ -123,6 +123,33 @@ async function readProfitBotConfiguration(contract) {
   };
 }
 
+function buildProfitBotDeploymentData(artifact, config) {
+  if (
+    !artifact ||
+    typeof artifact.bytecode !== "string" ||
+    artifact.bytecode === "0x" ||
+    !ethers.utils.isHexString(artifact.bytecode)
+  ) {
+    throw new Error("ProfitBot deployment bytecode is missing");
+  }
+
+  validateProfitBotConstructorAbi(artifact.abi);
+
+  const constructorArgs = buildProfitBotConstructorArgs(config);
+  const factory = new ethers.ContractFactory(
+    artifact.abi,
+    artifact.bytecode
+  );
+
+  const transaction = factory.getDeployTransaction(...constructorArgs);
+
+  if (!transaction.data) {
+    throw new Error("ProfitBot deployment data was not generated");
+  }
+
+  return transaction.data;
+}
+
 function validateProfitBotConstructorAbi(abi) {
   const expectedInputs = [
     ["_provider", "address"],
@@ -160,6 +187,7 @@ module.exports = {
   validateProfitBotConfiguration,
   validateProfitBotPool,
   buildProfitBotConstructorArgs,
+  buildProfitBotDeploymentData,
   validateProfitBotConstructorAbi,
   validateDeploymentDependencies,
   readProfitBotConfiguration
