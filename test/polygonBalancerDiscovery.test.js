@@ -383,3 +383,62 @@ test("buildVerifiedPoolEdgeTargets uses Balancer dynamicData totalLiquidity", ()
   assert.equal(targets.length, 1);
   assert.equal(targets[0].liquidity, "12345.67");
 });
+
+test("buildDynamicVerifiedEdgeTargets emits edges only from chain-matched pools", () => {
+  const {
+    buildDynamicVerifiedEdgeTargets
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const tokenA = {
+    address: "0x0000000000000000000000000000000000000011",
+    symbol: "AAA",
+    decimals: 18
+  };
+
+  const tokenB = {
+    address: "0x0000000000000000000000000000000000000022",
+    symbol: "BBB",
+    decimals: 6
+  };
+
+  const verified = [
+    {
+      candidate: {
+        address: "0x0000000000000000000000000000000000000091",
+        name: "Verified Pool",
+        type: "WEIGHTED",
+        dynamicData: { totalLiquidity: "50000" }
+      },
+      verification: {
+        apiMatchesChain: true,
+        poolId: "0xverified",
+        verifiedPoolTokens: [tokenA, tokenB],
+        poolAssets: [tokenA.address, tokenB.address],
+        balancesByAddress: {}
+      }
+    },
+    {
+      candidate: {
+        address: "0x0000000000000000000000000000000000000092",
+        name: "Mismatch Pool",
+        type: "WEIGHTED",
+        dynamicData: { totalLiquidity: "90000" }
+      },
+      verification: {
+        apiMatchesChain: false,
+        poolId: "0xmismatch",
+        verifiedPoolTokens: [],
+        poolAssets: [tokenA.address, tokenB.address],
+        balancesByAddress: {}
+      }
+    }
+  ];
+
+  const targets = buildDynamicVerifiedEdgeTargets(verified);
+
+  assert.equal(targets.length, 1);
+  assert.equal(targets[0].poolName, "Verified Pool");
+  assert.equal(targets[0].liquidity, "50000");
+  assert.equal(targets[0].tokenA.address, tokenA.address);
+  assert.equal(targets[0].tokenB.address, tokenB.address);
+});

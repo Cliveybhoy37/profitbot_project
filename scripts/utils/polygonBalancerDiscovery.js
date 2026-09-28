@@ -211,6 +211,19 @@ function buildVerifiedPoolEdgeTargets({ pool, verification }) {
   }));
 }
 
+function buildDynamicVerifiedEdgeTargets(verified) {
+  if (!Array.isArray(verified)) {
+    throw new Error("Balancer verified pools must be an array");
+  }
+
+  return verified.flatMap(entry =>
+    buildVerifiedPoolEdgeTargets({
+      pool: entry.candidate,
+      verification: entry.verification
+    })
+  );
+}
+
 function mapBalancesByAddress(tokens, balances) {
   if (!Array.isArray(tokens) || !Array.isArray(balances)) {
     throw new Error("Balancer tokens and balances must be arrays");
@@ -387,6 +400,7 @@ module.exports = {
   mapVerifiedPoolTokens,
   buildVerifiedPoolEdges,
   buildVerifiedPoolEdgeTargets,
+  buildDynamicVerifiedEdgeTargets,
   mapBalancesByAddress,
   verifyPool,
   discoverVerifiedCandidates,
