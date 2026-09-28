@@ -22,6 +22,8 @@ async function scanDynamicBalancerEdges({
   amountIn,
   premiumBps,
   candidateFilterFn,
+  orientationEvidence,
+  selectOrientations,
   discoverEdges = discoverDynamicVerifiedEdges,
   buildOrientations = buildBalancerEdgeCycleOrientations,
   evaluateCombinations = evaluateBalancerEdgeCombinations
@@ -46,7 +48,13 @@ async function scanDynamicBalancerEdges({
       continue;
     }
 
-    for (const cycle of orientations) {
+    const selectedOrientations = selectOrientations
+      ? selectOrientations({ edge, evidence: orientationEvidence })
+          .map(index => orientations[index])
+          .filter(Boolean)
+      : orientations;
+
+    for (const cycle of selectedOrientations) {
       try {
         const results = await evaluateCombinations({
           cycle,

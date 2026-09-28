@@ -334,3 +334,48 @@ test("scanDynamicBalancerEdges forwards candidate filter to discovery", async ()
   assert.equal(result.candidates.length, 0);
   assert.equal(result.positiveCandidates.length, 0);
 });
+
+test("scanDynamicBalancerEdges prunes unsupported orientations before combination evaluation", async () => {
+  const provider = {};
+  const blockTag = 123456;
+  const amountIn = ethers.BigNumber.from("10000000");
+  const startToken = {
+    address: "0x0000000000000000000000000000000000000001",
+    symbol: "USDC_E",
+    decimals: 6
+  };
+
+  const edge = { id: "PRUNED_EDGE" };
+  const cycleA = { id: "A" };
+  const cycleB = { id: "B" };
+  const orientationEvidence = new Map([["token", { supported: true }]]);
+  const evaluated = [];
+
+  const result = await scanDynamicBalancerEdges({
+    provider,
+    blockTag,
+    startToken,
+    amountIn,
+    orientationEvidence,
+    discoverEdges: async () => ({ edgeTargets: [edge] }),
+    buildOrientations: () => [cycleA, cycleB],
+    selectOrientations: args => {
+      assert.equal(args.edge, edge);
+      assert.equal(args.evidence, orientationEvidence);
+      return [1];
+    },
+    evaluateCombinations: async ({ cycle }) => {
+      evaluated.push(cycle.id);
+      return [{
+        entryVenue: "UNISWAP_V3",
+        exitVenue: "QUICKSWAP_V2",
+        amountIn,
+        amountOut: amountIn.add(1)
+      }];
+    }
+  });
+
+  assert.deepEqual(evaluated, ["B"]);
+  assert.equal(result.candidates.length, 1);
+  assert.equal(result.candidates[0].cycle, cycleB);
+});
