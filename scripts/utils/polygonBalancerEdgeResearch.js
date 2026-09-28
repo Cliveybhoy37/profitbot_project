@@ -33,6 +33,31 @@ function selectSupportedEdgeOrientations({ edge, evidence }) {
   return supported;
 }
 
+function collectUniqueEdgeTokens(edges) {
+  if (!Array.isArray(edges)) {
+    throw new Error("Balancer edges must be an array");
+  }
+
+  const tokensByAddress = new Map();
+
+  for (const edge of edges) {
+    for (const token of [edge?.tokenA, edge?.tokenB]) {
+      if (!token?.address) {
+        continue;
+      }
+
+      const address = token.address.toLowerCase();
+
+      if (!tokensByAddress.has(address)) {
+        tokensByAddress.set(address, token);
+      }
+    }
+  }
+
+  return [...tokensByAddress.values()];
+}
+
 module.exports = {
-  selectSupportedEdgeOrientations
+  selectSupportedEdgeOrientations,
+  collectUniqueEdgeTokens
 };

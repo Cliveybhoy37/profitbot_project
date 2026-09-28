@@ -57,3 +57,40 @@ test("selectSupportedEdgeOrientations rejects unsupported edge", () => {
     []
   );
 });
+
+test("collectUniqueEdgeTokens deduplicates endpoints by address", () => {
+  const {
+    collectUniqueEdgeTokens
+  } = require("../scripts/utils/polygonBalancerEdgeResearch");
+
+  const tokenAClone = {
+    ...TOKEN_A,
+    symbol: "A-duplicate"
+  };
+
+  const edges = [
+    {
+      tokenA: TOKEN_A,
+      tokenB: TOKEN_B
+    },
+    {
+      tokenA: tokenAClone,
+      tokenB: {
+        address: "0x0000000000000000000000000000000000000003",
+        symbol: "C"
+      }
+    }
+  ];
+
+  const tokens = collectUniqueEdgeTokens(edges);
+
+  assert.equal(tokens.length, 3);
+  assert.deepEqual(
+    tokens.map(token => token.address.toLowerCase()),
+    [
+      TOKEN_A.address.toLowerCase(),
+      TOKEN_B.address.toLowerCase(),
+      "0x0000000000000000000000000000000000000003"
+    ]
+  );
+});
