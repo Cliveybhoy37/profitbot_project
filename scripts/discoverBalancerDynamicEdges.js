@@ -11,7 +11,8 @@ const {
   resolveAaveEconomics
 } = require("./utils/polygonAaveEconomics");
 const {
-  scanDynamicBalancerEdges
+  scanDynamicBalancerEdges,
+  scanDynamicBalancerEdgesMultiSize
 } = require("./utils/polygonBalancerDynamicEdgeScanner");
 const {
   filterDynamicPoolResearchCandidates
@@ -53,6 +54,13 @@ function sortByGasBudgetDescending(candidates) {
   }
 
   const scanAmount = process.env.SCAN_AMOUNT || "10";
+  const scanSizes = process.env.SCAN_SIZES
+    ? process.env.SCAN_SIZES
+        .split(",")
+        .map(value => value.trim())
+        .filter(Boolean)
+    : null;
+
   const minimumLiquidity = Number(
     process.env.BALANCER_MIN_LIQUIDITY || "10000"
   );
@@ -73,6 +81,30 @@ function sortByGasBudgetDescending(candidates) {
     throw new Error("SCAN_AMOUNT must be positive");
   }
 
+  const amounts = scanSizes
+    ? scanSizes.map(value => {
+        const amount = ethers.utils.parseUnits(
+          value,
+          TOKENS.USDC_E.decimals
+        );
+
+        if (amount.lte(0)) {
+          throw new Error("SCAN_SIZES values must be positive");
+        }
+
+        return amount;
+      })
+    : null;
+
+  if (scanSizes && amounts.length === 0) {
+    throw new Error("SCAN_SIZES must contain at least one size");
+  }
+
+  const evidenceAmountIn = ethers.utils.parseUnits(
+    "10",
+    TOKENS.USDC_E.decimals
+  );
+
   const aave = await resolveAaveEconomics(
     provider,
     undefined,
@@ -84,7 +116,16 @@ function sortByGasBudgetDescending(candidates) {
   console.log("========================================");
   console.log("Polygon snapshot block:", block);
   console.log("Start token: USDC_E");
-  console.log("Research amount:", scanAmount, "USDC_E");
+  if (scanSizes) {
+    console.log(
+      "Research sizes:",
+      scanSizes.join(", "),
+      "USDC_E"
+    );
+    console.log("Orientation evidence amount: 10 USDC_E");
+  } else {
+    console.log("Research amount:", scanAmount, "USDC_E");
+  }
   console.log(
     "Minimum Balancer API liquidity:",
     minimumLiquidity
@@ -93,7 +134,7 @@ function sortByGasBudgetDescending(candidates) {
   console.log("Live execution: OFF");
   console.log("");
 
-  const scan = await scanDynamicBalancerEdges({
+  const scanOptions = {
     provider,
     blockTag: block,
     startToken: {
@@ -101,7 +142,6 @@ function sortByGasBudgetDescending(candidates) {
       address: TOKENS.USDC_E.address,
       decimals: TOKENS.USDC_E.decimals
     },
-    amountIn,
     premiumBps: aave.premiumBps,
     collectTokens: collectUniqueEdgeTokens,
     collectEvidence: collectExternalLiquidityEvidence,
@@ -111,7 +151,18 @@ function sortByGasBudgetDescending(candidates) {
         candidates,
         minimumLiquidity
       )
-  });
+  };
+
+  const scan = scanSizes
+    ? await scanDynamicBalancerEdgesMultiSize({
+        ...scanOptions,
+        amounts,
+        evidenceAmountIn
+      })
+    : await scanDynamicBalancerEdges({
+        ...scanOptions,
+        amountIn
+      });
 
   const verifiedPools = scan.verified.filter(
     item => item.verification
@@ -130,14 +181,43 @@ function sortByGasBudgetDescending(candidates) {
     "Maximum venue combinations after pruning:",
     scan.viableOrientationCount * 9
   );
-  console.log("Successful route quotes:", scan.candidates.length);
-  console.log("Gross-positive routes:", scan.positiveCandidates.length);
-  console.log(
-    "Premium-covered routes:",
-    scan.premiumCoveredCandidates.length
-  );
+  let premiumCoveredCandidates;
 
-  if (scan.premiumCoveredCandidates.length === 0) {
+  if (scanSizes) {
+    console.log("");
+    console.log("SIZE RESULTS");
+
+    for (const result of scan.sizeResults) {
+      console.log(
+        ethers.utils.formatUnits(
+          result.amountIn,
+          TOKENS.USDC_E.decimals
+        ),
+        "USDC_E:",
+        "quotes",
+        result.candidates.length,
+        "| gross-positive",
+        result.positiveCandidates.length,
+        "| premium-covered",
+        result.premiumCoveredCandidates.length
+      );
+    }
+
+    premiumCoveredCandidates = scan.sizeResults.flatMap(
+      result => result.premiumCoveredCandidates
+    );
+  } else {
+    console.log("Successful route quotes:", scan.candidates.length);
+    console.log("Gross-positive routes:", scan.positiveCandidates.length);
+    console.log(
+      "Premium-covered routes:",
+      scan.premiumCoveredCandidates.length
+    );
+
+    premiumCoveredCandidates = scan.premiumCoveredCandidates;
+  }
+
+  if (premiumCoveredCandidates.length === 0) {
     console.log("");
     console.log(
       "No routes survived the Aave premium gate at this pinned block."
@@ -152,7 +232,7 @@ function sortByGasBudgetDescending(candidates) {
   console.log("========================================");
 
   const survivors = sortByGasBudgetDescending(
-    scan.premiumCoveredCandidates
+    premiumCoveredCandidates
   );
 
   for (const [index, candidate] of survivors.entries()) {

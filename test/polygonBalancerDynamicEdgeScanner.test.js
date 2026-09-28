@@ -5,7 +5,8 @@ const assert = require("node:assert/strict");
 const { ethers } = require("ethers");
 
 const {
-  scanDynamicBalancerEdges
+  scanDynamicBalancerEdges,
+  scanDynamicBalancerEdgesMultiSize
 } = require("../scripts/utils/polygonBalancerDynamicEdgeScanner");
 
 test("scanDynamicBalancerEdges evaluates both orientations for every discovered edge", async () => {
@@ -455,4 +456,143 @@ test("scanDynamicBalancerEdges reports orientation pruning telemetry", async () 
 
   assert.equal(result.viableEdgeCount, 2);
   assert.equal(result.viableOrientationCount, 3);
+});
+
+
+test("scanDynamicBalancerEdgesMultiSize discovers and prunes once before evaluating every size", async () => {
+  const provider = {};
+  const blockTag = 97531;
+  const startToken = {
+    address: "0x0000000000000000000000000000000000000001",
+    symbol: "USDC_E",
+    decimals: 6
+  };
+  const amounts = [
+    ethers.BigNumber.from("1000000"),
+    ethers.BigNumber.from("5000000"),
+    ethers.BigNumber.from("10000000")
+  ];
+  const evidenceAmountIn = ethers.BigNumber.from("10000000");
+  const edge = { id: "EDGE" };
+  const cycleA = { id: "A" };
+  const cycleB = { id: "B" };
+  const evidence = new Map([["supported", true]]);
+  let discoveryCalls = 0;
+  let evidenceCalls = 0;
+  let selectorCalls = 0;
+  const evaluations = [];
+
+  const result = await scanDynamicBalancerEdgesMultiSize({
+    provider,
+    blockTag,
+    startToken,
+    amounts,
+    evidenceAmountIn,
+    premiumBps: 5n,
+    discoverEdges: async () => {
+      discoveryCalls += 1;
+      return { edgeTargets: [edge] };
+    },
+    collectTokens: () => [{ address: "0x00000000000000000000000000000000000000a1" }],
+    collectEvidence: async ({ amountIn }) => {
+      evidenceCalls += 1;
+      assert.equal(amountIn.toString(), evidenceAmountIn.toString());
+      return evidence;
+    },
+    buildOrientations: () => [cycleA, cycleB],
+    selectOrientations: ({ evidence: seenEvidence }) => {
+      selectorCalls += 1;
+      assert.equal(seenEvidence, evidence);
+      return [1];
+    },
+    evaluateCombinations: async ({ cycle, amountIn }) => {
+      evaluations.push(`${cycle.id}:${amountIn.toString()}`);
+      return [{
+        entryVenue: "UNISWAP_V3",
+        exitVenue: "QUICKSWAP_V2",
+        amountIn,
+        amountOut: amountIn.add(1000)
+      }];
+    }
+  });
+
+  assert.equal(discoveryCalls, 1);
+  assert.equal(evidenceCalls, 1);
+  assert.equal(selectorCalls, 1);
+  assert.deepEqual(evaluations, [
+    "B:1000000",
+    "B:5000000",
+    "B:10000000"
+  ]);
+  assert.equal(result.viableEdgeCount, 1);
+  assert.equal(result.viableOrientationCount, 1);
+  assert.equal(result.sizeResults.length, 3);
+  assert.deepEqual(
+    result.sizeResults.map(item => item.amountIn.toString()),
+    amounts.map(amount => amount.toString())
+  );
+});
+
+test("scanDynamicBalancerEdgesMultiSize computes economics independently per size", async () => {
+  const amounts = [
+    ethers.BigNumber.from("1000000"),
+    ethers.BigNumber.from("10000000")
+  ];
+
+  const result = await scanDynamicBalancerEdgesMultiSize({
+    provider: {},
+    blockTag: 86420,
+    startToken: {
+      address: "0x0000000000000000000000000000000000000001"
+    },
+    amounts,
+    premiumBps: 5n,
+    discoverEdges: async () => ({
+      edgeTargets: [{ id: "EDGE" }]
+    }),
+    buildOrientations: () => [{ id: "CYCLE" }],
+    evaluateCombinations: async ({ amountIn }) => [{
+      entryVenue: "UNISWAP_V3",
+      exitVenue: "QUICKSWAP_V2",
+      amountIn,
+      amountOut: amountIn.add(
+        amountIn.eq(amounts[0]) ? 501 : 5000
+      )
+    }]
+  });
+
+  assert.equal(result.sizeResults.length, 2);
+
+  const small = result.sizeResults[0];
+  const large = result.sizeResults[1];
+
+  assert.equal(small.candidates[0].flashloanFee.toString(), "500");
+  assert.equal(small.candidates[0].gasBudget.toString(), "1");
+  assert.equal(small.premiumCoveredCandidates.length, 1);
+
+  assert.equal(large.candidates[0].flashloanFee.toString(), "5000");
+  assert.equal(large.candidates[0].gasBudget.toString(), "0");
+  assert.equal(large.premiumCoveredCandidates.length, 0);
+});
+
+test("scanDynamicBalancerEdgesMultiSize rejects an empty amount list before discovery", async () => {
+  let discoveryCalls = 0;
+
+  await assert.rejects(
+    scanDynamicBalancerEdgesMultiSize({
+      provider: {},
+      blockTag: 12345,
+      startToken: {
+        address: "0x0000000000000000000000000000000000000001"
+      },
+      amounts: [],
+      discoverEdges: async () => {
+        discoveryCalls += 1;
+        return { edgeTargets: [] };
+      }
+    }),
+    /amounts required/
+  );
+
+  assert.equal(discoveryCalls, 0);
 });
