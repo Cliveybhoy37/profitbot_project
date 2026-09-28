@@ -442,3 +442,125 @@ test("buildDynamicVerifiedEdgeTargets emits edges only from chain-matched pools"
   assert.equal(targets[0].tokenA.address, tokenA.address);
   assert.equal(targets[0].tokenB.address, tokenB.address);
 });
+
+test("discoverDynamicVerifiedEdges verifies dynamic pools at the pinned block", async () => {
+  const {
+    discoverDynamicVerifiedEdges
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const pool = {
+    address: "0x0000000000000000000000000000000000000091",
+    name: "Dynamic Pool",
+    type: "WEIGHTED",
+    protocolVersion: 2,
+    dynamicData: { totalLiquidity: "50000" },
+    poolTokens: [
+      {
+        address: "0x0000000000000000000000000000000000000011",
+        symbol: "AAA",
+        decimals: 18
+      },
+      {
+        address: "0x0000000000000000000000000000000000000022",
+        symbol: "BBB",
+        decimals: 6
+      }
+    ]
+  };
+
+  const verification = {
+    apiMatchesChain: true,
+    poolId: "0xverified",
+    verifiedPoolTokens: pool.poolTokens,
+    poolAssets: pool.poolTokens.map(token => token.address),
+    balancesByAddress: {}
+  };
+
+  const seen = [];
+
+  const result = await discoverDynamicVerifiedEdges({
+    provider: {},
+    blockTag: 123456,
+    fetchPoolsFn: async () => [pool],
+    createVaultFn: () => ({ fakeVault: true }),
+    verifyPoolFn: async args => {
+      seen.push(args);
+      return verification;
+    }
+  });
+
+  assert.equal(result.blockTag, 123456);
+  assert.equal(result.apiPoolCount, 1);
+  assert.equal(result.candidateCount, 1);
+  assert.equal(result.verified.length, 1);
+  assert.equal(result.edgeTargets.length, 1);
+  assert.equal(result.edgeTargets[0].poolName, "Dynamic Pool");
+
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].blockTag, 123456);
+  assert.deepEqual(seen[0].provider, {});
+  assert.deepEqual(seen[0].vault, { fakeVault: true });
+});
+
+test("discoverDynamicVerifiedEdges isolates pool verification failures", async () => {
+  const {
+    discoverDynamicVerifiedEdges
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const makePool = (address, name, tokenA, tokenB) => ({
+    address,
+    name,
+    type: "WEIGHTED",
+    protocolVersion: 2,
+    dynamicData: { totalLiquidity: "50000" },
+    poolTokens: [
+      { address: tokenA, symbol: "AAA", decimals: 18 },
+      { address: tokenB, symbol: "BBB", decimals: 18 }
+    ]
+  });
+
+  const badPool = makePool(
+    "0x0000000000000000000000000000000000000091",
+    "Bad Pool",
+    "0x0000000000000000000000000000000000000011",
+    "0x0000000000000000000000000000000000000022"
+  );
+
+  const goodPool = makePool(
+    "0x0000000000000000000000000000000000000092",
+    "Good Pool",
+    "0x0000000000000000000000000000000000000033",
+    "0x0000000000000000000000000000000000000044"
+  );
+
+  const result = await discoverDynamicVerifiedEdges({
+    provider: {},
+    blockTag: 654321,
+    fetchPoolsFn: async () => [badPool, goodPool],
+    createVaultFn: () => ({}),
+    verifyPoolFn: async ({ pool }) => {
+      if (pool.name === "Bad Pool") {
+        throw new Error("verification exploded");
+      }
+
+      return {
+        apiMatchesChain: true,
+        poolId: "0xgood",
+        verifiedPoolTokens: pool.poolTokens,
+        poolAssets: pool.poolTokens.map(token => token.address),
+        balancesByAddress: {}
+      };
+    }
+  });
+
+  assert.equal(result.candidateCount, 2);
+  assert.equal(result.verified.length, 2);
+
+  assert.equal(result.verified[0].verification, null);
+  assert.equal(result.verified[0].error, "verification exploded");
+
+  assert.equal(result.verified[1].verification.apiMatchesChain, true);
+
+  assert.equal(result.edgeTargets.length, 1);
+  assert.equal(result.edgeTargets[0].poolName, "Good Pool");
+});

@@ -324,6 +324,59 @@ async function verifyPool({
 }
 
 
+async function discoverDynamicVerifiedEdges({
+  provider,
+  blockTag,
+  fetchPoolsFn = fetchPools,
+  createVaultFn = createVault,
+  verifyPoolFn = verifyPool
+}) {
+  if (!provider) {
+    throw new Error("Balancer dynamic discovery requires provider");
+  }
+
+  if (blockTag === undefined || blockTag === null) {
+    throw new Error(
+      "Balancer dynamic discovery requires pinned blockTag"
+    );
+  }
+
+  const pools = await fetchPoolsFn();
+  const candidates = selectDynamicPoolCandidates(pools);
+  const vault = createVaultFn(provider);
+  const verified = [];
+
+  for (const pool of candidates) {
+    try {
+      const verification = await verifyPoolFn({
+        pool,
+        blockTag,
+        provider,
+        vault
+      });
+
+      verified.push({
+        candidate: pool,
+        verification
+      });
+    } catch (error) {
+      verified.push({
+        candidate: pool,
+        verification: null,
+        error: error.message
+      });
+    }
+  }
+
+  return {
+    blockTag,
+    apiPoolCount: pools.length,
+    candidateCount: candidates.length,
+    verified,
+    edgeTargets: buildDynamicVerifiedEdgeTargets(verified)
+  };
+}
+
 async function discoverVerifiedCandidates({
   provider,
   blockTag
@@ -403,6 +456,7 @@ module.exports = {
   buildDynamicVerifiedEdgeTargets,
   mapBalancesByAddress,
   verifyPool,
+  discoverDynamicVerifiedEdges,
   discoverVerifiedCandidates,
   createVault
 };
