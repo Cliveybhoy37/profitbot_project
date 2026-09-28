@@ -21,13 +21,15 @@ async function scanDynamicBalancerEdges({
   startToken,
   amountIn,
   premiumBps,
+  candidateFilterFn,
   discoverEdges = discoverDynamicVerifiedEdges,
   buildOrientations = buildBalancerEdgeCycleOrientations,
   evaluateCombinations = evaluateBalancerEdgeCombinations
 }) {
   const discovery = await discoverEdges({
     provider,
-    blockTag
+    blockTag,
+    candidateFilterFn
   });
 
   const candidates = [];

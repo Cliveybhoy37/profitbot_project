@@ -304,3 +304,33 @@ test("scanDynamicBalancerEdges separates candidates that strictly cover flashloa
 
   assert.equal(result.premiumCoveredCandidates[0], result.candidates[0]);
 });
+
+test("scanDynamicBalancerEdges forwards candidate filter to discovery", async () => {
+  const provider = {};
+  const candidateFilterFn = candidates => candidates;
+
+  let seenFilter = null;
+
+  const result = await scanDynamicBalancerEdges({
+    provider,
+    blockTag: 888,
+    startToken: {
+      address: "0x0000000000000000000000000000000000000001",
+      symbol: "USDC_E",
+      decimals: 6
+    },
+    amountIn: ethers.BigNumber.from("10000000"),
+    candidateFilterFn,
+    discoverEdges: async args => {
+      seenFilter = args.candidateFilterFn;
+
+      return {
+        edgeTargets: []
+      };
+    }
+  });
+
+  assert.equal(seenFilter, candidateFilterFn);
+  assert.equal(result.candidates.length, 0);
+  assert.equal(result.positiveCandidates.length, 0);
+});

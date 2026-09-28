@@ -1,0 +1,225 @@
+"use strict";
+
+// Read-only Polygon dynamic Balancer edge discovery.
+// No signer, wallet, approvals, flashloan, or transaction submission.
+
+require("dotenv").config();
+
+const { ethers } = require("ethers");
+const TOKENS = require("./utils/polygonScannerTokens");
+const {
+  resolveAaveEconomics
+} = require("./utils/polygonAaveEconomics");
+const {
+  scanDynamicBalancerEdges
+} = require("./utils/polygonBalancerDynamicEdgeScanner");
+const {
+  filterDynamicPoolResearchCandidates
+} = require("./utils/polygonBalancerDiscovery");
+
+const provider =
+  new ethers.providers.JsonRpcProvider(process.env.ALCHEMY_POLYGON);
+
+function sortByGasBudgetDescending(candidates) {
+  return [...candidates].sort((a, b) => {
+    if (a.gasBudget.gt(b.gasBudget)) {
+      return -1;
+    }
+
+    if (a.gasBudget.lt(b.gasBudget)) {
+      return 1;
+    }
+
+    return 0;
+  });
+}
+
+(async () => {
+  if (!process.env.ALCHEMY_POLYGON) {
+    throw new Error("ALCHEMY_POLYGON required");
+  }
+
+  const block = process.env.SCAN_BLOCK
+    ? Number(process.env.SCAN_BLOCK)
+    : await provider.getBlockNumber();
+
+  if (!Number.isInteger(block) || block <= 0) {
+    throw new Error("Invalid SCAN_BLOCK");
+  }
+
+  const scanAmount = process.env.SCAN_AMOUNT || "10";
+  const minimumLiquidity = Number(
+    process.env.BALANCER_MIN_LIQUIDITY || "10000"
+  );
+
+  if (
+    !Number.isFinite(minimumLiquidity) ||
+    minimumLiquidity < 0
+  ) {
+    throw new Error("Invalid BALANCER_MIN_LIQUIDITY");
+  }
+
+  const amountIn = ethers.utils.parseUnits(
+    scanAmount,
+    TOKENS.USDC_E.decimals
+  );
+
+  if (amountIn.lte(0)) {
+    throw new Error("SCAN_AMOUNT must be positive");
+  }
+
+  const aave = await resolveAaveEconomics(
+    provider,
+    undefined,
+    block
+  );
+
+  console.log("========================================");
+  console.log("DYNAMIC BALANCER EDGE DISCOVERY");
+  console.log("========================================");
+  console.log("Polygon snapshot block:", block);
+  console.log("Start token: USDC_E");
+  console.log("Research amount:", scanAmount, "USDC_E");
+  console.log(
+    "Minimum Balancer API liquidity:",
+    minimumLiquidity
+  );
+  console.log("Aave flashloan premium:", aave.premiumBps.toString(), "bps");
+  console.log("Live execution: OFF");
+  console.log("");
+
+  const scan = await scanDynamicBalancerEdges({
+    provider,
+    blockTag: block,
+    startToken: {
+      symbol: "USDC_E",
+      address: TOKENS.USDC_E.address,
+      decimals: TOKENS.USDC_E.decimals
+    },
+    amountIn,
+    premiumBps: aave.premiumBps,
+    candidateFilterFn: candidates =>
+      filterDynamicPoolResearchCandidates(
+        candidates,
+        minimumLiquidity
+      )
+  });
+
+  const verifiedPools = scan.verified.filter(
+    item => item.verification
+  ).length;
+
+  console.log("========================================");
+  console.log("DISCOVERY SUMMARY");
+  console.log("========================================");
+  console.log("API pools:", scan.apiPoolCount);
+  console.log("Dynamic pool candidates:", scan.candidateCount);
+  console.log("On-chain verified pools:", verifiedPools);
+  console.log("Verified Balancer edges:", scan.edgeTargets.length);
+  console.log("Successful route quotes:", scan.candidates.length);
+  console.log("Gross-positive routes:", scan.positiveCandidates.length);
+  console.log(
+    "Premium-covered routes:",
+    scan.premiumCoveredCandidates.length
+  );
+
+  if (scan.premiumCoveredCandidates.length === 0) {
+    console.log("");
+    console.log(
+      "No routes survived the Aave premium gate at this pinned block."
+    );
+    console.log("Live execution: OFF");
+    return;
+  }
+
+  console.log("");
+  console.log("========================================");
+  console.log("PREMIUM-COVERED CANDIDATES");
+  console.log("========================================");
+
+  const survivors = sortByGasBudgetDescending(
+    scan.premiumCoveredCandidates
+  );
+
+  for (const [index, candidate] of survivors.entries()) {
+    const cycle = candidate.cycle;
+    const balancerLeg = cycle.legs[1];
+
+    console.log("");
+    console.log(`#${index + 1}`);
+    console.log("Pool:", cycle.poolName);
+    console.log("Pool type:", cycle.poolType);
+    console.log("Pool ID:", cycle.poolId);
+    console.log(
+      "Route:",
+      cycle.legs
+        .map(leg => leg.tokenIn.symbol || leg.tokenIn.address)
+        .concat(
+          cycle.legs[cycle.legs.length - 1].tokenOut.symbol ||
+          cycle.legs[cycle.legs.length - 1].tokenOut.address
+        )
+        .join(" -> ")
+    );
+    console.log(
+      "Venues:",
+      candidate.entryVenue,
+      "-> BALANCER_V2 ->",
+      candidate.exitVenue
+    );
+    console.log(
+      "Balancer edge:",
+      balancerLeg.tokenIn.address,
+      "->",
+      balancerLeg.tokenOut.address
+    );
+    console.log(
+      "Amount in:",
+      ethers.utils.formatUnits(
+        candidate.amountIn,
+        TOKENS.USDC_E.decimals
+      ),
+      "USDC_E"
+    );
+    console.log(
+      "Amount out:",
+      ethers.utils.formatUnits(
+        candidate.amountOut,
+        TOKENS.USDC_E.decimals
+      ),
+      "USDC_E"
+    );
+    console.log(
+      "Gross delta:",
+      ethers.utils.formatUnits(
+        candidate.grossDelta,
+        TOKENS.USDC_E.decimals
+      ),
+      "USDC_E"
+    );
+    console.log(
+      "Flashloan fee:",
+      ethers.utils.formatUnits(
+        candidate.flashloanFee,
+        TOKENS.USDC_E.decimals
+      ),
+      "USDC_E"
+    );
+    console.log(
+      "Gas budget before gas:",
+      ethers.utils.formatUnits(
+        candidate.gasBudget,
+        TOKENS.USDC_E.decimals
+      ),
+      "USDC_E"
+    );
+  }
+
+  console.log("");
+  console.log("Gas economics: NOT YET APPLIED");
+  console.log("Exact ProfitBot simulation: NOT YET APPLIED");
+  console.log("Live execution: OFF");
+})().catch(error => {
+  console.error("Dynamic Balancer edge discovery failed:");
+  console.error(error.message);
+  process.exitCode = 1;
+});

@@ -94,6 +94,38 @@ function selectDynamicPoolCandidates(pools) {
   });
 }
 
+function filterDynamicPoolResearchCandidates(
+  pools,
+  minimumLiquidity
+) {
+  if (!Array.isArray(pools)) {
+    throw new Error("Research candidates must be an array");
+  }
+
+  if (
+    typeof minimumLiquidity !== "number" ||
+    !Number.isFinite(minimumLiquidity) ||
+    minimumLiquidity < 0
+  ) {
+    throw new Error("Invalid minimum liquidity");
+  }
+
+  return pools.filter(pool => {
+    if (pool.type !== "WEIGHTED" && pool.type !== "STABLE") {
+      return false;
+    }
+
+    const liquidity = Number(
+      pool.dynamicData?.totalLiquidity
+    );
+
+    return (
+      Number.isFinite(liquidity) &&
+      liquidity >= minimumLiquidity
+    );
+  });
+}
+
 function verifiedOverlap(pool) {
   return [
     ...new Set(
@@ -329,7 +361,8 @@ async function discoverDynamicVerifiedEdges({
   blockTag,
   fetchPoolsFn = fetchPools,
   createVaultFn = createVault,
-  verifyPoolFn = verifyPool
+  verifyPoolFn = verifyPool,
+  candidateFilterFn = null
 }) {
   if (!provider) {
     throw new Error("Balancer dynamic discovery requires provider");
@@ -342,7 +375,19 @@ async function discoverDynamicVerifiedEdges({
   }
 
   const pools = await fetchPoolsFn();
-  const candidates = selectDynamicPoolCandidates(pools);
+  const structuralCandidates =
+    selectDynamicPoolCandidates(pools);
+
+  const candidates = candidateFilterFn
+    ? candidateFilterFn(structuralCandidates)
+    : structuralCandidates;
+
+  if (!Array.isArray(candidates)) {
+    throw new Error(
+      "Balancer candidate filter must return an array"
+    );
+  }
+
   const vault = createVaultFn(provider);
   const verified = [];
 
@@ -448,6 +493,7 @@ module.exports = {
   VAULT_ABI,
   fetchPools,
   selectDynamicPoolCandidates,
+  filterDynamicPoolResearchCandidates,
   verifiedOverlap,
   combinations3,
   mapVerifiedPoolTokens,

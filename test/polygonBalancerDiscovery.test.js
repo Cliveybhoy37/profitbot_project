@@ -564,3 +564,120 @@ test("discoverDynamicVerifiedEdges isolates pool verification failures", async (
   assert.equal(result.edgeTargets.length, 1);
   assert.equal(result.edgeTargets[0].poolName, "Good Pool");
 });
+
+test("filterDynamicPoolResearchCandidates keeps only supported pools above minimum liquidity", () => {
+  const {
+    filterDynamicPoolResearchCandidates
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const makePool = (name, type, liquidity) => ({
+    name,
+    type,
+    dynamicData: {
+      totalLiquidity: liquidity
+    }
+  });
+
+  const pools = [
+    makePool("Weighted High", "WEIGHTED", "50000"),
+    makePool("Stable Exact", "STABLE", "10000"),
+    makePool("Weighted Low", "WEIGHTED", "9999.99"),
+    makePool("Unsupported High", "GYROE", "1000000"),
+    makePool("Missing Liquidity", "WEIGHTED", null),
+    makePool("Invalid Liquidity", "STABLE", "not-a-number")
+  ];
+
+  const result = filterDynamicPoolResearchCandidates(
+    pools,
+    10000
+  );
+
+  assert.deepEqual(
+    result.map(pool => pool.name),
+    ["Weighted High", "Stable Exact"]
+  );
+});
+
+test("filterDynamicPoolResearchCandidates validates its inputs", () => {
+  const {
+    filterDynamicPoolResearchCandidates
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  assert.throws(
+    () => filterDynamicPoolResearchCandidates(null, 10000),
+    /array/
+  );
+
+  assert.throws(
+    () => filterDynamicPoolResearchCandidates([], -1),
+    /minimum liquidity/
+  );
+});
+
+test("discoverDynamicVerifiedEdges applies optional candidate filter before verification", async () => {
+  const {
+    discoverDynamicVerifiedEdges
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const makePool = (address, name, liquidity) => ({
+    address,
+    name,
+    type: "WEIGHTED",
+    protocolVersion: 2,
+    dynamicData: { totalLiquidity: liquidity },
+    poolTokens: [
+      {
+        address: "0x0000000000000000000000000000000000000011",
+        symbol: "AAA",
+        decimals: 18
+      },
+      {
+        address: "0x0000000000000000000000000000000000000022",
+        symbol: "BBB",
+        decimals: 18
+      }
+    ]
+  });
+
+  const low = makePool(
+    "0x0000000000000000000000000000000000000091",
+    "Low",
+    "100"
+  );
+
+  const high = makePool(
+    "0x0000000000000000000000000000000000000092",
+    "High",
+    "50000"
+  );
+
+  const seen = [];
+
+  const result = await discoverDynamicVerifiedEdges({
+    provider: {},
+    blockTag: 777,
+    fetchPoolsFn: async () => [low, high],
+    createVaultFn: () => ({}),
+    candidateFilterFn: candidates =>
+      candidates.filter(
+        pool => Number(pool.dynamicData.totalLiquidity) >= 10000
+      ),
+    verifyPoolFn: async ({ pool }) => {
+      seen.push(pool.name);
+
+      return {
+        apiMatchesChain: true,
+        poolId: "0xverified",
+        verifiedPoolTokens: pool.poolTokens,
+        poolAssets: pool.poolTokens.map(token => token.address),
+        balancesByAddress: {}
+      };
+    }
+  });
+
+  assert.equal(result.apiPoolCount, 2);
+  assert.equal(result.candidateCount, 1);
+  assert.deepEqual(seen, ["High"]);
+  assert.equal(result.verified.length, 1);
+  assert.equal(result.edgeTargets.length, 1);
+});
