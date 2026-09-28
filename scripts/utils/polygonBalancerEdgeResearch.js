@@ -1,8 +1,12 @@
 "use strict";
 
-// Pure research helper for pruning Balancer edge orientations.
-// Consumes previously collected external-liquidity evidence.
-// No provider, signer, wallet, quote, or transaction activity.
+const {
+  probeExternalTokenLiquidity
+} = require("./polygonExternalLiquidityResearch");
+
+// Research helpers for pruning Balancer edge orientations.
+// External-liquidity collection is read-only and may perform provider quotes.
+// No signer, wallet, approval, or transaction activity.
 
 function selectSupportedEdgeOrientations({ edge, evidence }) {
   if (!edge?.tokenA?.address || !edge?.tokenB?.address) {
@@ -57,7 +61,37 @@ function collectUniqueEdgeTokens(edges) {
   return [...tokensByAddress.values()];
 }
 
+async function collectExternalLiquidityEvidence({
+  tokens,
+  provider,
+  blockTag,
+  startToken,
+  amountIn,
+  probeFn = probeExternalTokenLiquidity
+}) {
+  if (!Array.isArray(tokens)) {
+    throw new Error("Balancer edge research tokens must be an array");
+  }
+
+  const evidence = new Map();
+
+  for (const token of tokens) {
+    const result = await probeFn({
+      provider,
+      blockTag,
+      startToken,
+      candidateToken: token,
+      amountIn
+    });
+
+    evidence.set(token.address.toLowerCase(), result);
+  }
+
+  return evidence;
+}
+
 module.exports = {
   selectSupportedEdgeOrientations,
-  collectUniqueEdgeTokens
+  collectUniqueEdgeTokens,
+  collectExternalLiquidityEvidence
 };

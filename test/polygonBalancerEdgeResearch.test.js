@@ -94,3 +94,57 @@ test("collectUniqueEdgeTokens deduplicates endpoints by address", () => {
     ]
   );
 });
+
+test("collectExternalLiquidityEvidence probes each token once", async () => {
+  const {
+    collectExternalLiquidityEvidence
+  } = require("../scripts/utils/polygonBalancerEdgeResearch");
+
+  const tokens = [
+    TOKEN_A,
+    TOKEN_B
+  ];
+
+  const calls = [];
+
+  const probeFn = async args => {
+    calls.push(args);
+
+    return {
+      token: args.candidateToken,
+      entryVenues: ["QUICKSWAP_V2"],
+      exitVenues: ["UNISWAP_V3"],
+      hasEntry: true,
+      hasExit: true,
+      hasRoundTripSupport: true
+    };
+  };
+
+  const evidence = await collectExternalLiquidityEvidence({
+    tokens,
+    provider: { mock: true },
+    blockTag: 123456,
+    startToken: {
+      address: "0x0000000000000000000000000000000000000099",
+      symbol: "USDC_E"
+    },
+    amountIn: { mockAmount: true },
+    probeFn
+  });
+
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].candidateToken, TOKEN_A);
+  assert.equal(calls[1].candidateToken, TOKEN_B);
+  assert.equal(calls[0].blockTag, 123456);
+  assert.equal(calls[1].blockTag, 123456);
+
+  assert.equal(evidence.size, 2);
+  assert.equal(
+    evidence.get(TOKEN_A.address.toLowerCase()).token,
+    TOKEN_A
+  );
+  assert.equal(
+    evidence.get(TOKEN_B.address.toLowerCase()).token,
+    TOKEN_B
+  );
+});
