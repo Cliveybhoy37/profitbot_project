@@ -1,5 +1,7 @@
 "use strict";
 
+const { ethers } = require("ethers");
+
 const {
   discoverDynamicVerifiedEdges
 } = require("./polygonBalancerDiscovery");
@@ -9,12 +11,16 @@ const {
 const {
   evaluateBalancerEdgeCombinations
 } = require("./polygonBalancerEdgeCombinations");
+const {
+  flashloanAdjustedResearchEconomics
+} = require("./polygonNetEconomics");
 
 async function scanDynamicBalancerEdges({
   provider,
   blockTag,
   startToken,
   amountIn,
+  premiumBps,
   discoverEdges = discoverDynamicVerifiedEdges,
   buildOrientations = buildBalancerEdgeCycleOrientations,
   evaluateCombinations = evaluateBalancerEdgeCombinations
@@ -48,11 +54,30 @@ async function scanDynamicBalancerEdges({
         });
 
         for (const result of results) {
-          candidates.push({
+          const grossDelta = result.amountOut.sub(result.amountIn);
+          const candidate = {
             ...result,
             cycle,
-            grossDelta: result.amountOut.sub(result.amountIn)
-          });
+            grossDelta
+          };
+
+          if (premiumBps !== undefined) {
+            const economics = flashloanAdjustedResearchEconomics({
+              startAmount: BigInt(result.amountIn.toString()),
+              finalAmount: BigInt(result.amountOut.toString()),
+              premiumBps
+            });
+
+            candidate.flashloanFee = ethers.BigNumber.from(
+              economics.flashloanFee.toString()
+            );
+            candidate.gasBudget = ethers.BigNumber.from(
+              economics.gasBudget.toString()
+            );
+            candidate.coversFlashloanFee = economics.coversFlashloanFee;
+          }
+
+          candidates.push(candidate);
         }
       } catch (_) {
         continue;
@@ -64,10 +89,15 @@ async function scanDynamicBalancerEdges({
     candidate => candidate.grossDelta.gt(0)
   );
 
+  const premiumCoveredCandidates = candidates.filter(
+    candidate => candidate.coversFlashloanFee === true
+  );
+
   return {
     ...discovery,
     candidates,
-    positiveCandidates
+    positiveCandidates,
+    premiumCoveredCandidates
   };
 }
 

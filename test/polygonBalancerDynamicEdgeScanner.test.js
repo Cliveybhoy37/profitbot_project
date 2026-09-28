@@ -237,3 +237,70 @@ test("scanDynamicBalancerEdges annotates gross delta and separates positive cand
 
   assert.equal(result.positiveCandidates[0], result.candidates[0]);
 });
+
+test("scanDynamicBalancerEdges separates candidates that strictly cover flashloan premium", async () => {
+  const provider = {};
+  const blockTag = 999999;
+  const amountIn = ethers.BigNumber.from("100000000");
+  const premiumBps = 5n;
+  const startToken = {
+    address: "0x0000000000000000000000000000000000000001",
+    symbol: "USDC_E",
+    decimals: 6
+  };
+
+  const cycle = {
+    id: "PREMIUM_CYCLE",
+    poolId: "0x" + "ab".repeat(32),
+    poolAddress: "0x00000000000000000000000000000000000000dd",
+    poolName: "Premium Pool",
+    poolType: "WEIGHTED"
+  };
+
+  const result = await scanDynamicBalancerEdges({
+    provider,
+    blockTag,
+    startToken,
+    amountIn,
+    premiumBps,
+    discoverEdges: async () => ({
+      edgeTargets: [{ id: "EDGE" }]
+    }),
+    buildOrientations: () => [cycle],
+    evaluateCombinations: async () => [
+      {
+        entryVenue: "QUICKSWAP_V2",
+        exitVenue: "UNISWAP_V3",
+        amountIn,
+        amountOut: amountIn.add(50001)
+      },
+      {
+        entryVenue: "SUSHISWAP_V2",
+        exitVenue: "UNISWAP_V3",
+        amountIn,
+        amountOut: amountIn.add(50000)
+      },
+      {
+        entryVenue: "UNISWAP_V3",
+        exitVenue: "QUICKSWAP_V2",
+        amountIn,
+        amountOut: amountIn.add(40000)
+      }
+    ]
+  });
+
+  assert.equal(result.positiveCandidates.length, 3);
+  assert.equal(result.premiumCoveredCandidates.length, 1);
+
+  assert.equal(result.candidates[0].flashloanFee.toString(), "50000");
+  assert.equal(result.candidates[0].gasBudget.toString(), "1");
+  assert.equal(result.candidates[0].coversFlashloanFee, true);
+
+  assert.equal(result.candidates[1].gasBudget.toString(), "0");
+  assert.equal(result.candidates[1].coversFlashloanFee, false);
+
+  assert.equal(result.candidates[2].gasBudget.toString(), "-10000");
+  assert.equal(result.candidates[2].coversFlashloanFee, false);
+
+  assert.equal(result.premiumCoveredCandidates[0], result.candidates[0]);
+});
