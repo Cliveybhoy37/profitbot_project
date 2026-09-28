@@ -185,3 +185,66 @@ The eventual new owner/deployer wallet must be created and controlled by the use
 10. Re-check premium, gas, slippage, and net economics immediately before any authorized live transaction.
 
 Never store private keys, seed phrases, passwords, RPC URLs, or API secrets in this file.
+
+## Live deployment update — 2026-09-28
+
+ProfitBot was successfully deployed to Polygon and independently inspected through the read-only RPC workflow.
+
+Deployment contract:
+
+`0xDDAdb712e936f6bEE8c98452E8913f212Dcd007a`
+
+Owner / deployer:
+
+`0x1B786608D3F073e44910bB975413f97A11Dd7bcA`
+
+Deployment transaction:
+
+`0xb0e897e2c784b6a128bda6bc049c82f373a46cc5e25b54ba171c836ed03ab12c`
+
+Deployment block:
+
+`94566628`
+
+Receipt status:
+
+`1`
+
+Deployment gas used:
+
+`1790837`
+
+Pre-deployment creation-data size:
+
+`8987` bytes
+
+Pre-deployment creation-data keccak256:
+
+`0xfb42bbadc58c082386e6ed34cbf3c336049ee9c60c2e6dccdd68cc4b1cc7249d`
+
+Post-deployment inspection verified:
+
+- owner matches the intended ProfitBot Live Owner
+- runtime bytecode size is `7822` bytes
+- Polygon ProfitBot configuration is verified
+
+The historical deployment at
+`0x064c68eEB942A92b5c2Fb0a7413e1D31796c8435`
+is not the live target for the current workflow.
+
+The current live target is:
+
+`0xDDAdb712e936f6bEE8c98452E8913f212Dcd007a`
+
+No live flashloan execution has been authorized or submitted as part of this deployment milestone.
+
+## Current next steps
+
+1. Preserve the verified deployment address above as the live target.
+2. Obtain fresh Polygon route quotes; historical profits are evidence only.
+3. Build a guarded candidate using the existing locked route/encoding workflow.
+4. Run exact provider-only live-state flashloan simulation against the new ProfitBot.
+5. Re-check Aave premium, slippage, current gas and net economics.
+6. Proceed to a live flashloan transaction only after fresh evidence shows positive net economics and the user explicitly authorizes that transaction.
+
+Never store private keys, seed phrases, passwords, RPC URLs, or API secrets in this file.
