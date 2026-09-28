@@ -229,3 +229,68 @@ test("buildVerifiedPoolEdges rejects duplicate token addresses", () => {
     /duplicate token address/
   );
 });
+
+test("buildVerifiedPoolEdgeTargets creates edges from arbitrary Vault-verified tokens", () => {
+  const {
+    buildVerifiedPoolEdgeTargets
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const tokens = [
+    { address: "0x0000000000000000000000000000000000000011", symbol: "AAA", decimals: 18 },
+    { address: "0x0000000000000000000000000000000000000022", symbol: "BBB", decimals: 6 },
+    { address: "0x0000000000000000000000000000000000000033", symbol: "CCC", decimals: 8 }
+  ];
+
+  const verification = {
+    poolId: "0xpool",
+    apiMatchesChain: true,
+    verifiedPoolTokens: tokens,
+    poolAssets: tokens.map(token => token.address),
+    balancesByAddress: {
+      [tokens[0].address.toLowerCase()]: "100",
+      [tokens[1].address.toLowerCase()]: "200",
+      [tokens[2].address.toLowerCase()]: "300"
+    }
+  };
+
+  const targets = buildVerifiedPoolEdgeTargets({
+    pool: {
+      address: "0x0000000000000000000000000000000000000099",
+      name: "Research Pool",
+      type: "WEIGHTED",
+      liquidity: "12345"
+    },
+    verification
+  });
+
+  assert.equal(targets.length, 3);
+  assert.equal(targets[0].poolId, "0xpool");
+  assert.deepEqual(targets[0].poolAssets, verification.poolAssets);
+  assert.equal(targets[0].tokenA.symbol, "AAA");
+  assert.equal(targets[0].tokenB.symbol, "BBB");
+});
+
+test("buildVerifiedPoolEdgeTargets rejects API/Vault token mismatch", () => {
+  const {
+    buildVerifiedPoolEdgeTargets
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  assert.deepEqual(
+    buildVerifiedPoolEdgeTargets({
+      pool: {
+        address: "0x0000000000000000000000000000000000000099",
+        name: "Mismatch Pool",
+        type: "WEIGHTED",
+        liquidity: "12345"
+      },
+      verification: {
+        poolId: "0xpool",
+        apiMatchesChain: false,
+        verifiedPoolTokens: [],
+        poolAssets: [],
+        balancesByAddress: {}
+      }
+    }),
+    []
+  );
+});

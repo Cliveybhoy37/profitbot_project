@@ -161,6 +161,27 @@ function buildVerifiedPoolEdges(tokens) {
   return edges;
 }
 
+function buildVerifiedPoolEdgeTargets({ pool, verification }) {
+  if (!verification || !verification.apiMatchesChain) {
+    return [];
+  }
+
+  const edges = buildVerifiedPoolEdges(
+    verification.verifiedPoolTokens
+  );
+
+  return edges.map(edge => ({
+    ...edge,
+    poolId: verification.poolId,
+    poolAddress: pool.address,
+    poolName: pool.name,
+    poolType: pool.type,
+    liquidity: pool.liquidity,
+    poolAssets: verification.poolAssets,
+    balancesByAddress: verification.balancesByAddress
+  }));
+}
+
 function mapBalancesByAddress(tokens, balances) {
   if (!Array.isArray(tokens) || !Array.isArray(balances)) {
     throw new Error("Balancer tokens and balances must be arrays");
@@ -335,6 +356,7 @@ module.exports = {
   combinations3,
   mapVerifiedPoolTokens,
   buildVerifiedPoolEdges,
+  buildVerifiedPoolEdgeTargets,
   mapBalancesByAddress,
   verifyPool,
   discoverVerifiedCandidates,
