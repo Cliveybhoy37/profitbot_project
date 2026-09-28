@@ -91,6 +91,45 @@ function combinations3(items) {
   return result;
 }
 
+function mapVerifiedPoolTokens(apiTokens, vaultTokens) {
+  if (!Array.isArray(apiTokens) || !Array.isArray(vaultTokens)) {
+    throw new Error("Balancer API and Vault tokens must be arrays");
+  }
+
+  const apiByAddress = new Map(
+    apiTokens.map(token => [
+      token.address.toLowerCase(),
+      token
+    ])
+  );
+
+  const apiAddresses = new Set(apiByAddress.keys());
+  const vaultAddresses = new Set(
+    vaultTokens.map(address => address.toLowerCase())
+  );
+
+  const setsMatch =
+    apiAddresses.size === vaultAddresses.size &&
+    [...apiAddresses].every(address =>
+      vaultAddresses.has(address)
+    );
+
+  if (!setsMatch) {
+    throw new Error("Balancer API/Vault token mismatch");
+  }
+
+  return vaultTokens.map(address => {
+    const checksummed = ethers.utils.getAddress(address);
+    const apiToken = apiByAddress.get(address.toLowerCase());
+
+    return {
+      address: checksummed,
+      symbol: apiToken.symbol,
+      decimals: Number(apiToken.decimals)
+    };
+  });
+}
+
 function mapBalancesByAddress(tokens, balances) {
   if (!Array.isArray(tokens) || !Array.isArray(balances)) {
     throw new Error("Balancer tokens and balances must be arrays");
@@ -170,10 +209,20 @@ async function verifyPool({
     onChain.balances
   );
 
+  const poolAssets = onChain.tokens.map(address =>
+    ethers.utils.getAddress(address)
+  );
+
+  const verifiedPoolTokens = apiMatchesChain
+    ? mapVerifiedPoolTokens(pool.poolTokens, onChain.tokens)
+    : [];
+
   return {
     poolId,
     apiMatchesChain,
     verifiedTokens,
+    verifiedPoolTokens,
+    poolAssets,
     triangles: combinations3(verifiedTokens),
     balancesByAddress,
     lastChangeBlock: onChain.lastChangeBlock
@@ -253,6 +302,7 @@ module.exports = {
   fetchPools,
   verifiedOverlap,
   combinations3,
+  mapVerifiedPoolTokens,
   mapBalancesByAddress,
   verifyPool,
   discoverVerifiedCandidates,

@@ -126,3 +126,68 @@ test("mapBalancesByAddress rejects token balance length mismatch", () => {
     /token\/balance length mismatch/
   );
 });
+
+test("maps API metadata onto Vault-verified tokens in Vault order", () => {
+  const {
+    mapVerifiedPoolTokens
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const tokenA = "0x0000000000000000000000000000000000000011";
+  const tokenB = "0x0000000000000000000000000000000000000022";
+  const tokenC = "0x0000000000000000000000000000000000000033";
+
+  const apiTokens = [
+    { address: tokenC, symbol: "CCC", decimals: 8 },
+    { address: tokenA, symbol: "AAA", decimals: 18 },
+    { address: tokenB, symbol: "BBB", decimals: 6 }
+  ];
+
+  const result = mapVerifiedPoolTokens(
+    apiTokens,
+    [tokenA, tokenB, tokenC]
+  );
+
+  assert.deepEqual(result, [
+    {
+      address: ethersAddress(tokenA),
+      symbol: "AAA",
+      decimals: 18
+    },
+    {
+      address: ethersAddress(tokenB),
+      symbol: "BBB",
+      decimals: 6
+    },
+    {
+      address: ethersAddress(tokenC),
+      symbol: "CCC",
+      decimals: 8
+    }
+  ]);
+});
+
+test("verified pool token mapping rejects API/Vault token mismatch", () => {
+  const {
+    mapVerifiedPoolTokens
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const tokenA = "0x0000000000000000000000000000000000000011";
+  const tokenB = "0x0000000000000000000000000000000000000022";
+  const unknown = "0x0000000000000000000000000000000000000099";
+
+  assert.throws(
+    () =>
+      mapVerifiedPoolTokens(
+        [
+          { address: tokenA, symbol: "AAA", decimals: 18 },
+          { address: tokenB, symbol: "BBB", decimals: 6 }
+        ],
+        [tokenA, unknown]
+      ),
+    /API\/Vault token mismatch/
+  );
+});
+
+function ethersAddress(address) {
+  return require("ethers").ethers.utils.getAddress(address);
+}
