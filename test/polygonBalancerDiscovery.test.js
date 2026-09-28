@@ -294,3 +294,53 @@ test("buildVerifiedPoolEdgeTargets rejects API/Vault token mismatch", () => {
     []
   );
 });
+
+test("selectDynamicPoolCandidates accepts protocol-v2 pools with arbitrary token pairs", () => {
+  const {
+    selectDynamicPoolCandidates
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const pools = [
+    {
+      address: "0x0000000000000000000000000000000000000099",
+      protocolVersion: 2,
+      poolTokens: [
+        { address: "0x0000000000000000000000000000000000000011" },
+        { address: "0x0000000000000000000000000000000000000022" }
+      ]
+    }
+  ];
+
+  assert.deepEqual(selectDynamicPoolCandidates(pools), pools);
+});
+
+test("selectDynamicPoolCandidates rejects non-v2 and malformed token sets", () => {
+  const {
+    selectDynamicPoolCandidates
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const validTokens = [
+    { address: "0x0000000000000000000000000000000000000011" },
+    { address: "0x0000000000000000000000000000000000000022" }
+  ];
+
+  const pools = [
+    {
+      address: "0x0000000000000000000000000000000000000091",
+      protocolVersion: 3,
+      poolTokens: validTokens
+    },
+    {
+      address: "0x0000000000000000000000000000000000000092",
+      protocolVersion: 2,
+      poolTokens: [validTokens[0]]
+    },
+    {
+      address: "0x0000000000000000000000000000000000000093",
+      protocolVersion: 2,
+      poolTokens: [validTokens[0], validTokens[0]]
+    }
+  ];
+
+  assert.deepEqual(selectDynamicPoolCandidates(pools), []);
+});

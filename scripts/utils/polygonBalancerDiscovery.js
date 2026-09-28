@@ -65,6 +65,35 @@ async function fetchPools() {
   return body.data?.poolGetPools || [];
 }
 
+function selectDynamicPoolCandidates(pools) {
+  if (!Array.isArray(pools)) {
+    throw new Error("Balancer pools must be an array");
+  }
+
+  return pools.filter(pool => {
+    if (
+      Number(pool.protocolVersion) !== 2 ||
+      !Array.isArray(pool.poolTokens) ||
+      pool.poolTokens.length < 2
+    ) {
+      return false;
+    }
+
+    const addresses = pool.poolTokens
+      .map(token =>
+        typeof token?.address === "string"
+          ? token.address.toLowerCase()
+          : null
+      );
+
+    if (addresses.some(address => !address)) {
+      return false;
+    }
+
+    return new Set(addresses).size === addresses.length;
+  });
+}
+
 function verifiedOverlap(pool) {
   return [
     ...new Set(
@@ -352,6 +381,7 @@ module.exports = {
   POOL_ABI,
   VAULT_ABI,
   fetchPools,
+  selectDynamicPoolCandidates,
   verifiedOverlap,
   combinations3,
   mapVerifiedPoolTokens,
