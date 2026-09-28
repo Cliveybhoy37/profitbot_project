@@ -379,3 +379,80 @@ test("scanDynamicBalancerEdges prunes unsupported orientations before combinatio
   assert.equal(result.candidates.length, 1);
   assert.equal(result.candidates[0].cycle, cycleB);
 });
+
+test("scanDynamicBalancerEdges collects shared endpoint evidence once before pruning", async () => {
+  const provider = {};
+  const blockTag = 246810;
+  const amountIn = ethers.BigNumber.from("10000000");
+  const startToken = {
+    address: "0x0000000000000000000000000000000000000001",
+    symbol: "USDC_E",
+    decimals: 6
+  };
+
+  const tokenA = { address: "0x00000000000000000000000000000000000000a1" };
+  const tokenB = { address: "0x00000000000000000000000000000000000000b1" };
+  const tokenC = { address: "0x00000000000000000000000000000000000000c1" };
+  const edgeAB = { id: "AB", tokenA, tokenB };
+  const edgeBC = { id: "BC", tokenA: tokenB, tokenB: tokenC };
+  const evidence = new Map([["evidence", true]]);
+  let collectedTokens = null;
+  let selectorCalls = 0;
+
+  await scanDynamicBalancerEdges({
+    provider,
+    blockTag,
+    startToken,
+    amountIn,
+    discoverEdges: async () => ({ edgeTargets: [edgeAB, edgeBC] }),
+    collectTokens: edges => {
+      assert.deepEqual(edges, [edgeAB, edgeBC]);
+      return [tokenA, tokenB, tokenC];
+    },
+    collectEvidence: async args => {
+      collectedTokens = args.tokens;
+      assert.equal(args.provider, provider);
+      assert.equal(args.blockTag, blockTag);
+      assert.equal(args.startToken, startToken);
+      assert.equal(args.amountIn, amountIn);
+      return evidence;
+    },
+    selectOrientations: args => {
+      selectorCalls += 1;
+      assert.equal(args.evidence, evidence);
+      return [];
+    },
+    buildOrientations: ({ edge }) => [{ id: edge.id }],
+    evaluateCombinations: async () => {
+      throw new Error("unsupported orientation should not be evaluated");
+    }
+  });
+
+  assert.deepEqual(collectedTokens, [tokenA, tokenB, tokenC]);
+  assert.equal(selectorCalls, 2);
+});
+
+test("scanDynamicBalancerEdges reports orientation pruning telemetry", async () => {
+  const provider = {};
+  const amountIn = ethers.BigNumber.from("10000000");
+  const evidence = new Map();
+  const edges = [{ id: "A" }, { id: "B" }];
+
+  const result = await scanDynamicBalancerEdges({
+    provider,
+    blockTag: 13579,
+    startToken: { address: "0x0000000000000000000000000000000000000001" },
+    amountIn,
+    orientationEvidence: evidence,
+    discoverEdges: async () => ({ edgeTargets: edges }),
+    buildOrientations: ({ edge }) => [
+      { id: edge.id + "-0" },
+      { id: edge.id + "-1" }
+    ],
+    selectOrientations: ({ edge }) => edge.id === "A" ? [0, 1] : [1],
+    evaluateCombinations: async () => []
+  });
+
+  assert.equal(result.viableEdgeCount, 2);
+  assert.equal(result.viableOrientationCount, 3);
+});

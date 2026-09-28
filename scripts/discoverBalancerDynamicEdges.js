@@ -16,6 +16,11 @@ const {
 const {
   filterDynamicPoolResearchCandidates
 } = require("./utils/polygonBalancerDiscovery");
+const {
+  collectUniqueEdgeTokens,
+  collectExternalLiquidityEvidence,
+  selectSupportedEdgeOrientations
+} = require("./utils/polygonBalancerEdgeResearch");
 
 const provider =
   new ethers.providers.JsonRpcProvider(process.env.ALCHEMY_POLYGON);
@@ -98,6 +103,9 @@ function sortByGasBudgetDescending(candidates) {
     },
     amountIn,
     premiumBps: aave.premiumBps,
+    collectTokens: collectUniqueEdgeTokens,
+    collectEvidence: collectExternalLiquidityEvidence,
+    selectOrientations: selectSupportedEdgeOrientations,
     candidateFilterFn: candidates =>
       filterDynamicPoolResearchCandidates(
         candidates,
@@ -116,6 +124,12 @@ function sortByGasBudgetDescending(candidates) {
   console.log("Dynamic pool candidates:", scan.candidateCount);
   console.log("On-chain verified pools:", verifiedPools);
   console.log("Verified Balancer edges:", scan.edgeTargets.length);
+  console.log("Viable Balancer edges:", scan.viableEdgeCount);
+  console.log("Viable edge orientations:", scan.viableOrientationCount);
+  console.log(
+    "Maximum venue combinations after pruning:",
+    scan.viableOrientationCount * 9
+  );
   console.log("Successful route quotes:", scan.candidates.length);
   console.log("Gross-positive routes:", scan.positiveCandidates.length);
   console.log(

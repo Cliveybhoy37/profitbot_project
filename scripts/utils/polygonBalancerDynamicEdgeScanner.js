@@ -23,6 +23,8 @@ async function scanDynamicBalancerEdges({
   premiumBps,
   candidateFilterFn,
   orientationEvidence,
+  collectTokens,
+  collectEvidence,
   selectOrientations,
   discoverEdges = discoverDynamicVerifiedEdges,
   buildOrientations = buildBalancerEdgeCycleOrientations,
@@ -34,7 +36,22 @@ async function scanDynamicBalancerEdges({
     candidateFilterFn
   });
 
+  let resolvedOrientationEvidence = orientationEvidence;
+
+  if (collectTokens && collectEvidence) {
+    const tokens = collectTokens(discovery.edgeTargets);
+    resolvedOrientationEvidence = await collectEvidence({
+      tokens,
+      provider,
+      blockTag,
+      startToken,
+      amountIn
+    });
+  }
+
   const candidates = [];
+  let viableEdgeCount = 0;
+  let viableOrientationCount = 0;
 
   for (const edge of discovery.edgeTargets) {
     let orientations;
@@ -49,10 +66,15 @@ async function scanDynamicBalancerEdges({
     }
 
     const selectedOrientations = selectOrientations
-      ? selectOrientations({ edge, evidence: orientationEvidence })
+      ? selectOrientations({ edge, evidence: resolvedOrientationEvidence })
           .map(index => orientations[index])
           .filter(Boolean)
       : orientations;
+
+    if (selectedOrientations.length > 0) {
+      viableEdgeCount += 1;
+      viableOrientationCount += selectedOrientations.length;
+    }
 
     for (const cycle of selectedOrientations) {
       try {
@@ -106,6 +128,8 @@ async function scanDynamicBalancerEdges({
   return {
     ...discovery,
     candidates,
+    viableEdgeCount,
+    viableOrientationCount,
     positiveCandidates,
     premiumCoveredCandidates
   };
