@@ -109,3 +109,59 @@ test("probeExternalTokenLiquidity requires a pinned block", async () => {
     /pinned block/
   );
 });
+
+test("probeExternalRoundTrips chains entry output into exit probes", async () => {
+  const {
+    probeExternalRoundTrips
+  } = require("../scripts/utils/polygonExternalLiquidityResearch");
+
+  const entryAmount = ethers.BigNumber.from("2500000000000000000");
+  const seenExitAmounts = [];
+
+  const quoteFn = async (venue, path, amountIn) => {
+    const isEntry =
+      path[0].toLowerCase() === START.address.toLowerCase();
+
+    if (isEntry) {
+      if (venue !== "QUICKSWAP_V2") return null;
+
+      return {
+        venue,
+        amountOut: entryAmount
+      };
+    }
+
+    seenExitAmounts.push(amountIn.toString());
+
+    if (venue !== "UNISWAP_V3") return null;
+
+    return {
+      venue,
+      amountOut: ethers.BigNumber.from("9950000")
+    };
+  };
+
+  const result = await probeExternalRoundTrips({
+    provider: {},
+    blockTag: 12345,
+    startToken: START,
+    candidateToken: TOKEN,
+    amountIn: ethers.BigNumber.from("10000000"),
+    quoteFn
+  });
+
+  assert.deepEqual(
+    seenExitAmounts,
+    [
+      entryAmount.toString(),
+      entryAmount.toString(),
+      entryAmount.toString()
+    ]
+  );
+
+  assert.equal(result.length, 1);
+  assert.equal(result[0].entryVenue, "QUICKSWAP_V2");
+  assert.equal(result[0].exitVenue, "UNISWAP_V3");
+  assert.equal(result[0].entryQuote.amountOut.toString(), entryAmount.toString());
+  assert.equal(result[0].exitQuote.amountOut.toString(), "9950000");
+});
