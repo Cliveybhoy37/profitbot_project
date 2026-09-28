@@ -40,6 +40,23 @@ function sortByGasBudgetDescending(candidates) {
   });
 }
 
+function formatGrossBps(candidate) {
+  const scale = ethers.BigNumber.from(1000000);
+  const scaledBps = candidate.grossDelta
+    .mul(10000)
+    .mul(scale)
+    .div(candidate.amountIn);
+
+  const whole = scaledBps.div(scale).toString();
+  const fraction = scaledBps
+    .mod(scale)
+    .toString()
+    .padStart(6, "0")
+    .slice(0, 2);
+
+  return `${whole}.${fraction}`;
+}
+
 (async () => {
   if (!process.env.ALCHEMY_POLYGON) {
     throw new Error("ALCHEMY_POLYGON required");
@@ -267,6 +284,11 @@ function sortByGasBudgetDescending(candidates) {
           TOKENS.USDC_E.decimals
         ),
         "USDC_E"
+      );
+      console.log(
+        "Gross edge:",
+        formatGrossBps(candidate),
+        "bps"
       );
       console.log(
         "Flashloan fee:",
