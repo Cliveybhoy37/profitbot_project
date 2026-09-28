@@ -191,3 +191,41 @@ test("verified pool token mapping rejects API/Vault token mismatch", () => {
 function ethersAddress(address) {
   return require("ethers").ethers.utils.getAddress(address);
 }
+
+test("buildVerifiedPoolEdges creates each unique pool token pair once", () => {
+  const {
+    buildVerifiedPoolEdges
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const tokens = [
+    { address: "0x0000000000000000000000000000000000000011", symbol: "AAA", decimals: 18 },
+    { address: "0x0000000000000000000000000000000000000022", symbol: "BBB", decimals: 6 },
+    { address: "0x0000000000000000000000000000000000000033", symbol: "CCC", decimals: 8 }
+  ];
+
+  assert.deepEqual(
+    buildVerifiedPoolEdges(tokens),
+    [
+      { tokenA: tokens[0], tokenB: tokens[1] },
+      { tokenA: tokens[0], tokenB: tokens[2] },
+      { tokenA: tokens[1], tokenB: tokens[2] }
+    ]
+  );
+});
+
+test("buildVerifiedPoolEdges rejects duplicate token addresses", () => {
+  const {
+    buildVerifiedPoolEdges
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const address = "0x0000000000000000000000000000000000000011";
+
+  assert.throws(
+    () =>
+      buildVerifiedPoolEdges([
+        { address, symbol: "AAA", decimals: 18 },
+        { address: address.toUpperCase(), symbol: "DUP", decimals: 18 }
+      ]),
+    /duplicate token address/
+  );
+});

@@ -130,6 +130,37 @@ function mapVerifiedPoolTokens(apiTokens, vaultTokens) {
   });
 }
 
+function buildVerifiedPoolEdges(tokens) {
+  if (!Array.isArray(tokens)) {
+    throw new Error("Balancer verified pool tokens must be an array");
+  }
+
+  const seen = new Set();
+
+  for (const token of tokens) {
+    const address = token.address.toLowerCase();
+
+    if (seen.has(address)) {
+      throw new Error("Balancer duplicate token address");
+    }
+
+    seen.add(address);
+  }
+
+  const edges = [];
+
+  for (let i = 0; i < tokens.length - 1; i++) {
+    for (let j = i + 1; j < tokens.length; j++) {
+      edges.push({
+        tokenA: tokens[i],
+        tokenB: tokens[j]
+      });
+    }
+  }
+
+  return edges;
+}
+
 function mapBalancesByAddress(tokens, balances) {
   if (!Array.isArray(tokens) || !Array.isArray(balances)) {
     throw new Error("Balancer tokens and balances must be arrays");
@@ -303,6 +334,7 @@ module.exports = {
   verifiedOverlap,
   combinations3,
   mapVerifiedPoolTokens,
+  buildVerifiedPoolEdges,
   mapBalancesByAddress,
   verifyPool,
   discoverVerifiedCandidates,
