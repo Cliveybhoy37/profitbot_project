@@ -158,7 +158,8 @@ async function probeExternalRoundTrips({
         exitVenue,
         amountIn,
         entryQuote,
-        exitQuote
+        exitQuote,
+        roundTripDelta: exitQuote.amountOut.sub(amountIn)
       });
     }
   }

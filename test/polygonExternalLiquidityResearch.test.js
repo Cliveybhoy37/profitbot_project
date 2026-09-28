@@ -164,4 +164,5 @@ test("probeExternalRoundTrips chains entry output into exit probes", async () =>
   assert.equal(result[0].exitVenue, "UNISWAP_V3");
   assert.equal(result[0].entryQuote.amountOut.toString(), entryAmount.toString());
   assert.equal(result[0].exitQuote.amountOut.toString(), "9950000");
+  assert.equal(result[0].roundTripDelta.toString(), "-50000");
 });
