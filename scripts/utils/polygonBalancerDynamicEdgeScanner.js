@@ -47,16 +47,27 @@ async function scanDynamicBalancerEdges({
           blockTag
         });
 
-        candidates.push(...results);
+        for (const result of results) {
+          candidates.push({
+            ...result,
+            cycle,
+            grossDelta: result.amountOut.sub(result.amountIn)
+          });
+        }
       } catch (_) {
         continue;
       }
     }
   }
 
+  const positiveCandidates = candidates.filter(
+    candidate => candidate.grossDelta.gt(0)
+  );
+
   return {
     ...discovery,
-    candidates
+    candidates,
+    positiveCandidates
   };
 }
 

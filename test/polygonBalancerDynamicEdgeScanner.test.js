@@ -176,3 +176,64 @@ test("scanDynamicBalancerEdges isolates a failed edge and continues with later e
   assert.equal(result.candidates.length, 1);
   assert.equal(result.candidates[0].amountOut.toString(), "10000003");
 });
+
+test("scanDynamicBalancerEdges annotates gross delta and separates positive candidates", async () => {
+  const provider = {};
+  const blockTag = 888888;
+  const amountIn = ethers.BigNumber.from("10000000");
+  const startToken = {
+    address: "0x0000000000000000000000000000000000000001",
+    symbol: "USDC_E",
+    decimals: 6
+  };
+
+  const edge = { id: "EDGE" };
+  const cycle = {
+    id: "CYCLE",
+    poolId: "0x" + "ef".repeat(32),
+    poolAddress: "0x00000000000000000000000000000000000000cc",
+    poolName: "Economics Pool",
+    poolType: "WEIGHTED"
+  };
+
+  const result = await scanDynamicBalancerEdges({
+    provider,
+    blockTag,
+    startToken,
+    amountIn,
+    discoverEdges: async () => ({
+      edgeTargets: [edge]
+    }),
+    buildOrientations: () => [cycle],
+    evaluateCombinations: async () => [
+      {
+        entryVenue: "QUICKSWAP_V2",
+        exitVenue: "UNISWAP_V3",
+        amountIn,
+        amountOut: amountIn.add(25)
+      },
+      {
+        entryVenue: "SUSHISWAP_V2",
+        exitVenue: "UNISWAP_V3",
+        amountIn,
+        amountOut: amountIn
+      },
+      {
+        entryVenue: "UNISWAP_V3",
+        exitVenue: "QUICKSWAP_V2",
+        amountIn,
+        amountOut: amountIn.sub(10)
+      }
+    ]
+  });
+
+  assert.equal(result.candidates.length, 3);
+  assert.equal(result.positiveCandidates.length, 1);
+
+  assert.equal(result.candidates[0].cycle, cycle);
+  assert.equal(result.candidates[0].grossDelta.toString(), "25");
+  assert.equal(result.candidates[1].grossDelta.toString(), "0");
+  assert.equal(result.candidates[2].grossDelta.toString(), "-10");
+
+  assert.equal(result.positiveCandidates[0], result.candidates[0]);
+});
