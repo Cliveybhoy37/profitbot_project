@@ -217,6 +217,80 @@ function sortByGasBudgetDescending(candidates) {
     premiumCoveredCandidates = scan.premiumCoveredCandidates;
   }
 
+  const grossPositiveCandidates = scanSizes
+    ? scan.sizeResults.flatMap(
+        result => result.positiveCandidates
+      )
+    : scan.positiveCandidates;
+
+  if (grossPositiveCandidates.length > 0) {
+    console.log("");
+    console.log("========================================");
+    console.log("GROSS-POSITIVE RESEARCH SIGNALS");
+    console.log("========================================");
+
+    for (const [index, candidate] of grossPositiveCandidates.entries()) {
+      const cycle = candidate.cycle;
+
+      console.log("");
+      console.log(`#${index + 1}`);
+      console.log("Pool:", cycle.poolName);
+      console.log("Pool ID:", cycle.poolId);
+      console.log(
+        "Route:",
+        cycle.legs
+          .map(leg => leg.tokenIn.symbol || leg.tokenIn.address)
+          .concat(
+            cycle.legs[cycle.legs.length - 1].tokenOut.symbol ||
+            cycle.legs[cycle.legs.length - 1].tokenOut.address
+          )
+          .join(" -> ")
+      );
+      console.log(
+        "Venues:",
+        candidate.entryVenue,
+        "-> BALANCER_V2 ->",
+        candidate.exitVenue
+      );
+      console.log(
+        "Amount in:",
+        ethers.utils.formatUnits(
+          candidate.amountIn,
+          TOKENS.USDC_E.decimals
+        ),
+        "USDC_E"
+      );
+      console.log(
+        "Gross delta:",
+        ethers.utils.formatUnits(
+          candidate.grossDelta,
+          TOKENS.USDC_E.decimals
+        ),
+        "USDC_E"
+      );
+      console.log(
+        "Flashloan fee:",
+        ethers.utils.formatUnits(
+          candidate.flashloanFee,
+          TOKENS.USDC_E.decimals
+        ),
+        "USDC_E"
+      );
+      console.log(
+        "Premium-adjusted budget:",
+        ethers.utils.formatUnits(
+          candidate.gasBudget,
+          TOKENS.USDC_E.decimals
+        ),
+        "USDC_E"
+      );
+      console.log(
+        "Covers premium:",
+        candidate.coversFlashloanFee
+      );
+    }
+  }
+
   if (premiumCoveredCandidates.length === 0) {
     console.log("");
     console.log(
