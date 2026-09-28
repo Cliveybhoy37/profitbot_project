@@ -205,7 +205,7 @@ function buildVerifiedPoolEdgeTargets({ pool, verification }) {
     poolAddress: pool.address,
     poolName: pool.name,
     poolType: pool.type,
-    liquidity: pool.liquidity,
+    liquidity: pool.dynamicData?.totalLiquidity ?? pool.liquidity,
     poolAssets: verification.poolAssets,
     balancesByAddress: verification.balancesByAddress
   }));

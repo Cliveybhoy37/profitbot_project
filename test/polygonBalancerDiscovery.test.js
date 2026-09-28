@@ -344,3 +344,42 @@ test("selectDynamicPoolCandidates rejects non-v2 and malformed token sets", () =
 
   assert.deepEqual(selectDynamicPoolCandidates(pools), []);
 });
+
+test("buildVerifiedPoolEdgeTargets uses Balancer dynamicData totalLiquidity", () => {
+  const {
+    buildVerifiedPoolEdgeTargets
+  } = require("../scripts/utils/polygonBalancerDiscovery");
+
+  const tokenA = {
+    address: "0x0000000000000000000000000000000000000011",
+    symbol: "AAA",
+    decimals: 18
+  };
+
+  const tokenB = {
+    address: "0x0000000000000000000000000000000000000022",
+    symbol: "BBB",
+    decimals: 6
+  };
+
+  const targets = buildVerifiedPoolEdgeTargets({
+    pool: {
+      address: "0x0000000000000000000000000000000000000099",
+      name: "Dynamic Pool",
+      type: "WEIGHTED",
+      dynamicData: {
+        totalLiquidity: "12345.67"
+      }
+    },
+    verification: {
+      apiMatchesChain: true,
+      poolId: "0xpool",
+      verifiedPoolTokens: [tokenA, tokenB],
+      poolAssets: [tokenA.address, tokenB.address],
+      balancesByAddress: {}
+    }
+  });
+
+  assert.equal(targets.length, 1);
+  assert.equal(targets[0].liquidity, "12345.67");
+});
