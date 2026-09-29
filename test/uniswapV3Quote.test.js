@@ -37,7 +37,7 @@ test("default fee tiers include the 1% tier", () => {
   }
   delete require.cache[modulePath];
 
-  assert.deepEqual(FEE_TIERS, [500, 3000, 10000]);
+  assert.deepEqual(FEE_TIERS, [100, 500, 3000, 10000]);
 });
 
 test("fast fee tiers omit the 1% tier when explicitly enabled", () => {

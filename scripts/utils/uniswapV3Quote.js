@@ -6,7 +6,7 @@ const { Contract, ethers } = require("ethers");
 
 const QUOTER_ADDRESS = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6";
 const FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
-const FULL_FEE_TIERS = [500, 3000, 10000];
+const FULL_FEE_TIERS = [100, 500, 3000, 10000];
 const FAST_FEE_TIERS = [500, 3000];
 
 const FEE_TIERS =
