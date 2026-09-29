@@ -564,3 +564,230 @@ Do not return to progressively smaller TUSD notionals without new evidence that
 market conditions have materially changed.
 
 Profit first. Lambo second.
+
+---
+
+## Post-Balancer Opportunity Research — 2026-09-29
+
+This section records read-only opportunity research performed after the
+dynamic Balancer observer checkpoint.
+
+The production ProfitBot build was not modified during this research.
+
+Live execution remained:
+
+`OFF`
+
+No transactions were submitted.
+
+### Verified Current Execution Architecture
+
+The current ProfitBot execution path requires exactly three swap legs.
+
+Current contract flow:
+
+`Aave V3 flashLoanSimple -> exactly 3 swap legs -> repay Aave`
+
+Supported execution venues are:
+
+- QuickSwap V2
+- SushiSwap V2
+- Uniswap V3
+- Balancer V2
+
+Balancer is currently a swap venue inside ProfitBot.
+
+Balancer is NOT the current flashloan lender.
+
+The current contract borrows through Aave V3.
+
+Legacy `scripts/scanAndExecute.js` is explicitly disabled and must not be
+used as authority for the current execution architecture.
+
+### Verified Aave Polygon Flashloan Premium
+
+A read-only on-chain query of the current Polygon Aave market returned:
+
+`FLASHLOAN_PREMIUM_TOTAL = 5 bps`
+
+Therefore the current research premium reference of:
+
+`5 bps = 0.05%`
+
+matches the queried Aave Polygon state.
+
+Do not substitute the historical 9 bps value found in legacy code or
+third-party examples.
+
+The premium remains an on-chain parameter and should be re-verified when
+needed rather than assumed permanently fixed.
+
+### LINK Research
+
+LINK produced a genuine direction-specific gross arbitrage signal.
+
+The useful orientation was approximately:
+
+`USDC_E -> WETH -> LINK -> USDC_E`
+
+Controlled fee-tier research showed that the Uniswap V3 500-fee LINK/WETH
+pool produced the healthier scalable curve compared with the misleading
+small-size 10000-fee signal.
+
+However, the positive edge collapsed before economically meaningful
+flashloan size.
+
+Absolute gross profit remained only a few thousandths of USDC before gas.
+
+Conclusion:
+
+LINK demonstrated a real market discrepancy but insufficient scalable
+absolute profit for the current ProfitBot.
+
+No production changes were made.
+
+### NAKA Research
+
+NAKA was structurally verified on Polygon and had supported connectivity
+through NAKA/WPOL and NAKA/USDC_E markets.
+
+A complete pinned-block three-leg sweep found a small gross-positive forward
+signal at tiny size.
+
+Best observed research result was approximately:
+
+`0.05 USDC_E -> +173 gross bps -> +0.000865 USDC_E gross`
+
+The edge deteriorated rapidly and was already unattractive at larger sizes.
+
+Conclusion:
+
+NAKA demonstrated attractive headline basis points at tiny size but
+negligible absolute profit and no useful flashloan scalability.
+
+No production changes were made.
+
+### LGNS Research
+
+LGNS/DAI primary liquidity was structurally verified.
+
+The QuickSwap V2 LGNS/DAI market had substantial primary depth.
+
+Secondary SushiSwap and Uniswap V3 liquidity was highly shallow or distorted.
+
+A tiny two-leg SushiSwap -> QuickSwap discrepancy appeared around 10 DAI,
+but disappeared before meaningful size.
+
+The current ProfitBot also requires exactly three swap legs, so the two-leg
+observation was market research only and was not an execution candidate.
+
+Conclusion:
+
+LGNS demonstrated that apparent cross-venue fragmentation can be caused by
+shallow secondary liquidity rather than scalable arbitrage.
+
+No production changes were made.
+
+### SAND Research
+
+SAND was structurally verified as:
+
+`0xBbba073C31bF03b8ACf7c28EF0738DeCF3695683`
+
+with 18 decimals.
+
+The long-lived QuickSwap V2 SAND/WPOL market was verified on-chain.
+
+Pinned-block research showed healthy SAND/WPOL connectivity across:
+
+- QuickSwap V2
+- SushiSwap V2
+- Uniswap V3
+
+However, direct SAND gateway legs against DAI, USDC_E, native USDC, and WETH
+were weak, distorted, or insufficient to close an attractive current
+three-leg route.
+
+Conclusion:
+
+SAND/WPOL itself is a functioning intermediate market, but the required
+third gateway leg prevented it from becoming a useful current ProfitBot
+candidate.
+
+No production changes were made.
+
+### Research Lessons
+
+The completed research produced four distinct rejection patterns:
+
+`LINK`
+Real discrepancy, but insufficient scalable absolute profit.
+
+`NAKA`
+Large tiny-size basis points, but negligible absolute profit.
+
+`LGNS`
+Deep primary venue, but displaced secondary venues lack meaningful depth.
+
+`SAND`
+Healthy intermediate market, but weak closing gateway leg.
+
+Future discovery should prioritize:
+
+- deep flashloan/gateway asset liquidity
+- multiple genuinely usable venues
+- fragmented or mispriced intermediate liquidity
+- exact closed three-leg topology compatible with current ProfitBot
+- edge persistence at meaningful size
+- absolute surviving profit rather than headline basis points
+- current flashloan premium
+- realistic gas
+- exact simulation before any live execution consideration
+
+Pool existence alone is not sufficient evidence of useful liquidity.
+
+Displayed/indexer prices are candidate intelligence only.
+
+Pinned-block executable on-chain quotes are the research authority.
+
+### Polygon MEV / Simulation Caveat
+
+Do not assume that a private Alchemy Polygon RPC endpoint provides private
+mempool or MEV-protected transaction submission.
+
+Any future Polygon MEV/private-orderflow mechanism must be verified
+specifically for Polygon before being incorporated into the execution plan.
+
+Likewise, external simulation APIs should not replace the repository's
+existing exact ProfitBot simulation and safety gates without deliberate
+review.
+
+### Balancer Flashloan Research Note
+
+Balancer may be worth investigating separately as a possible future
+flashloan source if its current Polygon lending mechanics and fees are
+verified.
+
+This is NOT part of the current ProfitBot architecture.
+
+Do not change the lender from Aave merely to test this hypothesis.
+
+A different flashloan source would be an architecture change requiring
+separate design, tests, simulation, and review.
+
+### State After Research
+
+Production ProfitBot source:
+
+`UNCHANGED`
+
+Live execution:
+
+`OFF`
+
+Research transactions:
+
+`NONE`
+
+Next work should begin from the current git state and this checkpoint.
+
