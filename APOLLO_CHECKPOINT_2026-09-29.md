@@ -791,3 +791,133 @@ Research transactions:
 
 Next work should begin from the current git state and this checkpoint.
 
+## Uniswap V3 1bp Fee-Tier Coverage — 2026-09-29
+
+### Durable implementation state
+
+- Commit: `002e0b6` — `Add Polygon Uniswap V3 1bp fee tier coverage`
+- Branch: `repair/simulation-safety`
+- Commit pushed to `origin/repair/simulation-safety`.
+- Working tree was clean and synchronized after push.
+- Live execution remains OFF.
+
+### Change
+
+`FULL_FEE_TIERS` in `scripts/utils/uniswapV3Quote.js` now contains:
+
+`[100, 500, 3000, 10000]`
+
+Previously it contained:
+
+`[500, 3000, 10000]`
+
+`FAST_FEE_TIERS` intentionally remains unchanged:
+
+`[500, 3000]`
+
+The corresponding default-fee-tier test expectation was updated. No execution-contract, token-registry, deployment, wallet, RPC, or live-execution configuration was changed.
+
+### Verification
+
+Full test baseline after the change:
+
+- Node tests: 147/147 PASS
+- Hardhat tests: 13/13 PASS
+- Total: 160/160 PASS
+- Solidity compilation: 32 files compiled successfully
+
+Generated `artifacts/` and `cache/` churn from Hardhat was restored before commit.
+
+### Why fee tier 100 was added
+
+Read-only Polygon research established that the 1bp Uniswap V3 tier is materially used and that omitting it creates a genuine quote/discovery coverage gap.
+
+A controlled fee-tier comparison over useful core-token pairs showed:
+
+- 70 tested route/size cases
+- 270 successful individual quotes
+- fee-100 was best in 11 cases
+- fee-100 was a strict improvement in 10 cases
+- all 10 strict misses occurred on `USDC_NATIVE <-> DAI`
+
+This does not imply arbitrage profitability. It establishes that the full quote helper must consider fee tier 100 to select the best executable V3 quote.
+
+### Exact three-leg ProfitBot research after patch
+
+A read-only exact-three-leg sweep was run at pinned Polygon block:
+
+`94668258`
+
+Parameters:
+
+- start/end asset: `USDC_NATIVE`
+- venues: QuickSwap V2, SushiSwap V2, Uniswap V3
+- sizes: 1, 10, 100, 1000, 10000 USDC_NATIVE
+- exact three-leg closed routes only
+- Aave premium NOT deducted during gross screening
+- gas NOT deducted during gross screening
+- no signer, approvals, or transactions
+
+Results:
+
+- complete three-leg combinations: 2295
+- gross-positive combinations: 0
+
+Best complete routes at 1, 10, 100, and 1000 USDC_NATIVE were:
+
+`USDC_NATIVE -> DAI -> USDC_E -> USDC_NATIVE`
+
+All three legs selected Uniswap V3 fee tier 100.
+
+Observed gross results:
+
+- 1 USDC_NATIVE: approximately -2 bps
+- 10 USDC_NATIVE: approximately -2 bps
+- 100 USDC_NATIVE: approximately -2 bps
+- 1000 USDC_NATIVE: approximately -3 bps
+
+At 10000 USDC_NATIVE the best route changed to:
+
+`USDC_NATIVE -> WETH -> USDC_E -> USDC_NATIVE`
+
+with V3 fee tiers:
+
+`500 -> 500 -> 100`
+
+and approximately -66 bps gross.
+
+Because no tested route was gross-positive, no Aave-premium, gas, simulation, or execution stage was justified.
+
+### Correction to earlier fee-100 research
+
+An earlier direct fee-100 pair probe reported no `USDC_NATIVE/USDC_E` fee-100 pool.
+
+That negative result is superseded by later executable pinned-block quoting.
+
+The exact-three-leg sweep successfully quoted the `USDC_E -> USDC_NATIVE` fee-100 leg through:
+
+`0xD36ec33c8bed5a9F7B6630855f1533455b98a418`
+
+Therefore do NOT carry forward the earlier conclusion that the native/bridged USDC fee-100 route is absent.
+
+Executable pinned-block quote evidence is authoritative over that earlier negative lookup.
+
+### Current conclusion
+
+The fee-100 change is retained because it improves real Polygon Uniswap V3 discovery coverage while preserving the existing safety/profitability behavior.
+
+It did not create a profitable opportunity in the tested exact-three-leg core-token sweep.
+
+Continue to reject candidates in this order:
+
+1. executable quote availability
+2. exact closed supported topology
+3. size persistence
+4. absolute gross profit
+5. actual flashloan premium
+6. gas
+7. execution/MEV buffer
+8. simulation
+9. execution eligibility
+
+Do not infer profitability merely because fee tier 100 produces a better quote.
