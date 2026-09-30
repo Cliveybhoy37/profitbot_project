@@ -590,6 +590,84 @@ function sleep(ms) {
   );
 }
 
+function shouldPrintHeartbeat({
+  iteration,
+  heartbeatEvery,
+  initial,
+  changed,
+  liveReady
+}) {
+  requirePositiveInteger(
+    iteration,
+    "iteration"
+  );
+
+  requirePositiveInteger(
+    heartbeatEvery,
+    "heartbeatEvery"
+  );
+
+  if (
+    initial ||
+    changed ||
+    liveReady
+  ) {
+    return false;
+  }
+
+  return (
+    iteration %
+      heartbeatEvery ===
+    0
+  );
+}
+
+function printHeartbeat(
+  summary
+) {
+  const best =
+    summary.best;
+
+  const parts = [
+    "WATCHING",
+    `block=${summary.quoteBlock}`,
+    `gas=${formatGwei(
+      summary.policySnapshot
+        .gasPriceWei
+    )}gwei`
+  ];
+
+  if (best) {
+    parts.push(
+      `best=${best.id}`
+    );
+
+    parts.push(
+      `gross=${formatEther(
+        best.grossDelta
+      )}WPOL`
+    );
+
+    parts.push(
+      `ceiling=${formatGwei(
+        best.maxGasPriceWei
+      )}gwei`
+    );
+  }
+
+  parts.push(
+    "LIVE_READY=false"
+  );
+
+  parts.push(
+    "BROADCAST=false"
+  );
+
+  console.log(
+    parts.join(" | ")
+  );
+}
+
 async function watchOpportunities({
   provider,
   pollMs =
@@ -597,7 +675,8 @@ async function watchOpportunities({
   maxIterations =
     Infinity,
   evidenceDir =
-    DEFAULT_EVIDENCE_DIR
+    DEFAULT_EVIDENCE_DIR,
+  heartbeatEvery = 10
 }) {
   if (!provider) {
     throw new Error(
@@ -608,6 +687,11 @@ async function watchOpportunities({
   requirePositiveInteger(
     pollMs,
     "pollMs"
+  );
+
+  requirePositiveInteger(
+    heartbeatEvery,
+    "heartbeatEvery"
   );
 
   if (
@@ -648,17 +732,22 @@ async function watchOpportunities({
         summary
       );
 
+    const initial =
+      previousFingerprint ===
+        null;
+
     const changed =
-      previousFingerprint !==
-        null &&
+      !initial &&
       fingerprint !==
         previousFingerprint;
 
+    const liveReady =
+      summary.ready.length > 0;
+
     if (
-      previousFingerprint ===
-        null ||
+      initial ||
       changed ||
-      summary.ready.length > 0
+      liveReady
     ) {
       printSummary(
         summary,
@@ -667,11 +756,21 @@ async function watchOpportunities({
             changed
         }
       );
+    } else if (
+      shouldPrintHeartbeat({
+        iteration,
+        heartbeatEvery,
+        initial,
+        changed,
+        liveReady
+      })
+    ) {
+      printHeartbeat(
+        summary
+      );
     }
 
-    if (
-      summary.ready.length > 0
-    ) {
+    if (liveReady) {
       const file =
         saveEvidence(
           summary,
@@ -825,5 +924,7 @@ module.exports = {
   stateFingerprint,
   serializableSummary,
   saveEvidence,
+  shouldPrintHeartbeat,
+  printHeartbeat,
   watchOpportunities
 };

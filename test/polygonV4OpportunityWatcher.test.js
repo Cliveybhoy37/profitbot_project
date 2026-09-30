@@ -20,7 +20,8 @@ const {
 const {
   calculateGasCeiling,
   diagnosticForRow,
-  stateFingerprint
+  stateFingerprint,
+  shouldPrintHeartbeat
 } = require(
   "../scripts/research/watchPolygonV4LiveOpportunities"
 );
@@ -263,6 +264,84 @@ test(
       stateFingerprint(
         ready
       )
+    );
+  }
+);
+
+
+test(
+  "heartbeat prints only on quiet configured intervals",
+  () => {
+    assert.equal(
+      shouldPrintHeartbeat({
+        iteration: 10,
+        heartbeatEvery: 10,
+        initial: false,
+        changed: false,
+        liveReady: false
+      }),
+      true
+    );
+
+    assert.equal(
+      shouldPrintHeartbeat({
+        iteration: 9,
+        heartbeatEvery: 10,
+        initial: false,
+        changed: false,
+        liveReady: false
+      }),
+      false
+    );
+
+    assert.equal(
+      shouldPrintHeartbeat({
+        iteration: 10,
+        heartbeatEvery: 10,
+        initial: true,
+        changed: false,
+        liveReady: false
+      }),
+      false
+    );
+
+    assert.equal(
+      shouldPrintHeartbeat({
+        iteration: 10,
+        heartbeatEvery: 10,
+        initial: false,
+        changed: true,
+        liveReady: false
+      }),
+      false
+    );
+
+    assert.equal(
+      shouldPrintHeartbeat({
+        iteration: 10,
+        heartbeatEvery: 10,
+        initial: false,
+        changed: false,
+        liveReady: true
+      }),
+      false
+    );
+  }
+);
+
+test(
+  "heartbeat policy rejects invalid intervals",
+  () => {
+    assert.throws(
+      () =>
+        shouldPrintHeartbeat({
+          iteration: 1,
+          heartbeatEvery: 0,
+          initial: false,
+          changed: false,
+          liveReady: false
+        }),
+      /heartbeatEvery must be a positive safe integer/
     );
   }
 );
