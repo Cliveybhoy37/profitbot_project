@@ -131,6 +131,33 @@ test(
       "789"
     );
 
+    assert.deepEqual(
+      result.poolKey,
+      {
+        currency0:
+          ethers.utils.getAddress(
+            POOL_KEY.currency0
+          ),
+        currency1:
+          ethers.utils.getAddress(
+            POOL_KEY.currency1
+          ),
+        fee:
+          POOL_KEY.fee,
+        tickSpacing:
+          POOL_KEY.tickSpacing,
+        hooks:
+          ethers.utils.getAddress(
+            POOL_KEY.hooks
+          )
+      }
+    );
+
+    assert.equal(
+      result.zeroForOne,
+      false
+    );
+
     assert.equal(
       received.params
         .exactAmount

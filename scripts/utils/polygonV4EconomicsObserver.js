@@ -261,7 +261,10 @@ async function observeV4Quote({
       amountOut:
         amountOut.toString(),
       gasEstimate:
-        gasEstimate.toString()
+        gasEstimate.toString(),
+      poolKey:
+        normalizedPoolKey,
+      zeroForOne
     };
   } catch (error) {
     return classifyV4Failure(
