@@ -16,6 +16,12 @@ const {
   "../scripts/utils/polygonV4ExecutionRoute"
 );
 
+const {
+  preflightObservedV4Candidate
+} = require(
+  "../scripts/utils/polygonV4CandidatePreflight"
+);
+
 describe(
   "Polygon V4 observed candidate -> Aave execution",
   function () {
@@ -94,6 +100,11 @@ describe(
           status: "QUOTE_OK",
           blockTag:
             FORK_BLOCK,
+
+          amounts: {
+            start:
+              START.toString()
+          },
 
           entry: {
             venue:
@@ -201,6 +212,13 @@ describe(
           FORK_BLOCK
         );
 
+        assert(
+          candidate.amountIn.eq(
+            START
+          ),
+          "candidate amount differs from observed start amount"
+        );
+
         assert.strictEqual(
           candidate.legs[0].fee,
           observation.entry.fee
@@ -219,7 +237,83 @@ describe(
         );
 
         // ----------------------------------------------------------
-        // 3. Apply 50-bps protection and encode the candidate.
+        // 3. Fail-closed preflight using frozen historical inputs.
+        //
+        // The fork is pinned to the observation block, so age is zero.
+        // The 5-bps premium and 650,723 gas are measurements from this
+        // same historical route, not assumptions about live Polygon.
+        // ----------------------------------------------------------
+
+        const preflight =
+          preflightObservedV4Candidate({
+            candidate,
+            requestedAmount:
+              START,
+            currentBlock:
+              FORK_BLOCK,
+            maxAgeBlocks:
+              3,
+            slippageBps:
+              50,
+            maxSlippageBps:
+              100,
+            premiumBps:
+              5,
+            estimatedGas:
+              ethers.BigNumber.from(
+                "650723"
+              ),
+            gasPriceWei:
+              ethers.utils.parseUnits(
+                "10",
+                "gwei"
+              ),
+            safetyReserveWei:
+              ethers.utils.parseEther(
+                "0.001"
+              ),
+            minimumNetProfitWei:
+              ethers.utils.parseEther(
+                "0.005"
+              )
+          });
+
+        assert.strictEqual(
+          preflight.ageBlocks,
+          0,
+          "historical candidate unexpectedly aged"
+        );
+
+        assert(
+          preflight.amountIn.eq(
+            START
+          ),
+          "preflight amount mismatch"
+        );
+
+        assert(
+          preflight.expectedNetProfit.gte(
+            ethers.utils.parseEther(
+              "0.005"
+            )
+          ),
+          "preflight accepted insufficient expected profit"
+        );
+
+        console.log(
+          "preflight age blocks:",
+          preflight.ageBlocks
+        );
+
+        console.log(
+          "preflight expected net WPOL:",
+          ethers.utils.formatEther(
+            preflight.expectedNetProfit
+          )
+        );
+
+        // ----------------------------------------------------------
+        // 4. Apply 50-bps protection and encode the candidate.
         // ----------------------------------------------------------
 
         const legs =
@@ -256,7 +350,7 @@ describe(
         );
 
         // ----------------------------------------------------------
-        // 4. Deploy isolated generic executor with zero prefunding.
+        // 5. Deploy isolated generic executor with zero prefunding.
         // ----------------------------------------------------------
 
         const Executor =
@@ -292,7 +386,7 @@ describe(
         );
 
         // ----------------------------------------------------------
-        // 5. Execute exactly the candidate derived above.
+        // 6. Execute exactly the candidate derived above.
         // ----------------------------------------------------------
 
         const tx =

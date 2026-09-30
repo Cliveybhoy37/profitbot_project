@@ -45,6 +45,11 @@ function observation() {
     status: "QUOTE_OK",
     blockTag: 94709817,
 
+    amounts: {
+      start:
+        "125000000000000000"
+    },
+
     entry: {
       venue: "UNISWAP_V3",
       status: "QUOTE_OK",
@@ -87,6 +92,11 @@ test(
     assert.equal(
       candidate.blockTag,
       94709817
+    );
+
+    assert.equal(
+      candidate.amountIn.toString(),
+      "125000000000000000"
     );
 
     assert.equal(
@@ -250,6 +260,80 @@ test(
           exitToken: APEPE
         }),
       /requires all three observed legs/
+    );
+  }
+);
+
+
+test(
+  "requires observed block and start-amount provenance",
+  () => {
+    const missingBlock =
+      observation();
+
+    delete missingBlock.blockTag;
+
+    assert.throws(
+      () =>
+        buildObservedV4Candidate({
+          observation:
+            missingBlock,
+          startToken: WPOL,
+          entryToken: DAI,
+          exitToken: APEPE
+        }),
+      /requires observed blockTag/
+    );
+
+    const missingAmounts =
+      observation();
+
+    delete missingAmounts.amounts;
+
+    assert.throws(
+      () =>
+        buildObservedV4Candidate({
+          observation:
+            missingAmounts,
+          startToken: WPOL,
+          entryToken: DAI,
+          exitToken: APEPE
+        }),
+      /requires observed start amount/
+    );
+
+    const missingStart =
+      observation();
+
+    delete missingStart.amounts.start;
+
+    assert.throws(
+      () =>
+        buildObservedV4Candidate({
+          observation:
+            missingStart,
+          startToken: WPOL,
+          entryToken: DAI,
+          exitToken: APEPE
+        }),
+      /Observed start amount/
+    );
+
+    const zeroStart =
+      observation();
+
+    zeroStart.amounts.start = "0";
+
+    assert.throws(
+      () =>
+        buildObservedV4Candidate({
+          observation:
+            zeroStart,
+          startToken: WPOL,
+          entryToken: DAI,
+          exitToken: APEPE
+        }),
+      /Observed start amount must be positive/
     );
   }
 );

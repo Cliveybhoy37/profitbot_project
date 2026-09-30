@@ -145,6 +145,32 @@ function buildObservedV4Candidate({
     );
   }
 
+  if (
+    !Number.isInteger(
+      observation.blockTag
+    ) ||
+    observation.blockTag <= 0
+  ) {
+    throw new Error(
+      "Execution candidate requires observed blockTag"
+    );
+  }
+
+  if (
+    !observation.amounts ||
+    typeof observation.amounts !== "object"
+  ) {
+    throw new Error(
+      "Execution candidate requires observed start amount"
+    );
+  }
+
+  const amountIn =
+    requirePositiveAmount(
+      observation.amounts.start,
+      "Observed start amount"
+    );
+
   const start =
     requireAddress(
       startToken,
@@ -230,7 +256,9 @@ function buildObservedV4Candidate({
 
   return {
     blockTag:
-      observation.blockTag ?? null,
+      observation.blockTag,
+
+    amountIn,
 
     legs: [
       {
