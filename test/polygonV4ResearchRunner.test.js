@@ -272,3 +272,298 @@ test("empty discovery stage produces clean resumable progress", () => {
     }
   );
 });
+
+test("ACTIVE progress defaults empty", () => {
+  const {
+    getActiveProgress
+  } = require("../scripts/research/runPolygonV4Research");
+
+  const state =
+    createResearchState(
+      makeIdentity(94700000)
+    );
+
+  assert.deepEqual(
+    getActiveProgress(state),
+    {
+      observations: []
+    }
+  );
+});
+
+test("ACTIVE checkpoints successful observations and completes", async () => {
+  const {
+    runActive
+  } = require("../scripts/research/runPolygonV4Research");
+
+  const dir =
+    fs.mkdtempSync(
+      path.join(
+        os.tmpdir(),
+        "apollo-v4-active-"
+      )
+    );
+
+  const file =
+    path.join(dir, "state.json");
+
+  const identity =
+    makeIdentity(94700000);
+
+  const poolA =
+    `0x${"44".repeat(32)}`;
+
+  const poolB =
+    `0x${"55".repeat(32)}`;
+
+  try {
+    const state =
+      createResearchState(identity);
+
+    completeStage(
+      state,
+      "PINNED",
+      {
+        pinnedBlock:
+          identity.pinnedBlock
+      }
+    );
+
+    completeStage(
+      state,
+      "DISCOVERY",
+      {
+        pools: [
+          { poolId: poolA },
+          { poolId: poolB }
+        ]
+      }
+    );
+
+    const stateView = {
+      async getLiquidity(poolId) {
+        return poolId === poolA
+          ? require("ethers").ethers.BigNumber.from(9)
+          : require("ethers").ethers.constants.Zero;
+      }
+    };
+
+    const result =
+      await runActive({
+        provider: {},
+        file,
+        state,
+        stateView
+      });
+
+    assert.equal(
+      result.totalPools,
+      2
+    );
+
+    assert.equal(
+      result.activePools,
+      1
+    );
+
+    assert.equal(
+      result.inactivePools,
+      1
+    );
+
+    assert.equal(
+      state.completedStages.includes(
+        "ACTIVE"
+      ),
+      true
+    );
+
+    const reloaded =
+      loadResearchState(
+        file,
+        identity
+      );
+
+    assert.equal(
+      reloaded.stages.ACTIVE.observations.length,
+      2
+    );
+  } finally {
+    fs.rmSync(
+      dir,
+      {
+        recursive: true,
+        force: true
+      }
+    );
+  }
+});
+
+test("ACTIVE failure stays incomplete and successful pools resume from cache", async () => {
+  const {
+    runActive
+  } = require("../scripts/research/runPolygonV4Research");
+
+  const dir =
+    fs.mkdtempSync(
+      path.join(
+        os.tmpdir(),
+        "apollo-v4-active-resume-"
+      )
+    );
+
+  const file =
+    path.join(dir, "state.json");
+
+  const identity =
+    makeIdentity(94700000);
+
+  const poolA =
+    `0x${"66".repeat(32)}`;
+
+  const poolB =
+    `0x${"77".repeat(32)}`;
+
+  try {
+    const state =
+      createResearchState(identity);
+
+    completeStage(
+      state,
+      "PINNED",
+      {
+        pinnedBlock:
+          identity.pinnedBlock
+      }
+    );
+
+    completeStage(
+      state,
+      "DISCOVERY",
+      {
+        pools: [
+          { poolId: poolA },
+          { poolId: poolB }
+        ]
+      }
+    );
+
+    let firstCalls = 0;
+
+    const failingView = {
+      async getLiquidity(poolId) {
+        firstCalls += 1;
+
+        if (poolId === poolB) {
+          const error =
+            new Error("temporary failure");
+
+          error.code =
+            "SERVER_ERROR";
+
+          throw error;
+        }
+
+        return require("ethers").ethers.BigNumber.from(5);
+      }
+    };
+
+    await assert.rejects(
+      () =>
+        runActive({
+          provider: {},
+          file,
+          state,
+          stateView:
+            failingView
+        }),
+      /ACTIVE incomplete/
+    );
+
+    assert.equal(
+      firstCalls,
+      2
+    );
+
+    assert.equal(
+      state.completedStages.includes(
+        "ACTIVE"
+      ),
+      false
+    );
+
+    const saved =
+      loadResearchState(
+        file,
+        identity
+      );
+
+    assert.equal(
+      saved.stages.ACTIVE.observations.length,
+      2
+    );
+
+    assert.equal(
+      saved.stages.ACTIVE.observations.filter(
+        item => item.ok
+      ).length,
+      1
+    );
+
+    assert.equal(
+      saved.stages.ACTIVE.observations.filter(
+        item => !item.ok
+      ).length,
+      1
+    );
+
+    let resumedCalls = 0;
+
+    const recoveredView = {
+      async getLiquidity(poolId) {
+        resumedCalls += 1;
+
+        assert.equal(
+          poolId,
+          poolB
+        );
+
+        return require("ethers").ethers.BigNumber.from(7);
+      }
+    };
+
+    const result =
+      await runActive({
+        provider: {},
+        file,
+        state: saved,
+        stateView:
+          recoveredView
+      });
+
+    assert.equal(
+      resumedCalls,
+      1
+    );
+
+    assert.equal(
+      result.activePools,
+      2
+    );
+
+    assert.equal(
+      saved.completedStages.includes(
+        "ACTIVE"
+      ),
+      true
+    );
+  } finally {
+    fs.rmSync(
+      dir,
+      {
+        recursive: true,
+        force: true
+      }
+    );
+  }
+});

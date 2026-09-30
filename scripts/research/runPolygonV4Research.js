@@ -21,6 +21,11 @@ const {
 } = require("../utils/polygonV4Discovery");
 
 const {
+  makeStateView,
+  readPoolLiquidity
+} = require("../utils/polygonV4ActivePools");
+
+const {
   completeStage,
   updateStageProgress,
   saveResearchState,
@@ -446,6 +451,249 @@ async function runDiscovery({
   return finalPayload;
 }
 
+function getActiveProgress(state) {
+  const existing =
+    state.stages.ACTIVE;
+
+  if (
+    !existing ||
+    typeof existing !== "object" ||
+    !Array.isArray(existing.observations)
+  ) {
+    return {
+      observations: []
+    };
+  }
+
+  return {
+    observations:
+      existing.observations
+  };
+}
+
+function saveActiveProgress({
+  file,
+  state,
+  observations
+}) {
+  updateStageProgress(
+    state,
+    "ACTIVE",
+    {
+      observations
+    }
+  );
+
+  saveResearchState(file, state);
+}
+
+async function runActive({
+  provider,
+  file,
+  state,
+  stateView = null
+}) {
+  if (
+    !state.completedStages.includes(
+      "DISCOVERY"
+    )
+  ) {
+    throw new Error(
+      "Cannot run ACTIVE before DISCOVERY"
+    );
+  }
+
+  if (
+    state.completedStages.includes(
+      "ACTIVE"
+    )
+  ) {
+    console.log(
+      "ACTIVE already complete."
+    );
+
+    return state.stages.ACTIVE;
+  }
+
+  const discovery =
+    state.stages.DISCOVERY;
+
+  if (
+    !discovery ||
+    !Array.isArray(discovery.pools)
+  ) {
+    throw new Error(
+      "DISCOVERY payload has no verified pools"
+    );
+  }
+
+  const pools =
+    discovery.pools;
+
+  const progress =
+    getActiveProgress(state);
+
+  // Only successful observations count as completed.
+  // Failed observations remain persisted as evidence,
+  // but are retried on resume.
+  const successful =
+    new Map(
+      progress.observations
+        .filter(item => item.ok)
+        .map(item => [
+          item.poolId.toLowerCase(),
+          item
+        ])
+    );
+
+  const failures =
+    new Map(
+      progress.observations
+        .filter(item => !item.ok)
+        .map(item => [
+          item.poolId.toLowerCase(),
+          item
+        ])
+    );
+
+  const view =
+    stateView ||
+    makeStateView(provider);
+
+  console.log(
+    `ACTIVE: ${successful.size}/${pools.length} successful observations cached`
+  );
+
+  for (
+    let i = 0;
+    i < pools.length;
+    i += 1
+  ) {
+    const pool =
+      pools[i];
+
+    const poolId =
+      pool.poolId.toLowerCase();
+
+    if (successful.has(poolId)) {
+      console.log(
+        `[${i + 1}/${pools.length}] ${poolId} cached`
+      );
+      continue;
+    }
+
+    console.log(
+      `[${i + 1}/${pools.length}] ${poolId} StateView`
+    );
+
+    const observation =
+      await readPoolLiquidity({
+        stateView: view,
+        poolId,
+        blockTag:
+          state.identity.pinnedBlock
+      });
+
+    if (observation.ok) {
+      successful.set(
+        poolId,
+        observation
+      );
+
+      failures.delete(poolId);
+    } else {
+      failures.set(
+        poolId,
+        observation
+      );
+    }
+
+    const observations = [
+      ...successful.values(),
+      ...failures.values()
+    ];
+
+    saveActiveProgress({
+      file,
+      state,
+      observations
+    });
+
+    if (observation.ok) {
+      console.log(
+        `  liquidity=${observation.liquidity} ` +
+        `active=${observation.active} checkpointed`
+      );
+    } else {
+      console.log(
+        `  failed code=${observation.errorCode} checkpointed`
+      );
+    }
+  }
+
+  const observations = [
+    ...successful.values(),
+    ...failures.values()
+  ];
+
+  if (failures.size > 0) {
+    saveActiveProgress({
+      file,
+      state,
+      observations
+    });
+
+    throw new Error(
+      `ACTIVE incomplete: ${failures.size} StateView observation(s) failed`
+    );
+  }
+
+  const active =
+    observations.filter(
+      item =>
+        item.ok &&
+        item.active
+    );
+
+  const inactive =
+    observations.filter(
+      item =>
+        item.ok &&
+        !item.active
+    );
+
+  const finalPayload = {
+    observations,
+    totalPools:
+      pools.length,
+    successfulObservations:
+      observations.length,
+    activePools:
+      active.length,
+    inactivePools:
+      inactive.length,
+    failures: []
+  };
+
+  completeStage(
+    state,
+    "ACTIVE",
+    finalPayload
+  );
+
+  saveResearchState(
+    file,
+    state
+  );
+
+  console.log(
+    `ACTIVE complete: ${active.length} active, ` +
+    `${inactive.length} inactive, 0 failures`
+  );
+
+  return finalPayload;
+}
+
 async function main() {
   const args =
     parseArgs(process.argv.slice(2));
@@ -492,6 +740,12 @@ async function main() {
     state: run.state
   });
 
+  await runActive({
+    provider,
+    file: run.file,
+    state: run.state
+  });
+
   console.log(
     `State: ${run.file}`
   );
@@ -527,6 +781,9 @@ module.exports = {
   completedChunkKey,
   getDiscoveryProgress,
   saveDiscoveryProgress,
+  getActiveProgress,
+  saveActiveProgress,
   resolveRun,
-  runDiscovery
+  runDiscovery,
+  runActive
 };
