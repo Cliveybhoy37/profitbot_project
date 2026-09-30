@@ -371,6 +371,26 @@ function buildStructuralResults({
           };
         }
 
+        // CORE_CORE needs a third start asset to preserve the
+        // exact three-distinct-swap topology:
+        //
+        // startCore -> currency0 ->V4-> currency1 -> startCore
+        //
+        // This stage does not yet hold core-to-core outer quote evidence,
+        // so preserve the market for later probing instead of fabricating
+        // an identity leg or falsely rejecting it.
+        if (pool.category === "CORE_CORE") {
+          return {
+            poolId:
+              pool.poolId,
+            category:
+              pool.category,
+            quarantined: false,
+            deferredCoreCore: true,
+            orientations: []
+          };
+        }
+
         const orientations =
           supportedOrientationsForPool({
             pool,
@@ -384,6 +404,7 @@ function buildStructuralResults({
           category:
             pool.category,
           quarantined: false,
+          deferredCoreCore: false,
           orientations
         };
       }
@@ -402,10 +423,17 @@ function buildStructuralResults({
             pool.quarantined
         ).length,
 
+      deferredCoreCore:
+        pools.filter(
+          pool =>
+            pool.deferredCoreCore === true
+        ).length,
+
       withOrientation:
         pools.filter(
           pool =>
             !pool.quarantined &&
+            pool.deferredCoreCore !== true &&
             pool.orientations.length > 0
         ).length,
 
@@ -413,6 +441,7 @@ function buildStructuralResults({
         pools.filter(
           pool =>
             !pool.quarantined &&
+            pool.deferredCoreCore !== true &&
             pool.orientations.length === 0
         ).length
     }

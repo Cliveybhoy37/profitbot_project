@@ -721,3 +721,76 @@ test(
     );
   }
 );
+
+test(
+  "core-core market is deferred rather than given an identity-leg orientation",
+  () => {
+    const classifications = {
+      counts: {
+        totalActive: 1
+      },
+
+      pools: [
+        {
+          poolId:
+            `0x${"19".repeat(32)}`,
+          category:
+            "CORE_CORE",
+          quarantined: false,
+
+          currency0: {
+            kind: "CORE",
+            address:
+              CORE_A.address
+          },
+
+          currency1: {
+            kind: "CORE",
+            address:
+              CORE_B.address
+          }
+        }
+      ]
+    };
+
+    const result =
+      buildStructuralResults({
+        classifications,
+        outerEvidence: {},
+        coreTokens: [
+          CORE_A,
+          CORE_B
+        ]
+      });
+
+    assert.equal(
+      result.pools[0]
+        .deferredCoreCore,
+      true
+    );
+
+    assert.deepEqual(
+      result.pools[0]
+        .orientations,
+      []
+    );
+
+    assert.equal(
+      result.counts
+        .deferredCoreCore,
+      1
+    );
+
+    assert.equal(
+      result.counts
+        .withOrientation,
+      0
+    );
+
+    assert.equal(
+      result.counts
+        .withoutOrientation,
+      0
+    );
+  }
+);
