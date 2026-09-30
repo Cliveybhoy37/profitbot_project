@@ -121,6 +121,15 @@ test(
         .toString(),
       "9238753715718886"
     );
+
+    assert.equal(
+      result.minimumNetProfit
+        .toString(),
+      ethers.utils.parseEther(
+        "0.005"
+      ).toString(),
+      "minimum-profit policy was not preserved"
+    );
   }
 );
 

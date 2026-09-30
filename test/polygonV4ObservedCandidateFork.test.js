@@ -331,9 +331,15 @@ describe(
           latestBlock.timestamp + 300;
 
         const minimumProfit =
+          preflight.minimumNetProfit;
+
+        assert.equal(
+          minimumProfit.toString(),
           ethers.utils.parseEther(
             "0.005"
-          );
+          ).toString(),
+          "execution policy differs from preflight"
+        );
 
         const params =
           encodeV4ExecutionPlan({

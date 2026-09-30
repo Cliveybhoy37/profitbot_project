@@ -271,6 +271,7 @@ function preflightObservedV4Candidate({
     expectedPremium,
     estimatedGasCost,
     safetyReserve,
+    minimumNetProfit,
     expectedNetProfit
   };
 }
