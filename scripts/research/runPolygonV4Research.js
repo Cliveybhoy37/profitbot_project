@@ -7,6 +7,7 @@
 //   DISCOVERY
 //   ACTIVE
 //   STRUCTURAL
+//   ECONOMICS
 //
 // No signer, wallet, approvals, or transaction submission.
 
@@ -53,8 +54,37 @@ const {
   createResearchState
 } = require("../utils/polygonV4ResearchState");
 
+const {
+  buildEconomicsJobs
+} = require("../utils/polygonV4EconomicsStage");
+
+const {
+  QUOTE_OK,
+  NO_ROUTE,
+  RPC_FAILURE
+} = require("../utils/polygonV4OuterQuoteObserver");
+
+const {
+  observeThreeLegEconomics
+} = require("../utils/polygonV4EconomicsObserver");
+
 const CHAIN_ID = 137;
 const DISCOVERY_DEPTH = 500_000;
+
+// Deterministic coarse research probes.
+//
+// These are research inputs only. They are not execution
+// sizing recommendations and are deliberately independent
+// from legacy flashloan/environment settings.
+const ECONOMICS_COARSE_SIZES =
+  Object.freeze({
+    USDC_NATIVE: "10",
+    USDC_E: "10",
+    WPOL: "0.075",
+    DAI: "10",
+    WETH: "0.005",
+    WBTC: "0.0002"
+  });
 
 const STATE_DIR =
   path.resolve(
@@ -920,6 +950,386 @@ function structuralUnresolved({
   return unresolved;
 }
 
+function economicsStartAmount(job) {
+  const symbol =
+    job?.start?.symbol;
+
+  const decimals =
+    job?.start?.decimals;
+
+  const configured =
+    ECONOMICS_COARSE_SIZES[
+      symbol
+    ];
+
+  if (
+    typeof configured !== "string"
+  ) {
+    throw new Error(
+      `No ECONOMICS coarse size for ${String(symbol)}`
+    );
+  }
+
+  if (
+    !Number.isInteger(decimals) ||
+    decimals < 0 ||
+    decimals > 255
+  ) {
+    throw new Error(
+      `Invalid ECONOMICS decimals for ${String(symbol)}`
+    );
+  }
+
+  return ethers.utils.parseUnits(
+    configured,
+    decimals
+  );
+}
+
+function getEconomicsProgress(
+  state
+) {
+  const existing =
+    state.stages?.ECONOMICS;
+
+  return {
+    observations:
+      existing?.observations &&
+      typeof existing.observations ===
+        "object" &&
+      !Array.isArray(
+        existing.observations
+      )
+        ? {
+            ...existing.observations
+          }
+        : {},
+
+    unresolved:
+      Array.isArray(
+        existing?.unresolved
+      )
+        ? [
+            ...existing.unresolved
+          ]
+        : []
+  };
+}
+
+function economicsObservationIsConclusive(
+  observation
+) {
+  return (
+    observation?.status ===
+      QUOTE_OK ||
+    observation?.status ===
+      NO_ROUTE
+  );
+}
+
+function economicsUnresolved({
+  jobs,
+  observations
+}) {
+  const unresolved = [];
+
+  for (const job of jobs) {
+    const observation =
+      observations[job.id];
+
+    if (
+      !economicsObservationIsConclusive(
+        observation
+      )
+    ) {
+      unresolved.push({
+        jobId: job.id,
+        status:
+          observation?.status ??
+          "MISSING"
+      });
+    }
+  }
+
+  return unresolved;
+}
+
+function saveEconomicsProgress({
+  file,
+  state,
+  progress
+}) {
+  updateStageProgress(
+    state,
+    "ECONOMICS",
+    {
+      observations:
+        progress.observations,
+      unresolved:
+        progress.unresolved
+    }
+  );
+
+  saveResearchState(
+    file,
+    state
+  );
+}
+
+async function runEconomics({
+  provider,
+  file,
+  state,
+  observeThreeLegEconomicsFn =
+    observeThreeLegEconomics,
+  buildEconomicsJobsFn =
+    buildEconomicsJobs
+}) {
+  if (
+    !state.completedStages.includes(
+      "STRUCTURAL"
+    )
+  ) {
+    throw new Error(
+      "Cannot run ECONOMICS before STRUCTURAL"
+    );
+  }
+
+  if (
+    state.completedStages.includes(
+      "ECONOMICS"
+    )
+  ) {
+    console.log(
+      "ECONOMICS already complete."
+    );
+
+    return state.stages.ECONOMICS;
+  }
+
+  const structural =
+    state.stages.STRUCTURAL;
+
+  const jobs =
+    buildEconomicsJobsFn({
+      structural
+    });
+
+  const progress =
+    getEconomicsProgress(
+      state
+    );
+
+  console.log(
+    `ECONOMICS: ${jobs.length} deterministic job(s)`
+  );
+
+  for (
+    let i = 0;
+    i < jobs.length;
+    i += 1
+  ) {
+    const job =
+      jobs[i];
+
+    const cached =
+      progress.observations[
+        job.id
+      ];
+
+    if (
+      economicsObservationIsConclusive(
+        cached
+      )
+    ) {
+      console.log(
+        `[economics ${i + 1}/${jobs.length}] ${job.id} cached`
+      );
+
+      continue;
+    }
+
+    const startAmount =
+      economicsStartAmount(
+        job
+      );
+
+    console.log(
+      `[economics ${i + 1}/${jobs.length}] ${job.id}`
+    );
+
+    const result =
+      await observeThreeLegEconomicsFn({
+        provider,
+        blockTag:
+          state.identity.pinnedBlock,
+        poolKey:
+          job.poolKey,
+        zeroForOne:
+          job.zeroForOne,
+        startToken:
+          job.start.address,
+        entryToken:
+          job.entryToken,
+        exitToken:
+          job.exitToken,
+        startAmount,
+        entryVenue:
+          job.entryVenue,
+        exitVenue:
+          job.exitVenue
+      });
+
+    const observation = {
+      jobId:
+        job.id,
+      poolId:
+        job.poolId,
+      direction:
+        job.direction,
+      zeroForOne:
+        job.zeroForOne,
+      start:
+        job.start,
+      startAmount:
+        startAmount.toString(),
+      entryToken:
+        job.entryToken,
+      exitToken:
+        job.exitToken,
+      entryVenue:
+        job.entryVenue,
+      exitVenue:
+        job.exitVenue,
+      poolKey:
+        job.poolKey,
+      blockTag:
+        state.identity.pinnedBlock,
+      ...result
+    };
+
+    progress.observations[
+      job.id
+    ] = observation;
+
+    progress.unresolved =
+      economicsUnresolved({
+        jobs,
+        observations:
+          progress.observations
+      });
+
+    saveEconomicsProgress({
+      file,
+      state,
+      progress
+    });
+
+    if (
+      result.status ===
+        QUOTE_OK
+    ) {
+      console.log(
+        `  QUOTE_OK grossDelta=${result.grossDelta} grossBpsScaled=${result.grossBpsScaled}`
+      );
+    } else if (
+      result.status ===
+        NO_ROUTE
+    ) {
+      console.log(
+        `  NO_ROUTE failedLeg=${result.failedLeg ?? "UNKNOWN"}`
+      );
+    } else {
+      console.log(
+        `  unresolved status=${result.status ?? RPC_FAILURE} failedLeg=${result.failedLeg ?? "UNKNOWN"} checkpointed`
+      );
+    }
+  }
+
+  progress.unresolved =
+    economicsUnresolved({
+      jobs,
+      observations:
+        progress.observations
+    });
+
+  if (
+    progress.unresolved.length > 0
+  ) {
+    saveEconomicsProgress({
+      file,
+      state,
+      progress
+    });
+
+    throw new Error(
+      `ECONOMICS incomplete: ${progress.unresolved.length} observation(s) unresolved`
+    );
+  }
+
+  const observations =
+    Object.values(
+      progress.observations
+    );
+
+  const quoteOk =
+    observations.filter(
+      item =>
+        item.status ===
+        QUOTE_OK
+    ).length;
+
+  const noRoute =
+    observations.filter(
+      item =>
+        item.status ===
+        NO_ROUTE
+    ).length;
+
+  const grossPositive =
+    observations.filter(
+      item =>
+        item.status ===
+          QUOTE_OK &&
+        ethers.BigNumber.from(
+          item.grossDelta
+        ).gt(0)
+    ).length;
+
+  const finalPayload = {
+    coarseSizes: {
+      ...ECONOMICS_COARSE_SIZES
+    },
+    totalJobs:
+      jobs.length,
+    quoteOk,
+    noRoute,
+    grossPositive,
+    unresolved: [],
+    observations:
+      progress.observations
+  };
+
+  completeStage(
+    state,
+    "ECONOMICS",
+    finalPayload
+  );
+
+  saveResearchState(
+    file,
+    state
+  );
+
+  console.log(
+    `ECONOMICS complete: ${quoteOk} quoted, ` +
+    `${noRoute} no-route, ` +
+    `${grossPositive} gross-positive`
+  );
+
+  return finalPayload;
+}
+
 async function runStructural({
   provider,
   file,
@@ -1348,6 +1758,12 @@ async function main() {
     state: run.state
   });
 
+  await runEconomics({
+    provider,
+    file: run.file,
+    state: run.state
+  });
+
   console.log(
     `State: ${run.file}`
   );
@@ -1391,5 +1807,12 @@ module.exports = {
   saveStructuralProgress,
   requiredOuterPairs,
   structuralUnresolved,
-  runStructural
+  runStructural,
+  ECONOMICS_COARSE_SIZES,
+  economicsStartAmount,
+  getEconomicsProgress,
+  economicsObservationIsConclusive,
+  economicsUnresolved,
+  saveEconomicsProgress,
+  runEconomics
 };

@@ -1315,3 +1315,686 @@ test("STRUCTURAL RPC failure retries only unresolved outer evidence", async () =
     );
   }
 });
+
+test("ECONOMICS requires STRUCTURAL completion", async () => {
+  const {
+    runEconomics
+  } = require("../scripts/research/runPolygonV4Research");
+
+  const state =
+    createResearchState(
+      makeIdentity(94700000)
+    );
+
+  await assert.rejects(
+    () =>
+      runEconomics({
+        provider: {},
+        file: "/tmp/not-used.json",
+        state
+      }),
+    /before STRUCTURAL/
+  );
+});
+
+test("ECONOMICS coarse sizes parse deterministically for all six cores", () => {
+  const {
+    ECONOMICS_COARSE_SIZES,
+    economicsStartAmount
+  } = require("../scripts/research/runPolygonV4Research");
+
+  const { ethers } =
+    require("ethers");
+
+  const cases = [
+    ["USDC_NATIVE", 6, "10"],
+    ["USDC_E", 6, "10"],
+    ["WPOL", 18, "0.075"],
+    ["DAI", 18, "10"],
+    ["WETH", 18, "0.005"],
+    ["WBTC", 8, "0.0002"]
+  ];
+
+  assert.deepEqual(
+    ECONOMICS_COARSE_SIZES,
+    {
+      USDC_NATIVE: "10",
+      USDC_E: "10",
+      WPOL: "0.075",
+      DAI: "10",
+      WETH: "0.005",
+      WBTC: "0.0002"
+    }
+  );
+
+  for (
+    const [
+      symbol,
+      decimals,
+      human
+    ] of cases
+  ) {
+    const amount =
+      economicsStartAmount({
+        start: {
+          symbol,
+          decimals
+        }
+      });
+
+    assert.equal(
+      amount.toString(),
+      ethers.utils
+        .parseUnits(
+          human,
+          decimals
+        )
+        .toString()
+    );
+  }
+});
+
+test("ECONOMICS checkpoints conclusive jobs and chains exact control topology", async () => {
+  const {
+    runEconomics
+  } = require("../scripts/research/runPolygonV4Research");
+
+  const {
+    QUOTE_OK,
+    NO_ROUTE
+  } = require("../scripts/utils/polygonV4OuterQuoteObserver");
+
+  const dir =
+    fs.mkdtempSync(
+      path.join(
+        os.tmpdir(),
+        "apollo-v4-economics-"
+      )
+    );
+
+  const file =
+    path.join(
+      dir,
+      "state.json"
+    );
+
+  const identity =
+    makeIdentity(94700000);
+
+  const WPOL =
+    "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270";
+
+  const WETH =
+    "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619";
+
+  const USDT0 =
+    "0xc2132d05d31c914a87c6611c10748aeb04b58e8f";
+
+  const poolId =
+    `0x${"42".repeat(32)}`;
+
+  const poolKey = {
+    currency0: WETH,
+    currency1: USDT0,
+    fee: 75,
+    tickSpacing: 1,
+    hooks:
+      "0x0000000000000000000000000000000000000000"
+  };
+
+  const jobA = {
+    id:
+      `${poolId}:ONE_FOR_ZERO:${WPOL}:UNISWAP_V3:UNISWAP_V3`,
+    poolId,
+    direction:
+      "ONE_FOR_ZERO",
+    zeroForOne:
+      false,
+    start: {
+      symbol: "WPOL",
+      address: WPOL,
+      decimals: 18
+    },
+    entryToken:
+      USDT0,
+    exitToken:
+      WETH,
+    entryVenue:
+      "UNISWAP_V3",
+    exitVenue:
+      "UNISWAP_V3",
+    poolKey
+  };
+
+  const jobB = {
+    ...jobA,
+    id:
+      `${poolId}:ONE_FOR_ZERO:${WPOL}:QUICKSWAP_V2:UNISWAP_V3`,
+    entryVenue:
+      "QUICKSWAP_V2"
+  };
+
+  try {
+    const state =
+      createResearchState(
+        identity
+      );
+
+    completeStage(
+      state,
+      "PINNED",
+      {
+        pinnedBlock:
+          identity.pinnedBlock
+      }
+    );
+
+    completeStage(
+      state,
+      "DISCOVERY",
+      {}
+    );
+
+    completeStage(
+      state,
+      "ACTIVE",
+      {}
+    );
+
+    completeStage(
+      state,
+      "STRUCTURAL",
+      {
+        results: {
+          pools: []
+        }
+      }
+    );
+
+    const calls = [];
+
+    const result =
+      await runEconomics({
+        provider: {},
+        file,
+        state,
+
+        buildEconomicsJobsFn() {
+          return [
+            jobA,
+            jobB
+          ];
+        },
+
+        async observeThreeLegEconomicsFn(
+          args
+        ) {
+          calls.push(args);
+
+          assert.equal(
+            args.blockTag,
+            identity.pinnedBlock
+          );
+
+          assert.equal(
+            args.startToken,
+            WPOL
+          );
+
+          assert.equal(
+            args.entryToken,
+            USDT0
+          );
+
+          assert.equal(
+            args.exitToken,
+            WETH
+          );
+
+          assert.equal(
+            args.zeroForOne,
+            false
+          );
+
+          assert.equal(
+            args.startAmount.toString(),
+            require("ethers")
+              .ethers.utils
+              .parseUnits(
+                "0.075",
+                18
+              )
+              .toString()
+          );
+
+          if (
+            args.entryVenue ===
+              "QUICKSWAP_V2"
+          ) {
+            return {
+              status:
+                NO_ROUTE,
+              failedLeg:
+                "ENTRY",
+              entry: {
+                status:
+                  NO_ROUTE
+              }
+            };
+          }
+
+          return {
+            status:
+              QUOTE_OK,
+            blockTag:
+              identity.pinnedBlock,
+            entry: {
+              status:
+                QUOTE_OK,
+              amountOut:
+                "100"
+            },
+            v4: {
+              status:
+                QUOTE_OK,
+              amountOut:
+                "110"
+            },
+            exit: {
+              status:
+                QUOTE_OK,
+              amountOut:
+                "75010000000000000"
+            },
+            amounts: {
+              start:
+                "75000000000000000",
+              afterEntry:
+                "100",
+              afterV4:
+                "110",
+              final:
+                "75010000000000000"
+            },
+            grossDelta:
+              "10000000000000",
+            grossBpsScaled:
+              "1333333"
+          };
+        }
+      });
+
+    assert.equal(
+      calls.length,
+      2
+    );
+
+    assert.equal(
+      result.totalJobs,
+      2
+    );
+
+    assert.equal(
+      result.quoteOk,
+      1
+    );
+
+    assert.equal(
+      result.noRoute,
+      1
+    );
+
+    assert.equal(
+      result.grossPositive,
+      1
+    );
+
+    assert.equal(
+      state.completedStages.includes(
+        "ECONOMICS"
+      ),
+      true
+    );
+
+    const saved =
+      loadResearchState(
+        file,
+        identity
+      );
+
+    assert.equal(
+      Object.keys(
+        saved.stages
+          .ECONOMICS
+          .observations
+      ).length,
+      2
+    );
+  } finally {
+    fs.rmSync(
+      dir,
+      {
+        recursive: true,
+        force: true
+      }
+    );
+  }
+});
+
+test("ECONOMICS retries only unresolved RPC observations on resume", async () => {
+  const {
+    runEconomics
+  } = require("../scripts/research/runPolygonV4Research");
+
+  const {
+    QUOTE_OK,
+    RPC_FAILURE
+  } = require("../scripts/utils/polygonV4OuterQuoteObserver");
+
+  const dir =
+    fs.mkdtempSync(
+      path.join(
+        os.tmpdir(),
+        "apollo-v4-economics-resume-"
+      )
+    );
+
+  const file =
+    path.join(
+      dir,
+      "state.json"
+    );
+
+  const identity =
+    makeIdentity(94700000);
+
+  const WPOL =
+    "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270";
+
+  const WETH =
+    "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619";
+
+  const USDT0 =
+    "0xc2132d05d31c914a87c6611c10748aeb04b58e8f";
+
+  const poolId =
+    `0x${"43".repeat(32)}`;
+
+  const baseJob = {
+    poolId,
+    direction:
+      "ONE_FOR_ZERO",
+    zeroForOne:
+      false,
+    start: {
+      symbol:
+        "WPOL",
+      address:
+        WPOL,
+      decimals: 18
+    },
+    entryToken:
+      USDT0,
+    exitToken:
+      WETH,
+    exitVenue:
+      "UNISWAP_V3",
+    poolKey: {
+      currency0:
+        WETH,
+      currency1:
+        USDT0,
+      fee: 75,
+      tickSpacing: 1,
+      hooks:
+        "0x0000000000000000000000000000000000000000"
+    }
+  };
+
+  const jobA = {
+    ...baseJob,
+    id:
+      `${poolId}:ONE_FOR_ZERO:${WPOL}:UNISWAP_V3:UNISWAP_V3`,
+    entryVenue:
+      "UNISWAP_V3"
+  };
+
+  const jobB = {
+    ...baseJob,
+    id:
+      `${poolId}:ONE_FOR_ZERO:${WPOL}:QUICKSWAP_V2:UNISWAP_V3`,
+    entryVenue:
+      "QUICKSWAP_V2"
+  };
+
+  try {
+    const state =
+      createResearchState(
+        identity
+      );
+
+    completeStage(
+      state,
+      "PINNED",
+      {}
+    );
+
+    completeStage(
+      state,
+      "DISCOVERY",
+      {}
+    );
+
+    completeStage(
+      state,
+      "ACTIVE",
+      {}
+    );
+
+    completeStage(
+      state,
+      "STRUCTURAL",
+      {
+        results: {
+          pools: []
+        }
+      }
+    );
+
+    let firstCalls = 0;
+
+    await assert.rejects(
+      () =>
+        runEconomics({
+          provider: {},
+          file,
+          state,
+
+          buildEconomicsJobsFn() {
+            return [
+              jobA,
+              jobB
+            ];
+          },
+
+          async observeThreeLegEconomicsFn(
+            args
+          ) {
+            firstCalls += 1;
+
+            if (
+              args.entryVenue ===
+                "QUICKSWAP_V2"
+            ) {
+              return {
+                status:
+                  RPC_FAILURE,
+                failedLeg:
+                  "ENTRY",
+                entry: {
+                  status:
+                    RPC_FAILURE,
+                  errorCode:
+                    "SERVER_ERROR"
+                }
+              };
+            }
+
+            return {
+              status:
+                QUOTE_OK,
+              blockTag:
+                identity.pinnedBlock,
+              entry: {
+                status:
+                  QUOTE_OK,
+                amountOut:
+                  "100"
+              },
+              v4: {
+                status:
+                  QUOTE_OK,
+                amountOut:
+                  "110"
+              },
+              exit: {
+                status:
+                  QUOTE_OK,
+                amountOut:
+                  "75000000000000001"
+              },
+              amounts: {
+                start:
+                  "75000000000000000",
+                afterEntry:
+                  "100",
+                afterV4:
+                  "110",
+                final:
+                  "75000000000000001"
+              },
+              grossDelta:
+                "1",
+              grossBpsScaled:
+                "0"
+            };
+          }
+        }),
+      /ECONOMICS incomplete/
+    );
+
+    assert.equal(
+      firstCalls,
+      2
+    );
+
+    assert.equal(
+      state.completedStages.includes(
+        "ECONOMICS"
+      ),
+      false
+    );
+
+    const saved =
+      loadResearchState(
+        file,
+        identity
+      );
+
+    let resumedCalls = 0;
+
+    const result =
+      await runEconomics({
+        provider: {},
+        file,
+        state: saved,
+
+        buildEconomicsJobsFn() {
+          return [
+            jobA,
+            jobB
+          ];
+        },
+
+        async observeThreeLegEconomicsFn(
+          args
+        ) {
+          resumedCalls += 1;
+
+          assert.equal(
+            args.entryVenue,
+            "QUICKSWAP_V2"
+          );
+
+          return {
+            status:
+              QUOTE_OK,
+            blockTag:
+              identity.pinnedBlock,
+            entry: {
+              status:
+                QUOTE_OK,
+              amountOut:
+                "100"
+            },
+            v4: {
+              status:
+                QUOTE_OK,
+              amountOut:
+                "110"
+            },
+            exit: {
+              status:
+                QUOTE_OK,
+              amountOut:
+                "75000000000000002"
+            },
+            amounts: {
+              start:
+                "75000000000000000",
+              afterEntry:
+                "100",
+              afterV4:
+                "110",
+              final:
+                "75000000000000002"
+            },
+            grossDelta:
+              "2",
+            grossBpsScaled:
+              "0"
+          };
+        }
+      });
+
+    assert.equal(
+      resumedCalls,
+      1
+    );
+
+    assert.equal(
+      result.quoteOk,
+      2
+    );
+
+    assert.equal(
+      result.unresolved.length,
+      0
+    );
+
+    assert.equal(
+      saved.completedStages.includes(
+        "ECONOMICS"
+      ),
+      true
+    );
+  } finally {
+    fs.rmSync(
+      dir,
+      {
+        recursive: true,
+        force: true
+      }
+    );
+  }
+});
