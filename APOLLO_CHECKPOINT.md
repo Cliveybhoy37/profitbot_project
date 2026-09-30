@@ -1,250 +1,129 @@
-# Apollo ProfitBot Checkpoint
+# Apollo ProfitBot Checkpoint — 2026-09-30
 
-## Current objective
-
-Prepare the current ProfitBot for one controlled Polygon flashloan execution through a guarded sequence:
-
-1. proven route
-2. current quotes
-3. positive-slippage-protected three-leg execution data
-4. exact provider-only simulation
-5. current gas/economics validation
-6. explicit owner authorization
-7. one controlled live transaction
-
-No live transaction has been sent in the current workflow.
-
-## Repository state
-
+## Safe State
+- Repo: `/workspaces/profitbot_project`
 - Branch: `repair/simulation-safety`
-- Current checkpoint commit: `8c30c71`
-- Current working tree was clean when this checkpoint was created.
-- `contracts/ProfitBot.sol` is authoritative.
-- Committed generated ProfitBot artifact is intentionally stale.
-- Always run a fresh compile immediately before deployment preparation.
+- Live execution: OFF
+- ProfitBot known-good build: UNCHANGED
+- Working tree was clean immediately before this checkpoint.
+- Existing regression baseline: 160/160 PASS.
+- V4 remains RESEARCH ONLY; ProfitBot has no V4 execution integration.
+- Native POL V4 markets remain quarantined from the current WPOL-based architecture.
+
+## Corrected Polygon V4 Research Result
+Pinned block: `94684210`
+Discovery range: `94184211 -> 94684210`
+
+- Initialize events: 234
+- Verified V4 PoolIds: 234
+- Active V4 pools: 138
+- StateView failures: 0
+- Non-native structural candidates: 27
+- Native-POL candidates quarantined: 11
+- V4 quote passes: 1030
+- V4 quote failures: 386
+- Complete exact-three-leg routes: 1170
+- Gross-positive routes: 0
+
+Conclusion:
+No gross-positive exact-three-leg candidate was found in this screen.
+
+## Critical V4Quoter Fix
+The previous 0-pass / 1488-failure economics run was INVALID because the
+V4Quoter ABI used the wrong call shape.
+
+Correct V4Quoter uses ONE struct parameter:
+
+`quoteExactInputSingle(QuoteExactSingleParams params)`
+
+The corrected ABI/call was independently proven against WPAY/WETH and then
+used successfully in the completed bulk screen above.
+
+Therefore the corrected 1030-pass / 1170-route screen supersedes the earlier
+broken-ABI economics result.
+
+## Best Research Candidate
+V4 WETH/USDT0
+
+PoolId:
+`0x429e60d564e16b246d82f5cc44e7db043f870b3d6407f7362c509f1bd1a8f3e0`
+
+Pool:
+- fee: 75
+- tickSpacing: 1
+- hooks: zero address
+
+Best observed route:
+- Start: WPOL 1
+- Topology: UNISWAP_V3 -> V4 -> UNISWAP_V3
+- V4 direction: USDT0 -> WETH
+- Gross: -4.15 bps
+
+Other observations:
+- WPOL 10: -6.28 bps
+- USDC 1: -6.37 bps
+- USDC_E 1: -6.61 bps
+- WPOL 100: -11.18 bps
+
+Known Polygon Aave flashloan premium: 5 bps.
+
+The best -4.15 bps observation therefore still fails before gas once the
+Aave premium is considered. No execution/integration action is justified.
+
+## Next Research Step
+Do NOT repeat the full 500k-block scan first.
+
+Run a focused read-only WETH/USDT0 size-resolution probe:
+1. Pin the block.
+2. Preserve UNISWAP_V3 -> V4 -> UNISWAP_V3.
+3. Expose exact V3 fee tiers/pools selected.
+4. Test finer sizes below and around WPOL 1.
+5. Determine whether gross economics remain negative, approach zero,
+   or cross gross-positive.
+6. Only if gross-positive: test size persistence -> Aave 5 bps -> gas ->
+   simulation/safety.
+
+## Scanner Engineering Follow-Up
+After the focused probe, build a resumable/checkpointed research scanner.
+
+Requirements:
+- stage-level resume
+- pinned-block metadata
+- persistent discovery/candidate results
+- safe quote caching where appropriate
+- no signer or transactions
+- no credentials in checkpoint files
+- strict separation from ProfitBot execution code
+- Codespaces restart must not require repeating completed research stages
+
+## Recovery After Restart
+Run:
+
+`git status --short`
+`git --no-pager log --oneline -8`
+`git branch --show-current`
+
+Expected branch: `repair/simulation-safety`
 
-## Current ProfitBot constructor
+Do not use broad `git reset --hard` or `git clean`.
 
-Five arguments, in this exact order:
+RPC shell exports are transient and may need to be restored after a
+Codespaces restart.
 
-1. Aave PoolAddressesProvider
-2. QuickSwap V2 router
-3. SushiSwap V2 router
-4. Uniswap V3 router
-5. Balancer Vault
+## Security
+Never store private keys, seed phrases, RPC API keys, passwords, Infura
+credentials, Alchemy credentials, or other secrets in this checkpoint.
 
-Canonical Polygon addresses are maintained in:
+The previously exposed Infura API credential should be rotated/revoked
+before operational use.
 
-`scripts/utils/polygonProfitBotConfig.js`
+## Resume Point
+Corrected Polygon V4 discovery and quoting are operational.
 
-Do not substitute the old four-argument deployment path.
+At block 94684210:
+- 1170 complete exact-three-leg routes were evaluated.
+- 0 were gross-positive.
+- WETH/USDT0 at -4.15 bps was nearest to zero.
 
-## Deployment status
-
-Legacy `scripts/deployProfitBot.js` is disabled and incompatible with the current constructor. Do not revive it.
-
-Fresh deployment preflight has been verified after:
-
-`npx hardhat compile --force`
-
-The fresh artifact passed:
-
-`node scripts/preflightPolygonProfitBotDeployment.js`
-
-Verified Aave pool:
-
-`0x794a61358D6845594F94dc1DB02A252b5b4814aD`
-
-Generated `artifacts/` and `cache/` were restored afterward so the working tree remained clean.
-
-Historical fork deployment gas evidence:
-
-`1,784,117`
-
-Recent current-state read-only deployment gas estimate:
-
-`1,806,217`
-
-These are evidence, not hard-coded deployment limits.
-
-## Existing deployment
-
-Old deployment:
-
-`0x064c68eEB942A92b5c2Fb0a7413e1D31796c8435`
-
-This deployment is incompatible with the current ProfitBot interface and must not be used for the current simulation/live path.
-
-A fresh current-version ProfitBot deployment is required.
-
-## Simulation path
-
-Committed read-only simulator:
-
-`scripts/simulatePolygonProfitBotFlashloan.js`
-
-Interface:
-
-`node scripts/simulatePolygonProfitBotFlashloan.js <bot> <owner> <candidate.json> <loanAmount> <slippageBps>`
-
-Safety properties:
-
-- provider-only
-- no Wallet
-- no signer
-- no private key
-- no sendTransaction
-- no broadcast path
-- verifies deployed bytecode
-- verifies current ProfitBot configuration
-- verifies Aave pool
-- verifies supplied public owner against `owner()`
-- requires positive live slippage from 1 to 1000 bps
-- uses exact three-leg ProfitBot encoding
-- performs final simulation with `provider.call()`
-
-Focused simulation/candidate/route tests: 15/15 passing.
-
-## Candidate serialization
-
-JSON candidate `amountOut` values must be positive decimal strings.
-
-They are hydrated into `ethers.BigNumber` before execution-route construction to avoid JavaScript integer precision loss.
-
-CLI `loanAmount` must also be supplied as a positive decimal string in base units.
-
-## Locked route evidence
-
-Do not casually modify the Solidity execution path, historical route fixtures, or locked gas evidence.
-
-Proven historical route 1:
-
-USDC.e -> WBTC -> WPOL -> USDC.e
-
-Venues:
-
-Uniswap V3 (500) -> SushiSwap V2 -> Uniswap V3 (500)
-
-Polygon block:
-
-`94374759`
-
-Execution gas:
-
-`481335`
-
-Historical profit:
-
-`1637` USDC.e base units on a `1000000` base-unit loan.
-
-Proven historical route 2:
-
-USDC.e -> WETH -> WPOL -> USDC.e
-
-Venues:
-
-Uniswap V3 (500) -> Balancer V2 -> Uniswap V3 (500)
-
-Polygon block:
-
-`93974759`
-
-Execution gas:
-
-`480528`
-
-Historical profit:
-
-`2083` USDC.e base units on a `1000000` base-unit loan.
-
-Historical output amounts/profits are not assumed to be current live opportunities.
-
-## Environment safety
-
-Current workflow uses the existing read-only `ALCHEMY_POLYGON` environment variable.
-
-Do not create, replace, print, or reconstruct the old project `.env`.
-
-Do not place credentials in this checkpoint.
-
-Old private keys, API secrets, and other credentials should be treated as potentially compromised and must not be reused for a new live deployment.
-
-The eventual new owner/deployer wallet must be created and controlled by the user outside ChatGPT. Only its public address is needed for deployment preparation and simulation.
-
-## Next steps
-
-1. User creates/selects a new owner/deployer wallet outside ChatGPT.
-2. Use only its public address in this workflow.
-3. Fresh-compile ProfitBot immediately before deployment preparation.
-4. Re-run deployment preflight.
-5. Build/estimate the unsigned deployment transaction.
-6. Keep signing/broadcast authorization separate and explicit.
-7. Inspect the resulting deployed contract and verify owner/configuration.
-8. Obtain fresh route quotes for the intended controlled test.
-9. Run exact live-state provider-only flashloan simulation.
-10. Re-check premium, gas, slippage, and net economics immediately before any authorized live transaction.
-
-Never store private keys, seed phrases, passwords, RPC URLs, or API secrets in this file.
-
-## Live deployment update — 2026-09-28
-
-ProfitBot was successfully deployed to Polygon and independently inspected through the read-only RPC workflow.
-
-Deployment contract:
-
-`0xDDAdb712e936f6bEE8c98452E8913f212Dcd007a`
-
-Owner / deployer:
-
-`0x1B786608D3F073e44910bB975413f97A11Dd7bcA`
-
-Deployment transaction:
-
-`0xb0e897e2c784b6a128bda6bc049c82f373a46cc5e25b54ba171c836ed03ab12c`
-
-Deployment block:
-
-`94566628`
-
-Receipt status:
-
-`1`
-
-Deployment gas used:
-
-`1790837`
-
-Pre-deployment creation-data size:
-
-`8987` bytes
-
-Pre-deployment creation-data keccak256:
-
-`0xfb42bbadc58c082386e6ed34cbf3c336049ee9c60c2e6dccdd68cc4b1cc7249d`
-
-Post-deployment inspection verified:
-
-- owner matches the intended ProfitBot Live Owner
-- runtime bytecode size is `7822` bytes
-- Polygon ProfitBot configuration is verified
-
-The historical deployment at
-`0x064c68eEB942A92b5c2Fb0a7413e1D31796c8435`
-is not the live target for the current workflow.
-
-The current live target is:
-
-`0xDDAdb712e936f6bEE8c98452E8913f212Dcd007a`
-
-No live flashloan execution has been authorized or submitted as part of this deployment milestone.
-
-## Current next steps
-
-1. Preserve the verified deployment address above as the live target.
-2. Obtain fresh Polygon route quotes; historical profits are evidence only.
-3. Build a guarded candidate using the existing locked route/encoding workflow.
-4. Run exact provider-only live-state flashloan simulation against the new ProfitBot.
-5. Re-check Aave premium, slippage, current gas and net economics.
-6. Proceed to a live flashloan transaction only after fresh evidence shows positive net economics and the user explicitly authorizes that transaction.
-
-Never store private keys, seed phrases, passwords, RPC URLs, or API secrets in this file.
+ProfitBot remains unchanged.
+Live execution remains OFF.
