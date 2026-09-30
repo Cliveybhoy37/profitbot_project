@@ -195,3 +195,74 @@ test("requires Polygon chain identity", () => {
     /Polygon chainId 137/
   );
 });
+
+test("updates in-progress stage payload without completing stage", () => {
+  const {
+    updateStageProgress
+  } = require("../scripts/utils/polygonV4ResearchState");
+
+  const state = createResearchState(IDENTITY);
+
+  completeStage(state, "PINNED", {
+    pinnedBlock: IDENTITY.pinnedBlock
+  });
+
+  updateStageProgress(state, "DISCOVERY", {
+    completedChunks: 3,
+    totalChunks: 50
+  });
+
+  assert.deepEqual(
+    state.stages.DISCOVERY,
+    {
+      completedChunks: 3,
+      totalChunks: 50
+    }
+  );
+
+  assert.equal(
+    state.completedStages.includes("DISCOVERY"),
+    false
+  );
+
+  assert.equal(
+    nextIncompleteStage(state),
+    "DISCOVERY"
+  );
+});
+
+test("in-progress stage update requires previous stage complete", () => {
+  const {
+    updateStageProgress
+  } = require("../scripts/utils/polygonV4ResearchState");
+
+  const state = createResearchState(IDENTITY);
+
+  assert.throws(
+    () =>
+      updateStageProgress(state, "DISCOVERY", {
+        completedChunks: 1
+      }),
+    /before PINNED/
+  );
+});
+
+test("in-progress stage update rejects sensitive payloads", () => {
+  const {
+    updateStageProgress
+  } = require("../scripts/utils/polygonV4ResearchState");
+
+  const state = createResearchState(IDENTITY);
+
+  completeStage(state, "PINNED", {
+    ok: true
+  });
+
+  assert.throws(
+    () =>
+      updateStageProgress(state, "DISCOVERY", {
+        apiKey: "never-write-this"
+      }),
+    /sensitive field/
+  );
+});

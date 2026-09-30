@@ -200,6 +200,32 @@ function completeStage(state, stage, payload) {
   return state;
 }
 
+function updateStageProgress(state, stage, payload) {
+  assertCompatibleState(state);
+
+  if (!STAGES.includes(stage)) {
+    throw new Error(`Unknown research stage: ${stage}`);
+  }
+
+  const stageIndex = STAGES.indexOf(stage);
+
+  if (stageIndex > 0) {
+    const previous = STAGES[stageIndex - 1];
+
+    if (!state.completedStages.includes(previous)) {
+      throw new Error(
+        `Cannot update ${stage} before ${previous}`
+      );
+    }
+  }
+
+  assertSafeValue(payload, `stages.${stage}`);
+
+  state.stages[stage] = payload ?? {};
+
+  return state;
+}
+
 function nextIncompleteStage(state) {
   assertCompatibleState(state);
 
@@ -263,6 +289,7 @@ module.exports = {
   createResearchState,
   assertCompatibleState,
   completeStage,
+  updateStageProgress,
   nextIncompleteStage,
   saveResearchState,
   loadResearchState,
