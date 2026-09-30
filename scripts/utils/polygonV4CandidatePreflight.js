@@ -224,6 +224,11 @@ function preflightObservedV4Candidate({
       "Expected final output"
     );
 
+  const protectedFinalOutput =
+    expectedFinalOutput
+      .mul(10000 - slippageBps)
+      .div(10000);
+
   const expectedPremium =
     amountIn
       .mul(premium)
@@ -263,16 +268,43 @@ function preflightObservedV4Candidate({
     );
   }
 
+  if (
+    protectedFinalOutput.lt(
+      totalCost
+    )
+  ) {
+    throw new Error(
+      "Candidate protected output does not cover modeled costs"
+    );
+  }
+
+  const worstCaseNetProfit =
+    protectedFinalOutput.sub(
+      totalCost
+    );
+
+  if (
+    worstCaseNetProfit.lt(
+      minimumNetProfit
+    )
+  ) {
+    throw new Error(
+      "Candidate worst-case net profit below minimum"
+    );
+  }
+
   return {
     observationBlock,
     ageBlocks,
     amountIn,
     expectedFinalOutput,
+    protectedFinalOutput,
     expectedPremium,
     estimatedGasCost,
     safetyReserve,
     minimumNetProfit,
-    expectedNetProfit
+    expectedNetProfit,
+    worstCaseNetProfit
   };
 }
 

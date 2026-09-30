@@ -130,6 +130,46 @@ test(
       ).toString(),
       "minimum-profit policy was not preserved"
     );
+
+    assert.equal(
+      result.protectedFinalOutput
+        .toString(),
+      FINAL
+        .mul(9950)
+        .div(10000)
+        .toString(),
+      "protected final output mismatch"
+    );
+
+    assert.equal(
+      result.worstCaseNetProfit
+        .toString(),
+      result.protectedFinalOutput
+        .sub(START)
+        .sub(result.expectedPremium)
+        .sub(result.estimatedGasCost)
+        .sub(result.safetyReserve)
+        .toString(),
+      "worst-case economics mismatch"
+    );
+  }
+);
+
+test(
+  "rejects candidate whose protected boundary falls below minimum",
+  () => {
+    assert.throws(
+      () =>
+        preflightObservedV4Candidate(
+          input({
+            minimumNetProfitWei:
+              ethers.utils.parseEther(
+                "0.009"
+              )
+          })
+        ),
+      /worst-case net profit below minimum/
+    );
   }
 );
 
