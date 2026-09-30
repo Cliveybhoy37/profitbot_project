@@ -1394,6 +1394,61 @@ test("ECONOMICS coarse sizes parse deterministically for all six cores", () => {
   }
 });
 
+test("ECONOMICS observation keys include exact integer start amount", () => {
+  const {
+    economicsObservationKey
+  } = require("../scripts/research/runPolygonV4Research");
+
+  const job = {
+    id:
+      "pool:ZERO_FOR_ONE:start:UNISWAP_V3:UNISWAP_V3"
+  };
+
+  const amountA =
+    "75000000000000000";
+
+  const amountB =
+    "100000000000000000";
+
+  const keyA =
+    economicsObservationKey(
+      job,
+      amountA
+    );
+
+  const keyB =
+    economicsObservationKey(
+      job,
+      amountB
+    );
+
+  assert.equal(
+    keyA,
+    `${job.id}:amount=${amountA}`
+  );
+
+  assert.equal(
+    keyB,
+    `${job.id}:amount=${amountB}`
+  );
+
+  assert.notEqual(
+    keyA,
+    keyB
+  );
+
+  const observations = {
+    [keyA]: {
+      status: "QUOTE_OK"
+    }
+  };
+
+  assert.equal(
+    observations[keyB],
+    undefined
+  );
+});
+
 test("ECONOMICS checkpoints conclusive jobs and chains exact control topology", async () => {
   const {
     runEconomics

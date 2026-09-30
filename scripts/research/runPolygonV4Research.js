@@ -986,6 +986,34 @@ function economicsStartAmount(job) {
   );
 }
 
+function economicsObservationKey(
+  job,
+  startAmount
+) {
+  if (
+    !job ||
+    typeof job.id !== "string" ||
+    job.id.length === 0
+  ) {
+    throw new Error(
+      "Invalid ECONOMICS job id"
+    );
+  }
+
+  const amount =
+    ethers.BigNumber.from(
+      startAmount
+    );
+
+  if (amount.lte(0)) {
+    throw new Error(
+      "Invalid ECONOMICS start amount"
+    );
+  }
+
+  return `${job.id}:amount=${amount.toString()}`;
+}
+
 function getEconomicsProgress(
   state
 ) {
@@ -1034,8 +1062,21 @@ function economicsUnresolved({
   const unresolved = [];
 
   for (const job of jobs) {
+    const startAmount =
+      economicsStartAmount(
+        job
+      );
+
+    const observationKey =
+      economicsObservationKey(
+        job,
+        startAmount
+      );
+
     const observation =
-      observations[job.id];
+      observations[
+        observationKey
+      ];
 
     if (
       !economicsObservationIsConclusive(
@@ -1044,6 +1085,9 @@ function economicsUnresolved({
     ) {
       unresolved.push({
         jobId: job.id,
+        observationKey,
+        startAmount:
+          startAmount.toString(),
         status:
           observation?.status ??
           "MISSING"
@@ -1132,9 +1176,20 @@ async function runEconomics({
     const job =
       jobs[i];
 
+    const startAmount =
+      economicsStartAmount(
+        job
+      );
+
+    const observationKey =
+      economicsObservationKey(
+        job,
+        startAmount
+      );
+
     const cached =
       progress.observations[
-        job.id
+        observationKey
       ];
 
     if (
@@ -1148,11 +1203,6 @@ async function runEconomics({
 
       continue;
     }
-
-    const startAmount =
-      economicsStartAmount(
-        job
-      );
 
     console.log(
       `[economics ${i + 1}/${jobs.length}] ${job.id}`
@@ -1181,6 +1231,7 @@ async function runEconomics({
       });
 
     const observation = {
+      observationKey,
       jobId:
         job.id,
       poolId:
@@ -1209,7 +1260,7 @@ async function runEconomics({
     };
 
     progress.observations[
-      job.id
+      observationKey
     ] = observation;
 
     progress.unresolved =
@@ -1810,6 +1861,7 @@ module.exports = {
   runStructural,
   ECONOMICS_COARSE_SIZES,
   economicsStartAmount,
+  economicsObservationKey,
   getEconomicsProgress,
   economicsObservationIsConclusive,
   economicsUnresolved,
