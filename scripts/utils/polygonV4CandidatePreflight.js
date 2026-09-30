@@ -78,6 +78,7 @@ function requirePositiveInteger(
 
 function preflightObservedV4Candidate({
   candidate,
+  executionLegs,
   requestedAmount,
   currentBlock,
   maxAgeBlocks,
@@ -224,10 +225,85 @@ function preflightObservedV4Candidate({
       "Expected final output"
     );
 
+  if (
+    !Array.isArray(executionLegs) ||
+    executionLegs.length !== 3
+  ) {
+    throw new Error(
+      "Preflight requires exactly three execution legs"
+    );
+  }
+
+  for (let i = 0; i < 3; i++) {
+    const candidateLeg =
+      candidate.legs[i];
+
+    const executionLeg =
+      executionLegs[i];
+
+    if (
+      !candidateLeg ||
+      !executionLeg ||
+      typeof candidateLeg !== "object" ||
+      typeof executionLeg !== "object"
+    ) {
+      throw new Error(
+        "Preflight requires valid candidate and execution legs"
+      );
+    }
+
+    if (
+      typeof candidateLeg.tokenIn === "string" &&
+      typeof executionLeg.tokenIn === "string" &&
+      candidateLeg.tokenIn.toLowerCase() !==
+        executionLeg.tokenIn.toLowerCase()
+    ) {
+      throw new Error(
+        "Execution leg tokenIn does not match candidate"
+      );
+    }
+
+    if (
+      typeof candidateLeg.tokenOut === "string" &&
+      typeof executionLeg.tokenOut === "string" &&
+      candidateLeg.tokenOut.toLowerCase() !==
+        executionLeg.tokenOut.toLowerCase()
+    ) {
+      throw new Error(
+        "Execution leg tokenOut does not match candidate"
+      );
+    }
+
+    const candidateAmountOut =
+      requirePositiveBigNumber(
+        candidateLeg.amountOut,
+        `Candidate leg ${i} amountOut`
+      );
+
+    const executionMinAmountOut =
+      requirePositiveBigNumber(
+        executionLeg.minAmountOut,
+        `Execution leg ${i} minAmountOut`
+      );
+
+    const expectedMinAmountOut =
+      candidateAmountOut
+        .mul(10000 - slippage)
+        .div(10000);
+
+    if (
+      !executionMinAmountOut.eq(
+        expectedMinAmountOut
+      )
+    ) {
+      throw new Error(
+        "Execution leg minAmountOut does not match accepted slippage policy"
+      );
+    }
+  }
+
   const protectedFinalOutput =
-    expectedFinalOutput
-      .mul(10000 - slippageBps)
-      .div(10000);
+    executionLegs[2].minAmountOut;
 
   const expectedPremium =
     amountIn

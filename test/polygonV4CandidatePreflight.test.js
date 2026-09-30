@@ -49,10 +49,40 @@ function candidate() {
   };
 }
 
+function executionLegs(
+  observedCandidate,
+  slippageBps = 50
+) {
+  return observedCandidate.legs.map(
+    (leg) => ({
+      tokenIn: leg.tokenIn,
+      tokenOut: leg.tokenOut,
+      minAmountOut:
+        leg.amountOut
+          .mul(10000 - slippageBps)
+          .div(10000)
+    })
+  );
+}
+
 function input(overrides = {}) {
+  const observedCandidate =
+    overrides.candidate ||
+    candidate();
+
+  const slippageBps =
+    overrides.slippageBps === undefined
+      ? 50
+      : overrides.slippageBps;
+
   return {
     candidate:
-      candidate(),
+      observedCandidate,
+    executionLegs:
+      executionLegs(
+        observedCandidate,
+        slippageBps
+      ),
     requestedAmount:
       START,
     currentBlock:
@@ -151,6 +181,36 @@ test(
         .sub(result.safetyReserve)
         .toString(),
       "worst-case economics mismatch"
+    );
+  }
+);
+
+test(
+  "rejects execution floor inconsistent with accepted slippage",
+  () => {
+    const observedCandidate =
+      candidate();
+
+    const legs =
+      executionLegs(
+        observedCandidate,
+        50
+      );
+
+    legs[2].minAmountOut =
+      legs[2].minAmountOut.add(1);
+
+    assert.throws(
+      () =>
+        preflightObservedV4Candidate(
+          input({
+            candidate:
+              observedCandidate,
+            executionLegs:
+              legs
+          })
+        ),
+      /minAmountOut does not match accepted slippage policy/
     );
   }
 );

@@ -244,9 +244,17 @@ describe(
         // same historical route, not assumptions about live Polygon.
         // ----------------------------------------------------------
 
+        const legs =
+          buildV4ExecutionLegs(
+            candidate.legs,
+            50
+          );
+
         const preflight =
           preflightObservedV4Candidate({
             candidate,
+            executionLegs:
+              legs,
             requestedAmount:
               START,
             currentBlock:
@@ -313,14 +321,15 @@ describe(
         );
 
         // ----------------------------------------------------------
-        // 4. Apply 50-bps protection and encode the candidate.
+        // 4. Encode the same protected legs accepted by preflight.
         // ----------------------------------------------------------
 
-        const legs =
-          buildV4ExecutionLegs(
-            candidate.legs,
-            50
-          );
+        assert(
+          preflight.protectedFinalOutput.eq(
+            legs[2].minAmountOut
+          ),
+          "preflight did not preserve encoded terminal floor"
+        );
 
         const latestBlock =
           await ethers.provider.getBlock(
