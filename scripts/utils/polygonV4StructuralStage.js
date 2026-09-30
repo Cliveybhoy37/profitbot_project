@@ -158,6 +158,37 @@ function evidenceIsConclusive(
   );
 }
 
+function endpointEvidence({
+  startCore,
+  endpoint,
+  outerEvidence
+}) {
+  const startAddress =
+    String(startCore.address)
+      .toLowerCase();
+
+  const endpointAddress =
+    String(endpoint.address)
+      .toLowerCase();
+
+  // Exact-three-swap structural routes cannot use an
+  // identity leg. If a V4 endpoint equals the flashloan
+  // start asset, this orientation has only two real swaps.
+  if (
+    startAddress ===
+    endpointAddress
+  ) {
+    return null;
+  }
+
+  return outerEvidence[
+    pairKey(
+      startAddress,
+      endpointAddress
+    )
+  ] || null;
+}
+
 function supportedOrientationsForPool({
   pool,
   outerEvidence,
@@ -201,68 +232,53 @@ function supportedOrientationsForPool({
       String(core.address)
         .toLowerCase();
 
+    const c0Address =
+      String(c0.address)
+        .toLowerCase();
+
+    const c1Address =
+      String(c1.address)
+        .toLowerCase();
+
+    // Either equality would make one external leg an
+    // identity operation, leaving only two actual swaps.
+    if (
+      c0Address === coreAddress ||
+      c1Address === coreAddress
+    ) {
+      continue;
+    }
+
+    const c0Evidence =
+      endpointEvidence({
+        startCore: core,
+        endpoint: c0,
+        outerEvidence
+      });
+
+    const c1Evidence =
+      endpointEvidence({
+        startCore: core,
+        endpoint: c1,
+        outerEvidence
+      });
+
     const start = {
       symbol: core.symbol,
       address: coreAddress,
       decimals: core.decimals
     };
 
-    // Forward orientation:
-    // core -> currency0 ->V4-> currency1 -> core
-    let forwardEntry = true;
-    let forwardExit = true;
-
+    // startCore -> currency0 ->V4-> currency1 -> startCore
     if (
-      String(c0.address)
-        .toLowerCase() !==
-      coreAddress
-    ) {
-      if (c0.kind !== "EXOTIC") {
-        forwardEntry = false;
-      } else {
-        const evidence =
-          outerEvidence[
-            pairKey(
-              coreAddress,
-              c0.address
-            )
-          ];
-
-        forwardEntry =
-          evidenceIsConclusive(
-            evidence
-          ) &&
-          evidence.hasEntry === true;
-      }
-    }
-
-    if (
-      String(c1.address)
-        .toLowerCase() !==
-      coreAddress
-    ) {
-      if (c1.kind !== "EXOTIC") {
-        forwardExit = false;
-      } else {
-        const evidence =
-          outerEvidence[
-            pairKey(
-              coreAddress,
-              c1.address
-            )
-          ];
-
-        forwardExit =
-          evidenceIsConclusive(
-            evidence
-          ) &&
-          evidence.hasExit === true;
-      }
-    }
-
-    if (
-      forwardEntry &&
-      forwardExit
+      evidenceIsConclusive(
+        c0Evidence
+      ) &&
+      c0Evidence.hasEntry === true &&
+      evidenceIsConclusive(
+        c1Evidence
+      ) &&
+      c1Evidence.hasExit === true
     ) {
       orientations.push({
         direction:
@@ -271,62 +287,16 @@ function supportedOrientationsForPool({
       });
     }
 
-    // Reverse orientation:
-    // core -> currency1 ->V4-> currency0 -> core
-    let reverseEntry = true;
-    let reverseExit = true;
-
+    // startCore -> currency1 ->V4-> currency0 -> startCore
     if (
-      String(c1.address)
-        .toLowerCase() !==
-      coreAddress
-    ) {
-      if (c1.kind !== "EXOTIC") {
-        reverseEntry = false;
-      } else {
-        const evidence =
-          outerEvidence[
-            pairKey(
-              coreAddress,
-              c1.address
-            )
-          ];
-
-        reverseEntry =
-          evidenceIsConclusive(
-            evidence
-          ) &&
-          evidence.hasEntry === true;
-      }
-    }
-
-    if (
-      String(c0.address)
-        .toLowerCase() !==
-      coreAddress
-    ) {
-      if (c0.kind !== "EXOTIC") {
-        reverseExit = false;
-      } else {
-        const evidence =
-          outerEvidence[
-            pairKey(
-              coreAddress,
-              c0.address
-            )
-          ];
-
-        reverseExit =
-          evidenceIsConclusive(
-            evidence
-          ) &&
-          evidence.hasExit === true;
-      }
-    }
-
-    if (
-      reverseEntry &&
-      reverseExit
+      evidenceIsConclusive(
+        c1Evidence
+      ) &&
+      c1Evidence.hasEntry === true &&
+      evidenceIsConclusive(
+        c0Evidence
+      ) &&
+      c0Evidence.hasExit === true
     ) {
       orientations.push({
         direction:
@@ -371,26 +341,6 @@ function buildStructuralResults({
           };
         }
 
-        // CORE_CORE needs a third start asset to preserve the
-        // exact three-distinct-swap topology:
-        //
-        // startCore -> currency0 ->V4-> currency1 -> startCore
-        //
-        // This stage does not yet hold core-to-core outer quote evidence,
-        // so preserve the market for later probing instead of fabricating
-        // an identity leg or falsely rejecting it.
-        if (pool.category === "CORE_CORE") {
-          return {
-            poolId:
-              pool.poolId,
-            category:
-              pool.category,
-            quarantined: false,
-            deferredCoreCore: true,
-            orientations: []
-          };
-        }
-
         const orientations =
           supportedOrientationsForPool({
             pool,
@@ -404,7 +354,6 @@ function buildStructuralResults({
           category:
             pool.category,
           quarantined: false,
-          deferredCoreCore: false,
           orientations
         };
       }
@@ -423,17 +372,10 @@ function buildStructuralResults({
             pool.quarantined
         ).length,
 
-      deferredCoreCore:
-        pools.filter(
-          pool =>
-            pool.deferredCoreCore === true
-        ).length,
-
       withOrientation:
         pools.filter(
           pool =>
             !pool.quarantined &&
-            pool.deferredCoreCore !== true &&
             pool.orientations.length > 0
         ).length,
 
@@ -441,7 +383,6 @@ function buildStructuralResults({
         pools.filter(
           pool =>
             !pool.quarantined &&
-            pool.deferredCoreCore !== true &&
             pool.orientations.length === 0
         ).length
     }
@@ -455,6 +396,7 @@ module.exports = {
   collectUniqueExoticAddresses,
   metadataIsResolved,
   evidenceIsConclusive,
+  endpointEvidence,
   supportedOrientationsForPool,
   buildStructuralResults
 };

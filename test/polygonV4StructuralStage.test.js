@@ -269,106 +269,6 @@ test(
 );
 
 test(
-  "core-exotic forward orientation uses exotic exit support",
-  () => {
-    const pool = {
-      poolId:
-        `0x${"11".repeat(32)}`,
-      quarantined: false,
-      currency0: {
-        kind: "CORE",
-        address:
-          CORE_A.address
-      },
-      currency1: {
-        kind: "EXOTIC",
-        address:
-          EXOTIC_A
-      }
-    };
-
-    const outerEvidence = {
-      [pairKey(
-        CORE_A.address,
-        EXOTIC_A
-      )]:
-        evidence({
-          entry: false,
-          exit: true
-        })
-    };
-
-    assert.deepEqual(
-      supportedOrientationsForPool({
-        pool,
-        outerEvidence,
-        coreTokens: [
-          CORE_A
-        ]
-      }),
-      [
-        {
-          direction:
-            "ZERO_FOR_ONE",
-          start:
-            CORE_A
-        }
-      ]
-    );
-  }
-);
-
-test(
-  "core-exotic reverse orientation uses exotic entry support",
-  () => {
-    const pool = {
-      poolId:
-        `0x${"12".repeat(32)}`,
-      quarantined: false,
-      currency0: {
-        kind: "CORE",
-        address:
-          CORE_A.address
-      },
-      currency1: {
-        kind: "EXOTIC",
-        address:
-          EXOTIC_A
-      }
-    };
-
-    const outerEvidence = {
-      [pairKey(
-        CORE_A.address,
-        EXOTIC_A
-      )]:
-        evidence({
-          entry: true,
-          exit: false
-        })
-    };
-
-    assert.deepEqual(
-      supportedOrientationsForPool({
-        pool,
-        outerEvidence,
-        coreTokens: [
-          CORE_A
-        ]
-      }),
-      [
-        {
-          direction:
-            "ONE_FOR_ZERO",
-          start:
-            CORE_A
-        }
-      ]
-    );
-  }
-);
-
-test(
   "exotic-exotic forward orientation requires same core entry and exit topology",
   () => {
     const pool = {
@@ -627,170 +527,281 @@ test(
   }
 );
 
-test(
-  "structural results count supported and unsupported non-native pools",
-  () => {
-    const classifications = {
-      counts: {
-        totalActive: 2
-      },
+test("core-exotic exact three-leg route can use a different start core", () => {
+  const {
+    supportedOrientationsForPool,
+    pairKey
+  } = require("../scripts/utils/polygonV4StructuralStage");
 
-      pools: [
-        {
-          poolId:
-            `0x${"17".repeat(32)}`,
-          category:
-            "CORE_EXOTIC",
-          quarantined: false,
-          currency0: {
-            kind: "CORE",
-            address:
-              CORE_A.address
-          },
-          currency1: {
-            kind: "EXOTIC",
-            address:
-              EXOTIC_A
-          }
-        },
-        {
-          poolId:
-            `0x${"18".repeat(32)}`,
-          category:
-            "CORE_EXOTIC",
-          quarantined: false,
-          currency0: {
-            kind: "CORE",
-            address:
-              CORE_A.address
-          },
-          currency1: {
-            kind: "EXOTIC",
-            address:
-              EXOTIC_B
-          }
+  const WPOL = {
+    symbol: "WPOL",
+    address:
+      "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    decimals: 18
+  };
+
+  const WETH =
+    "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
+
+  const USDT0 =
+    "0x1111111111111111111111111111111111111111";
+
+  const pool = {
+    poolId:
+      `0x${"ab".repeat(32)}`,
+    category:
+      "CORE_EXOTIC",
+    quarantined: false,
+
+    currency0: {
+      address: WETH,
+      kind: "CORE"
+    },
+
+    currency1: {
+      address: USDT0,
+      kind: "EXOTIC"
+    }
+  };
+
+  const evidence = {};
+
+  // WPOL -> USDT0 is the entry outer leg.
+  evidence[
+    pairKey(
+      WPOL.address,
+      USDT0
+    )
+  ] = {
+    conclusive: true,
+    hasEntry: true,
+    hasExit: false,
+    entry: {
+      summary: {
+        status: "QUOTE_OK"
+      }
+    },
+    exit: {
+      summary: {
+        status: "NO_ROUTE"
+      }
+    }
+  };
+
+  // WETH -> WPOL is the exit outer leg.
+  evidence[
+    pairKey(
+      WPOL.address,
+      WETH
+    )
+  ] = {
+    conclusive: true,
+    hasEntry: false,
+    hasExit: true,
+    entry: {
+      summary: {
+        status: "NO_ROUTE"
+      }
+    },
+    exit: {
+      summary: {
+        status: "QUOTE_OK"
+      }
+    }
+  };
+
+  const orientations =
+    supportedOrientationsForPool({
+      pool,
+      outerEvidence:
+        evidence,
+      coreTokens: [WPOL]
+    });
+
+  assert.deepEqual(
+    orientations,
+    [
+      {
+        direction:
+          "ONE_FOR_ZERO",
+        start: {
+          symbol: "WPOL",
+          address:
+            WPOL.address.toLowerCase(),
+          decimals: 18
         }
-      ]
-    };
+      }
+    ]
+  );
+});
 
-    const outerEvidence = {
-      [pairKey(
-        CORE_A.address,
-        EXOTIC_A
-      )]:
-        evidence({
-          entry: false,
-          exit: true
-        }),
+test("start core equal to a V4 endpoint cannot create identity-leg orientation", () => {
+  const {
+    supportedOrientationsForPool,
+    pairKey
+  } = require("../scripts/utils/polygonV4StructuralStage");
 
-      [pairKey(
-        CORE_A.address,
-        EXOTIC_B
-      )]:
-        evidence({
-          entry: false,
-          exit: false
-        })
-    };
+  const WETH = {
+    symbol: "WETH",
+    address:
+      "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+    decimals: 18
+  };
 
-    const result =
-      buildStructuralResults({
-        classifications,
-        outerEvidence,
-        coreTokens: [
-          CORE_A
-        ]
-      });
+  const USDT0 =
+    "0x1111111111111111111111111111111111111111";
 
-    assert.equal(
-      result.counts
-        .totalActive,
-      2
-    );
+  const pool = {
+    poolId:
+      `0x${"ac".repeat(32)}`,
+    category:
+      "CORE_EXOTIC",
+    quarantined: false,
 
-    assert.equal(
-      result.counts
-        .withOrientation,
-      1
-    );
+    currency0: {
+      address:
+        WETH.address,
+      kind: "CORE"
+    },
 
-    assert.equal(
-      result.counts
-        .withoutOrientation,
-      1
-    );
-  }
-);
+    currency1: {
+      address: USDT0,
+      kind: "EXOTIC"
+    }
+  };
 
-test(
-  "core-core market is deferred rather than given an identity-leg orientation",
-  () => {
-    const classifications = {
-      counts: {
-        totalActive: 1
-      },
-
-      pools: [
-        {
-          poolId:
-            `0x${"19".repeat(32)}`,
-          category:
-            "CORE_CORE",
-          quarantined: false,
-
-          currency0: {
-            kind: "CORE",
-            address:
-              CORE_A.address
-          },
-
-          currency1: {
-            kind: "CORE",
-            address:
-              CORE_B.address
-          }
+  const evidence = {
+    [pairKey(
+      WETH.address,
+      USDT0
+    )]: {
+      conclusive: true,
+      hasEntry: true,
+      hasExit: true,
+      entry: {
+        summary: {
+          status: "QUOTE_OK"
         }
-      ]
-    };
+      },
+      exit: {
+        summary: {
+          status: "QUOTE_OK"
+        }
+      }
+    }
+  };
 
-    const result =
-      buildStructuralResults({
-        classifications,
-        outerEvidence: {},
-        coreTokens: [
-          CORE_A,
-          CORE_B
-        ]
-      });
+  const orientations =
+    supportedOrientationsForPool({
+      pool,
+      outerEvidence:
+        evidence,
+      coreTokens: [WETH]
+    });
 
-    assert.equal(
-      result.pools[0]
-        .deferredCoreCore,
-      true
-    );
+  assert.deepEqual(
+    orientations,
+    []
+  );
+});
 
-    assert.deepEqual(
-      result.pools[0]
-        .orientations,
-      []
-    );
+test("core-core market can form exact three-leg orientation through third core", () => {
+  const {
+    supportedOrientationsForPool,
+    pairKey
+  } = require("../scripts/utils/polygonV4StructuralStage");
 
-    assert.equal(
-      result.counts
-        .deferredCoreCore,
-      1
-    );
+  const WPOL = {
+    symbol: "WPOL",
+    address:
+      "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    decimals: 18
+  };
 
-    assert.equal(
-      result.counts
-        .withOrientation,
-      0
-    );
+  const WETH =
+    "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
 
-    assert.equal(
-      result.counts
-        .withoutOrientation,
-      0
-    );
-  }
-);
+  const USDC =
+    "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";
+
+  const pool = {
+    poolId:
+      `0x${"ad".repeat(32)}`,
+    category:
+      "CORE_CORE",
+    quarantined: false,
+
+    currency0: {
+      address: USDC,
+      kind: "CORE"
+    },
+
+    currency1: {
+      address: WETH,
+      kind: "CORE"
+    }
+  };
+
+  const evidence = {
+    [pairKey(
+      WPOL.address,
+      USDC
+    )]: {
+      conclusive: true,
+      hasEntry: true,
+      hasExit: false,
+      entry: {
+        summary: {
+          status: "QUOTE_OK"
+        }
+      },
+      exit: {
+        summary: {
+          status: "NO_ROUTE"
+        }
+      }
+    },
+
+    [pairKey(
+      WPOL.address,
+      WETH
+    )]: {
+      conclusive: true,
+      hasEntry: false,
+      hasExit: true,
+      entry: {
+        summary: {
+          status: "NO_ROUTE"
+        }
+      },
+      exit: {
+        summary: {
+          status: "QUOTE_OK"
+        }
+      }
+    }
+  };
+
+  const orientations =
+    supportedOrientationsForPool({
+      pool,
+      outerEvidence:
+        evidence,
+      coreTokens: [WPOL]
+    });
+
+  assert.equal(
+    orientations.length,
+    1
+  );
+
+  assert.equal(
+    orientations[0].direction,
+    "ZERO_FOR_ONE"
+  );
+
+  assert.equal(
+    orientations[0].start.address,
+    WPOL.address.toLowerCase()
+  );
+});

@@ -5,6 +5,8 @@
 // Current implemented stages:
 //   PINNED
 //   DISCOVERY
+//   ACTIVE
+//   STRUCTURAL
 //
 // No signer, wallet, approvals, or transaction submission.
 
@@ -24,6 +26,24 @@ const {
   makeStateView,
   readPoolLiquidity
 } = require("../utils/polygonV4ActivePools");
+
+const {
+  METADATA_OK,
+  coreTokens,
+  outerVenueNames,
+  observeTokenDecimals,
+  observeTokenAgainstCore
+} = require("../utils/polygonV4StructuralObserver");
+
+const {
+  pairKey,
+  getStructuralProgress,
+  buildStructuralClassifications,
+  collectUniqueExoticAddresses,
+  metadataIsResolved,
+  evidenceIsConclusive,
+  buildStructuralResults
+} = require("../utils/polygonV4StructuralStage");
 
 const {
   completeStage,
@@ -694,6 +714,582 @@ async function runActive({
   return finalPayload;
 }
 
+function saveStructuralProgress({
+  file,
+  state,
+  progress
+}) {
+  updateStageProgress(
+    state,
+    "STRUCTURAL",
+    {
+      classifications:
+        progress.classifications,
+      metadata:
+        progress.metadata,
+      outerEvidence:
+        progress.outerEvidence,
+      unresolved:
+        progress.unresolved
+    }
+  );
+
+  saveResearchState(
+    file,
+    state
+  );
+}
+
+function requiredOuterPairs({
+  classifications,
+  cores,
+  metadata
+}) {
+  if (
+    !classifications ||
+    !Array.isArray(
+      classifications.pools
+    )
+  ) {
+    throw new Error(
+      "Structural classifications required"
+    );
+  }
+
+  const coreByAddress =
+    new Map(
+      cores.map(core => [
+        String(core.address)
+          .toLowerCase(),
+        core
+      ])
+    );
+
+  const pairs =
+    new Map();
+
+  for (
+    const pool of
+    classifications.pools
+  ) {
+    if (pool.quarantined) {
+      continue;
+    }
+
+    const endpoints = [
+      pool.currency0,
+      pool.currency1
+    ];
+
+    for (const startCore of cores) {
+      const startAddress =
+        String(startCore.address)
+          .toLowerCase();
+
+      for (const endpoint of endpoints) {
+        const endpointAddress =
+          String(endpoint.address)
+            .toLowerCase();
+
+        // Identity outer legs are invalid for the exact
+        // three-real-swap topology and require no quote.
+        if (
+          endpointAddress ===
+          startAddress
+        ) {
+          continue;
+        }
+
+        const key =
+          pairKey(
+            startAddress,
+            endpointAddress
+          );
+
+        if (pairs.has(key)) {
+          continue;
+        }
+
+        const endpointCore =
+          coreByAddress.get(
+            endpointAddress
+          );
+
+        let candidateDecimals = null;
+
+        if (endpointCore) {
+          candidateDecimals =
+            endpointCore.decimals;
+        } else {
+          const metadataObservation =
+            metadata[
+              endpointAddress
+            ];
+
+          if (
+            metadataIsResolved(
+              metadataObservation
+            )
+          ) {
+            candidateDecimals =
+              metadataObservation.decimals;
+          }
+        }
+
+        pairs.set(
+          key,
+          {
+            key,
+            core:
+              startCore,
+            candidateAddress:
+              endpointAddress,
+            candidateDecimals
+          }
+        );
+      }
+    }
+  }
+
+  return Array.from(
+    pairs.values()
+  );
+}
+
+function structuralUnresolved({
+  exoticAddresses,
+  metadata,
+  outerEvidence,
+  requiredPairs
+}) {
+  const unresolved = [];
+
+  for (
+    const exoticAddress of
+    exoticAddresses
+  ) {
+    if (
+      !metadataIsResolved(
+        metadata[exoticAddress]
+      )
+    ) {
+      unresolved.push({
+        type: "METADATA",
+        token:
+          exoticAddress
+      });
+    }
+  }
+
+  for (
+    const pair of
+    requiredPairs
+  ) {
+    // An EXOTIC endpoint whose metadata has not resolved
+    // cannot safely be quoted yet. The METADATA item above
+    // is sufficient until it becomes probeable.
+    if (
+      !Number.isInteger(
+        pair.candidateDecimals
+      )
+    ) {
+      continue;
+    }
+
+    if (
+      !evidenceIsConclusive(
+        outerEvidence[
+          pair.key
+        ]
+      )
+    ) {
+      unresolved.push({
+        type:
+          "OUTER_EVIDENCE",
+        key:
+          pair.key,
+        core:
+          pair.core.address
+            .toLowerCase(),
+        candidate:
+          pair.candidateAddress
+      });
+    }
+  }
+
+  return unresolved;
+}
+
+async function runStructural({
+  provider,
+  file,
+  state,
+  observeTokenDecimalsFn =
+    observeTokenDecimals,
+  observeTokenAgainstCoreFn =
+    observeTokenAgainstCore,
+  cores =
+    coreTokens(),
+  venues =
+    outerVenueNames()
+}) {
+  if (
+    !state.completedStages.includes(
+      "ACTIVE"
+    )
+  ) {
+    throw new Error(
+      "Cannot run STRUCTURAL before ACTIVE"
+    );
+  }
+
+  if (
+    state.completedStages.includes(
+      "STRUCTURAL"
+    )
+  ) {
+    console.log(
+      "STRUCTURAL already complete."
+    );
+
+    return state.stages.STRUCTURAL;
+  }
+
+  const discovery =
+    state.stages.DISCOVERY;
+
+  const active =
+    state.stages.ACTIVE;
+
+  if (
+    !discovery ||
+    !Array.isArray(
+      discovery.pools
+    )
+  ) {
+    throw new Error(
+      "DISCOVERY payload has no verified pools"
+    );
+  }
+
+  if (
+    !active ||
+    !Array.isArray(
+      active.observations
+    )
+  ) {
+    throw new Error(
+      "ACTIVE payload has no observations"
+    );
+  }
+
+  const progress =
+    getStructuralProgress(
+      state
+    );
+
+  if (!progress.classifications) {
+    progress.classifications =
+      buildStructuralClassifications({
+        discoveredPools:
+          discovery.pools,
+        activeObservations:
+          active.observations
+      });
+
+    progress.unresolved = [];
+
+    saveStructuralProgress({
+      file,
+      state,
+      progress
+    });
+
+    console.log(
+      `STRUCTURAL classified ` +
+      `${progress.classifications.counts.totalActive} active pool(s)`
+    );
+  }
+
+  const exoticAddresses =
+    collectUniqueExoticAddresses(
+      progress.classifications
+    );
+
+  console.log(
+    `STRUCTURAL: ${exoticAddresses.length} unique non-native exotic token(s)`
+  );
+
+  // Metadata is successful only when METADATA_OK.
+  // Failed/ambiguous observations remain checkpointed,
+  // but are deliberately retried on resume.
+  for (
+    let i = 0;
+    i < exoticAddresses.length;
+    i += 1
+  ) {
+    const exoticAddress =
+      exoticAddresses[i];
+
+    if (
+      metadataIsResolved(
+        progress.metadata[
+          exoticAddress
+        ]
+      )
+    ) {
+      console.log(
+        `[metadata ${i + 1}/${exoticAddresses.length}] ` +
+        `${exoticAddress} cached`
+      );
+
+      continue;
+    }
+
+    console.log(
+      `[metadata ${i + 1}/${exoticAddresses.length}] ` +
+      `${exoticAddress} decimals`
+    );
+
+    const observation =
+      await observeTokenDecimalsFn({
+        provider,
+        tokenAddress:
+          exoticAddress,
+        blockTag:
+          state.identity.pinnedBlock
+      });
+
+    progress.metadata[
+      exoticAddress
+    ] = observation;
+
+    progress.unresolved =
+      structuralUnresolved({
+        exoticAddresses,
+        metadata:
+          progress.metadata,
+        outerEvidence:
+          progress.outerEvidence,
+        requiredPairs:
+          requiredOuterPairs({
+            classifications:
+              progress.classifications,
+            cores,
+            metadata:
+              progress.metadata
+          })
+      });
+
+    saveStructuralProgress({
+      file,
+      state,
+      progress
+    });
+
+    if (
+      observation.status ===
+      METADATA_OK
+    ) {
+      console.log(
+        `  decimals=${observation.decimals} checkpointed`
+      );
+    } else {
+      console.log(
+        `  metadata unresolved code=${
+          observation.errorCode ||
+          "UNKNOWN"
+        } checkpointed`
+      );
+    }
+  }
+
+  // Probe every distinct non-identity V4 endpoint
+  // against every possible start core.
+  //
+  // CORE endpoint decimals come from the registry.
+  // EXOTIC endpoint decimals come from pinned metadata.
+  //
+  // Conclusive evidence is cached for this pinned run.
+  // RPC/ambiguous evidence remains retryable.
+  const requiredPairs =
+    requiredOuterPairs({
+      classifications:
+        progress.classifications,
+      cores,
+      metadata:
+        progress.metadata
+    });
+
+  console.log(
+    `STRUCTURAL: ${requiredPairs.length} required outer pair(s)`
+  );
+
+  for (
+    let i = 0;
+    i < requiredPairs.length;
+    i += 1
+  ) {
+    const pair =
+      requiredPairs[i];
+
+    if (
+      !Number.isInteger(
+        pair.candidateDecimals
+      )
+    ) {
+      console.log(
+        `[outer ${i + 1}/${requiredPairs.length}] ` +
+        `${pair.key} waiting for metadata`
+      );
+
+      continue;
+    }
+
+    if (
+      evidenceIsConclusive(
+        progress.outerEvidence[
+          pair.key
+        ]
+      )
+    ) {
+      console.log(
+        `[outer ${i + 1}/${requiredPairs.length}] ` +
+        `${pair.key} cached`
+      );
+
+      continue;
+    }
+
+    console.log(
+      `[outer ${i + 1}/${requiredPairs.length}] ` +
+      `${pair.key}`
+    );
+
+    const observation =
+      await observeTokenAgainstCoreFn({
+        provider,
+        blockTag:
+          state.identity.pinnedBlock,
+        coreToken:
+          pair.core,
+        candidateAddress:
+          pair.candidateAddress,
+        candidateDecimals:
+          pair.candidateDecimals,
+        venueNames:
+          venues
+      });
+
+    progress.outerEvidence[
+      pair.key
+    ] = observation;
+
+    progress.unresolved =
+      structuralUnresolved({
+        exoticAddresses,
+        metadata:
+          progress.metadata,
+        outerEvidence:
+          progress.outerEvidence,
+        requiredPairs:
+          requiredOuterPairs({
+            classifications:
+              progress.classifications,
+            cores,
+            metadata:
+              progress.metadata
+          })
+      });
+
+    saveStructuralProgress({
+      file,
+      state,
+      progress
+    });
+
+    console.log(
+      observation.conclusive
+        ? `  entry=${observation.hasEntry} ` +
+          `exit=${observation.hasExit} checkpointed`
+        : "  unresolved RPC evidence checkpointed"
+    );
+  }
+
+  progress.unresolved =
+    structuralUnresolved({
+      exoticAddresses,
+      metadata:
+        progress.metadata,
+      outerEvidence:
+        progress.outerEvidence,
+      requiredPairs:
+        requiredOuterPairs({
+          classifications:
+            progress.classifications,
+          cores,
+          metadata:
+            progress.metadata
+        })
+    });
+
+  saveStructuralProgress({
+    file,
+    state,
+    progress
+  });
+
+  if (
+    progress.unresolved.length > 0
+  ) {
+    throw new Error(
+      `STRUCTURAL incomplete: ` +
+      `${progress.unresolved.length} observation(s) unresolved`
+    );
+  }
+
+  const results =
+    buildStructuralResults({
+      classifications:
+        progress.classifications,
+      outerEvidence:
+        progress.outerEvidence,
+      coreTokens:
+        cores
+    });
+
+  const finalPayload = {
+    classifications:
+      progress.classifications,
+    metadata:
+      progress.metadata,
+    outerEvidence:
+      progress.outerEvidence,
+    unresolved: [],
+    results
+  };
+
+  completeStage(
+    state,
+    "STRUCTURAL",
+    finalPayload
+  );
+
+  saveResearchState(
+    file,
+    state
+  );
+
+  console.log(
+    `STRUCTURAL complete: ` +
+    `${results.counts.withOrientation} supported, ` +
+    `${results.counts.withoutOrientation} unsupported, ` +
+    `${results.counts.quarantined} native POL quarantined`
+  );
+
+  return finalPayload;
+}
+
 async function main() {
   const args =
     parseArgs(process.argv.slice(2));
@@ -746,6 +1342,12 @@ async function main() {
     state: run.state
   });
 
+  await runStructural({
+    provider,
+    file: run.file,
+    state: run.state
+  });
+
   console.log(
     `State: ${run.file}`
   );
@@ -785,5 +1387,9 @@ module.exports = {
   saveActiveProgress,
   resolveRun,
   runDiscovery,
-  runActive
+  runActive,
+  saveStructuralProgress,
+  requiredOuterPairs,
+  structuralUnresolved,
+  runStructural
 };
