@@ -52,6 +52,56 @@ function requireV3Fee(value, label) {
   return value;
 }
 
+function buildOuterLeg({
+  observed,
+  tokenIn,
+  tokenOut,
+  amountOut,
+  label
+}) {
+  if (
+    !observed ||
+    typeof observed !== "object"
+  ) {
+    throw new Error(
+      `${label} requires observed quote evidence`
+    );
+  }
+
+  const venue =
+    observed.venue;
+
+  if (
+    venue === "QUICKSWAP_V2" ||
+    venue === "SUSHISWAP_V2"
+  ) {
+    return {
+      venue,
+      tokenIn,
+      tokenOut,
+      amountOut
+    };
+  }
+
+  if (venue === "UNISWAP_V3") {
+    return {
+      venue,
+      tokenIn,
+      tokenOut,
+      amountOut,
+      fee:
+        requireV3Fee(
+          observed.fee,
+          label
+        )
+    };
+  }
+
+  throw new Error(
+    `${label} requires supported observed venue`
+  );
+}
+
 function normalizePoolKey(poolKey) {
   if (!poolKey || typeof poolKey !== "object") {
     throw new Error(
@@ -242,17 +292,33 @@ function buildObservedV4Candidate({
       "Exit amountOut"
     );
 
-  const entryFee =
-    requireV3Fee(
-      observation.entry.fee,
-      "Entry leg"
-    );
+  const entryLeg =
+    buildOuterLeg({
+      observed:
+        observation.entry,
+      tokenIn:
+        start,
+      tokenOut:
+        entry,
+      amountOut:
+        entryAmountOut,
+      label:
+        "Entry leg"
+    });
 
-  const exitFee =
-    requireV3Fee(
-      observation.exit.fee,
-      "Exit leg"
-    );
+  const exitLeg =
+    buildOuterLeg({
+      observed:
+        observation.exit,
+      tokenIn:
+        exit,
+      tokenOut:
+        start,
+      amountOut:
+        exitAmountOut,
+      label:
+        "Exit leg"
+    });
 
   return {
     blockTag:
@@ -261,15 +327,7 @@ function buildObservedV4Candidate({
     amountIn,
 
     legs: [
-      {
-        venue: "UNISWAP_V3",
-        tokenIn: start,
-        tokenOut: entry,
-        amountOut:
-          entryAmountOut,
-        fee:
-          entryFee
-      },
+      entryLeg,
       {
         venue: "UNISWAP_V4",
         tokenIn: entry,
@@ -280,15 +338,7 @@ function buildObservedV4Candidate({
           normalizedPoolKey,
         zeroForOne
       },
-      {
-        venue: "UNISWAP_V3",
-        tokenIn: exit,
-        tokenOut: start,
-        amountOut:
-          exitAmountOut,
-        fee:
-          exitFee
-      }
+      exitLeg
     ]
   };
 }

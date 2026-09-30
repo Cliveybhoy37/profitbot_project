@@ -337,3 +337,127 @@ test(
     );
   }
 );
+
+test(
+  "preserves observed Sushi V2 entry venue without V3 fee metadata",
+  () => {
+    const evidence =
+      observation();
+
+    evidence.entry.venue =
+      "SUSHISWAP_V2";
+
+    evidence.entry.fee =
+      null;
+
+    evidence.entry.pool =
+      null;
+
+    const candidate =
+      buildObservedV4Candidate({
+        observation: evidence,
+        startToken: WPOL,
+        entryToken: DAI,
+        exitToken: APEPE
+      });
+
+    assert.equal(
+      candidate.legs[0].venue,
+      "SUSHISWAP_V2"
+    );
+
+    assert.equal(
+      candidate.legs[0].fee,
+      undefined
+    );
+
+    const protectedLegs =
+      buildV4ExecutionLegs(
+        candidate.legs,
+        50
+      );
+
+    assert.equal(
+      protectedLegs[0].venue,
+      1
+    );
+
+    assert.equal(
+      protectedLegs[0].venueData,
+      "0x"
+    );
+  }
+);
+
+test(
+  "preserves observed QuickSwap V2 entry venue without V3 fee metadata",
+  () => {
+    const evidence =
+      observation();
+
+    evidence.entry.venue =
+      "QUICKSWAP_V2";
+
+    evidence.entry.fee =
+      null;
+
+    evidence.entry.pool =
+      null;
+
+    const candidate =
+      buildObservedV4Candidate({
+        observation: evidence,
+        startToken: WPOL,
+        entryToken: DAI,
+        exitToken: APEPE
+      });
+
+    assert.equal(
+      candidate.legs[0].venue,
+      "QUICKSWAP_V2"
+    );
+
+    assert.equal(
+      candidate.legs[0].fee,
+      undefined
+    );
+
+    const protectedLegs =
+      buildV4ExecutionLegs(
+        candidate.legs,
+        50
+      );
+
+    assert.equal(
+      protectedLegs[0].venue,
+      0
+    );
+
+    assert.equal(
+      protectedLegs[0].venueData,
+      "0x"
+    );
+  }
+);
+
+test(
+  "rejects unsupported observed outer venue",
+  () => {
+    const evidence =
+      observation();
+
+    evidence.entry.venue =
+      "UNKNOWN_VENUE";
+
+    assert.throws(
+      () =>
+        buildObservedV4Candidate({
+          observation: evidence,
+          startToken: WPOL,
+          entryToken: DAI,
+          exitToken: APEPE
+        }),
+      /requires supported observed venue/
+    );
+  }
+);

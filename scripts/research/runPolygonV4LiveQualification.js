@@ -73,7 +73,17 @@ const DEADLINE_SECONDS = 300;
 
 async function qualifyLiveRoute({
   provider,
-  blockTag = null
+  blockTag = null,
+  startAmount = START,
+  entryVenue = "UNISWAP_V3",
+  startToken = WPOL,
+  entryToken = DAI,
+  poolKey = POOL_KEY,
+  zeroForOne = true,
+  exitToken = APEPE,
+  exitVenue = "UNISWAP_V3",
+  poolId = POOL_ID,
+  policySnapshot = null
 }) {
   if (!provider) {
     throw new Error("provider required");
@@ -97,22 +107,17 @@ async function qualifyLiveRoute({
       provider,
       blockTag:
         quoteBlock,
-      startToken:
-        WPOL,
+      startToken,
       startAmount:
-        START.toString(),
-      entryVenue:
-        "UNISWAP_V3",
-      entryToken:
-        DAI,
-      poolKey:
-        POOL_KEY,
-      zeroForOne:
-        true,
-      exitToken:
-        APEPE,
-      exitVenue:
-        "UNISWAP_V3"
+        ethers.BigNumber
+          .from(startAmount)
+          .toString(),
+      entryVenue,
+      entryToken,
+      poolKey,
+      zeroForOne,
+      exitToken,
+      exitVenue
     });
 
   if (
@@ -135,12 +140,9 @@ async function qualifyLiveRoute({
   const candidate =
     buildObservedV4Candidate({
       observation,
-      startToken:
-        WPOL,
-      entryToken:
-        DAI,
-      exitToken:
-        APEPE
+      startToken,
+      entryToken,
+      exitToken
     });
 
   const executionLegs =
@@ -149,34 +151,88 @@ async function qualifyLiveRoute({
       SLIPPAGE_BPS
     );
 
-  const [
-    currentBlock,
-    gasPriceWei,
-    aave
-  ] =
-    await Promise.all([
-      provider.getBlockNumber(),
-      provider.getGasPrice(),
-      resolveAaveEconomics(
-        provider,
-        undefined,
-        quoteBlock
+  let currentBlock;
+  let gasPriceWei;
+  let premiumBps;
+
+  if (policySnapshot) {
+    if (
+      !Number.isSafeInteger(
+        policySnapshot.currentBlock
+      ) ||
+      policySnapshot.currentBlock <= 0
+    ) {
+      throw new Error(
+        "Policy snapshot requires valid currentBlock"
+      );
+    }
+
+    if (
+      !ethers.BigNumber.isBigNumber(
+        policySnapshot.gasPriceWei
+      ) ||
+      policySnapshot.gasPriceWei.lte(0)
+    ) {
+      throw new Error(
+        "Policy snapshot requires positive gasPriceWei"
+      );
+    }
+
+    if (
+      !Number.isSafeInteger(
+        policySnapshot.premiumBps
+      ) ||
+      policySnapshot.premiumBps < 0
+    ) {
+      throw new Error(
+        "Policy snapshot requires valid premiumBps"
+      );
+    }
+
+    currentBlock =
+      policySnapshot.currentBlock;
+
+    gasPriceWei =
+      policySnapshot.gasPriceWei;
+
+    premiumBps =
+      policySnapshot.premiumBps;
+  } else {
+    const [
+      observedCurrentBlock,
+      observedGasPriceWei,
+      aave
+    ] =
+      await Promise.all([
+        provider.getBlockNumber(),
+        provider.getGasPrice(),
+        resolveAaveEconomics(
+          provider,
+          undefined,
+          quoteBlock
+        )
+      ]);
+
+    currentBlock =
+      observedCurrentBlock;
+
+    gasPriceWei =
+      observedGasPriceWei;
+
+    premiumBps =
+      Number(
+        aave.premiumBps
+      );
+
+    if (
+      !Number.isSafeInteger(
+        premiumBps
       )
-    ]);
-
-  const premiumBps =
-    Number(
-      aave.premiumBps
-    );
-
-  if (
-    !Number.isSafeInteger(
-      premiumBps
-    )
-  ) {
-    throw new Error(
-      "Aave premium does not fit safe integer"
-    );
+    ) {
+      throw new Error(
+        "Aave premium does not fit safe integer"
+      );
+    }
   }
 
   let preflight;
@@ -187,7 +243,9 @@ async function qualifyLiveRoute({
         candidate,
         executionLegs,
         requestedAmount:
-          START,
+          ethers.BigNumber.from(
+            startAmount
+          ),
         currentBlock,
         maxAgeBlocks:
           3,
@@ -252,8 +310,7 @@ async function qualifyLiveRoute({
     blockTag:
       quoteBlock,
     currentBlock,
-    poolId:
-      POOL_ID,
+    poolId,
     observation,
     candidate,
     executionLegs,
