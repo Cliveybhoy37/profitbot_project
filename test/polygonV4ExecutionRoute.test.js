@@ -5,9 +5,11 @@ const { ethers } = require("ethers");
 const {
   VENUE_IDS,
   LEG_TYPE,
+  EXECUTION_PLAN_TYPE,
   V4_DATA_TYPE,
   buildV4ExecutionLegs,
-  encodeV4ExecutionLegs
+  encodeV4ExecutionLegs,
+  encodeV4ExecutionPlan
 } = require("../scripts/utils/polygonV4ExecutionRoute");
 
 const WPOL =
@@ -172,6 +174,94 @@ test(
     assert.throws(
       () => buildV4ExecutionLegs(route, 50),
       /Execution route is not contiguous/
+    );
+  }
+);
+
+
+test(
+  "encodes deadline and minimum profit with protected legs",
+  () => {
+    const legs =
+      buildV4ExecutionLegs(
+        candidate(),
+        50
+      );
+
+    const minimumProfit =
+      ethers.BigNumber.from(
+        "5000000000000000"
+      );
+
+    const encoded =
+      encodeV4ExecutionPlan({
+        legs,
+        deadline: 2000000000,
+        minimumProfit
+      });
+
+    const decoded =
+      ethers.utils.defaultAbiCoder.decode(
+        [EXECUTION_PLAN_TYPE],
+        encoded
+      )[0];
+
+    assert.equal(
+      decoded.deadline.toString(),
+      "2000000000"
+    );
+
+    assert.equal(
+      decoded.minimumProfit.toString(),
+      minimumProfit.toString()
+    );
+
+    assert.equal(
+      decoded.legs.length,
+      3
+    );
+
+    assert.equal(
+      decoded.legs[0].tokenIn,
+      WPOL
+    );
+
+    assert.equal(
+      decoded.legs[2].tokenOut,
+      WPOL
+    );
+  }
+);
+
+test(
+  "rejects unsafe execution-plan policy",
+  () => {
+    const legs =
+      buildV4ExecutionLegs(
+        candidate(),
+        50
+      );
+
+    assert.throws(
+      () =>
+        encodeV4ExecutionPlan({
+          legs,
+          deadline: 0,
+          minimumProfit:
+            ethers.BigNumber.from(1)
+        }),
+      /deadline must be a positive/
+    );
+
+    assert.throws(
+      () =>
+        encodeV4ExecutionPlan({
+          legs,
+          deadline: 2000000000,
+          minimumProfit:
+            ethers.constants.Zero
+        }),
+      /minimumProfit must be a positive/
     );
   }
 );

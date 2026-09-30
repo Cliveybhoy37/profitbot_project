@@ -11,7 +11,7 @@ const {
 
 const {
   buildV4ExecutionLegs,
-  encodeV4ExecutionLegs
+  encodeV4ExecutionPlan
 } = require(
   "../scripts/utils/polygonV4ExecutionRoute"
 );
@@ -322,10 +322,25 @@ describe(
             50
           );
 
-        const params =
-          encodeV4ExecutionLegs(
-            legs
+        const latestBlock =
+          await ethers.provider.getBlock(
+            "latest"
           );
+
+        const deadline =
+          latestBlock.timestamp + 300;
+
+        const minimumProfit =
+          ethers.utils.parseEther(
+            "0.005"
+          );
+
+        const params =
+          encodeV4ExecutionPlan({
+            legs,
+            deadline,
+            minimumProfit
+          });
 
         assert(
           ethers.utils.isHexString(

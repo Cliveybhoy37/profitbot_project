@@ -20,6 +20,12 @@ contract PolygonV4CandidateExecutor {
         bytes venueData;
     }
 
+    struct ExecutionPlan {
+        uint256 deadline;
+        uint256 minimumProfit;
+        SwapLeg[] legs;
+    }
+
     struct PoolKey {
         address currency0;
         address currency1;
@@ -103,11 +109,11 @@ contract PolygonV4CandidateExecutor {
         require(token != address(0), "TOKEN");
         require(amount > 0, "AMOUNT");
 
-        // Validate before asking Aave to enter the callback.
-        _validateRoute(
-            abi.decode(params, (SwapLeg[])),
-            token
-        );
+        ExecutionPlan memory plan =
+            abi.decode(params, (ExecutionPlan));
+
+        // Fail closed before requesting the flashloan.
+        _validatePlan(plan, token);
 
         IAavePoolCandidate(AAVE_POOL).flashLoanSimple(
             address(this),
@@ -133,10 +139,14 @@ contract PolygonV4CandidateExecutor {
         require(asset != address(0), "ASSET");
         require(amount > 0, "AMOUNT");
 
-        SwapLeg[] memory legs =
-            abi.decode(params, (SwapLeg[]));
+        ExecutionPlan memory plan =
+            abi.decode(params, (ExecutionPlan));
 
-        _validateRoute(legs, asset);
+        // Revalidate at the callback security boundary.
+        _validatePlan(plan, asset);
+
+        SwapLeg[] memory legs =
+            plan.legs;
 
         uint256 balanceAtCallback =
             IERC20Candidate(asset).balanceOf(address(this));
@@ -170,17 +180,25 @@ contract PolygonV4CandidateExecutor {
             IERC20Candidate(asset).balanceOf(address(this));
 
         require(
-            finalBalance > startingAsset + debt,
-            "NO_INCREMENTAL_PROFIT"
+            finalBalance >= startingAsset + debt,
+            "DEBT_NOT_COVERED"
         );
 
         uint256 incrementalOutput =
             finalBalance - startingAsset;
 
+        uint256 incrementalProfit =
+            incrementalOutput - debt;
+
+        require(
+            incrementalProfit >= plan.minimumProfit,
+            "PROFIT_BELOW_MINIMUM"
+        );
+
         lastRouteOutput = incrementalOutput;
         lastDebt = debt;
         lastProfitBeforeRepayment =
-            incrementalOutput - debt;
+            incrementalProfit;
 
         _forceApprove(
             asset,
@@ -189,6 +207,29 @@ contract PolygonV4CandidateExecutor {
         );
 
         return true;
+    }
+
+    function _validatePlan(
+        ExecutionPlan memory plan,
+        address asset
+    )
+        internal
+        view
+    {
+        require(
+            plan.deadline >= block.timestamp,
+            "PLAN_EXPIRED"
+        );
+
+        require(
+            plan.minimumProfit > 0,
+            "MIN_PROFIT_ZERO"
+        );
+
+        _validateRoute(
+            plan.legs,
+            asset
+        );
     }
 
     function _validateRoute(

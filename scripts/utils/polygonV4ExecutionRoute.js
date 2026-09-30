@@ -13,6 +13,9 @@ const VENUE_IDS = Object.freeze({
 const LEG_TYPE =
   "tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes venueData)[]";
 
+const EXECUTION_PLAN_TYPE =
+  "tuple(uint256 deadline,uint256 minimumProfit,tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes venueData)[] legs)";
+
 const V4_DATA_TYPE =
   "tuple(address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks,bool zeroForOne)";
 
@@ -231,6 +234,53 @@ function buildV4ExecutionLegs(discoveredLegs, slippageBps) {
   return built;
 }
 
+function encodeV4ExecutionPlan({
+  legs,
+  deadline,
+  minimumProfit
+}) {
+  if (!Array.isArray(legs) || legs.length !== 3) {
+    throw new Error(
+      "Exactly three execution legs required"
+    );
+  }
+
+  if (
+    !Number.isSafeInteger(deadline) ||
+    deadline <= 0
+  ) {
+    throw new Error(
+      "Execution deadline must be a positive safe integer"
+    );
+  }
+
+  if (
+    !ethers.BigNumber.isBigNumber(
+      minimumProfit
+    ) ||
+    minimumProfit.lte(0)
+  ) {
+    throw new Error(
+      "minimumProfit must be a positive BigNumber"
+    );
+  }
+
+  return ethers.utils.defaultAbiCoder.encode(
+    [EXECUTION_PLAN_TYPE],
+    [[
+      deadline,
+      minimumProfit,
+      legs.map((leg) => [
+        leg.venue,
+        leg.tokenIn,
+        leg.tokenOut,
+        leg.minAmountOut,
+        leg.venueData
+      ])
+    ]]
+  );
+}
+
 function encodeV4ExecutionLegs(legs) {
   if (!Array.isArray(legs) || legs.length !== 3) {
     throw new Error("Exactly three execution legs required");
@@ -251,9 +301,11 @@ function encodeV4ExecutionLegs(legs) {
 module.exports = {
   VENUE_IDS,
   LEG_TYPE,
+  EXECUTION_PLAN_TYPE,
   V4_DATA_TYPE,
   applySlippage,
   encodeV4VenueData,
   buildV4ExecutionLegs,
-  encodeV4ExecutionLegs
+  encodeV4ExecutionLegs,
+  encodeV4ExecutionPlan
 };

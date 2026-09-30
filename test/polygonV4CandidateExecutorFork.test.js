@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 const {
   buildV4ExecutionLegs,
-  encodeV4ExecutionLegs
+  encodeV4ExecutionPlan
 } = require(
   "../scripts/utils/polygonV4ExecutionRoute"
 );
@@ -54,6 +54,22 @@ describe(
         ),
         FORK_BLOCK,
         "wrong fork block"
+      );
+    });
+
+    beforeEach(async function () {
+      await ethers.provider.send(
+        "hardhat_reset",
+        [
+          {
+            forking: {
+              jsonRpcUrl:
+                process.env.ALCHEMY_POLYGON,
+              blockNumber:
+                FORK_BLOCK
+            }
+          }
+        ]
       );
     });
 
@@ -116,8 +132,25 @@ describe(
             50
           );
 
+        const latestBlock =
+          await ethers.provider.getBlock(
+            "latest"
+          );
+
+        const deadline =
+          latestBlock.timestamp + 300;
+
+        const minimumProfit =
+          ethers.utils.parseEther(
+            "0.005"
+          );
+
         const params =
-          encodeV4ExecutionLegs(legs);
+          encodeV4ExecutionPlan({
+            legs,
+            deadline,
+            minimumProfit
+          });
 
         const wpol =
           await ethers.getContractAt(
@@ -319,6 +352,303 @@ describe(
 
         console.log(
           "GENERIC_AAVE_V4_ROUTE_OK"
+        );
+      }
+    );
+
+
+    it(
+      "rejects an expired execution plan before requesting Aave",
+      async function () {
+        const Executor =
+          await ethers.getContractFactory(
+            "PolygonV4CandidateExecutor"
+          );
+
+        const executor =
+          await Executor.deploy();
+
+        await executor.deployed();
+
+        const candidate = [
+          {
+            venue: "UNISWAP_V3",
+            tokenIn: WPOL,
+            tokenOut: DAI,
+            amountOut:
+              ethers.BigNumber.from(
+                "14481764747850506"
+              ),
+            fee: 100
+          },
+          {
+            venue: "UNISWAP_V4",
+            tokenIn: DAI,
+            tokenOut: APEPE,
+            amountOut:
+              ethers.BigNumber.from(
+                "12592522662788687883109"
+              ),
+            poolKey: {
+              currency0: DAI,
+              currency1: APEPE,
+              fee: 10000,
+              tickSpacing: 100,
+              hooks:
+                ethers.constants.AddressZero
+            },
+            zeroForOne: true
+          },
+          {
+            venue: "UNISWAP_V3",
+            tokenIn: APEPE,
+            tokenOut: WPOL,
+            amountOut:
+              EXPECTED_ROUTE_OUTPUT,
+            fee: 100
+          }
+        ];
+
+        const legs =
+          buildV4ExecutionLegs(
+            candidate,
+            50
+          );
+
+        const block =
+          await ethers.provider.getBlock(
+            "latest"
+          );
+
+        const params =
+          encodeV4ExecutionPlan({
+            legs,
+            deadline:
+              block.timestamp - 1,
+            minimumProfit:
+              ethers.BigNumber.from(1)
+          });
+
+        await assert.rejects(
+          executor.initiateFlashloan(
+            WPOL,
+            START,
+            params
+          ),
+          /PLAN_EXPIRED/
+        );
+      }
+    );
+
+    it(
+      "rejects a route whose realized profit is below the plan minimum",
+      async function () {
+        const Executor =
+          await ethers.getContractFactory(
+            "PolygonV4CandidateExecutor"
+          );
+
+        const executor =
+          await Executor.deploy();
+
+        await executor.deployed();
+
+        const candidate = [
+          {
+            venue: "UNISWAP_V3",
+            tokenIn: WPOL,
+            tokenOut: DAI,
+            amountOut:
+              ethers.BigNumber.from(
+                "14481764747850506"
+              ),
+            fee: 100
+          },
+          {
+            venue: "UNISWAP_V4",
+            tokenIn: DAI,
+            tokenOut: APEPE,
+            amountOut:
+              ethers.BigNumber.from(
+                "12592522662788687883109"
+              ),
+            poolKey: {
+              currency0: DAI,
+              currency1: APEPE,
+              fee: 10000,
+              tickSpacing: 100,
+              hooks:
+                ethers.constants.AddressZero
+            },
+            zeroForOne: true
+          },
+          {
+            venue: "UNISWAP_V3",
+            tokenIn: APEPE,
+            tokenOut: WPOL,
+            amountOut:
+              EXPECTED_ROUTE_OUTPUT,
+            fee: 100
+          }
+        ];
+
+        const legs =
+          buildV4ExecutionLegs(
+            candidate,
+            50
+          );
+
+        const block =
+          await ethers.provider.getBlock(
+            "latest"
+          );
+
+        // Historical realized profit is about
+        // 0.0167459837 WPOL, so 0.02 must fail.
+        const params =
+          encodeV4ExecutionPlan({
+            legs,
+            deadline:
+              block.timestamp + 300,
+            minimumProfit:
+              ethers.utils.parseEther(
+                "0.02"
+              )
+          });
+
+        await assert.rejects(
+          executor.initiateFlashloan(
+            WPOL,
+            START,
+            params
+          ),
+          /PROFIT_BELOW_MINIMUM/
+        );
+
+        const wpol =
+          await ethers.getContractAt(
+            [
+              "function balanceOf(address) view returns (uint256)",
+              "function allowance(address,address) view returns (uint256)"
+            ],
+            WPOL
+          );
+
+        const pool =
+          await executor.AAVE_POOL();
+
+        assert(
+          (
+            await wpol.balanceOf(
+              executor.address
+            )
+          ).eq(0),
+          "reverted execution retained funds"
+        );
+
+        assert(
+          (
+            await wpol.allowance(
+              executor.address,
+              pool
+            )
+          ).eq(0),
+          "reverted execution left Aave allowance"
+        );
+      }
+    );
+
+    it(
+      "rejects a zero minimum-profit execution plan",
+      async function () {
+        const Executor =
+          await ethers.getContractFactory(
+            "PolygonV4CandidateExecutor"
+          );
+
+        const executor =
+          await Executor.deploy();
+
+        await executor.deployed();
+
+        const candidate = [
+          {
+            venue: "UNISWAP_V3",
+            tokenIn: WPOL,
+            tokenOut: DAI,
+            amountOut:
+              ethers.BigNumber.from(
+                "14481764747850506"
+              ),
+            fee: 100
+          },
+          {
+            venue: "UNISWAP_V4",
+            tokenIn: DAI,
+            tokenOut: APEPE,
+            amountOut:
+              ethers.BigNumber.from(
+                "12592522662788687883109"
+              ),
+            poolKey: {
+              currency0: DAI,
+              currency1: APEPE,
+              fee: 10000,
+              tickSpacing: 100,
+              hooks:
+                ethers.constants.AddressZero
+            },
+            zeroForOne: true
+          },
+          {
+            venue: "UNISWAP_V3",
+            tokenIn: APEPE,
+            tokenOut: WPOL,
+            amountOut:
+              EXPECTED_ROUTE_OUTPUT,
+            fee: 100
+          }
+        ];
+
+        const legs =
+          buildV4ExecutionLegs(
+            candidate,
+            50
+          );
+
+        const block =
+          await ethers.provider.getBlock(
+            "latest"
+          );
+
+        // Bypass the JS encoder deliberately so Solidity itself
+        // proves it rejects zero minimum profit.
+        const planType =
+          "tuple(uint256 deadline,uint256 minimumProfit,tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes venueData)[] legs)";
+
+        const params =
+          ethers.utils.defaultAbiCoder.encode(
+            [planType],
+            [[
+              block.timestamp + 300,
+              0,
+              legs.map((leg) => [
+                leg.venue,
+                leg.tokenIn,
+                leg.tokenOut,
+                leg.minAmountOut,
+                leg.venueData
+              ])
+            ]]
+          );
+
+        await assert.rejects(
+          executor.initiateFlashloan(
+            WPOL,
+            START,
+            params
+          ),
+          /MIN_PROFIT_ZERO/
         );
       }
     );
