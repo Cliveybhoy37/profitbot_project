@@ -43,6 +43,12 @@ const DEFAULT_EVIDENCE_DIR =
     "live-opportunities"
   );
 
+const DEFAULT_OBSERVATION_LOG =
+  path.join(
+    DEFAULT_EVIDENCE_DIR,
+    "observations.jsonl"
+  );
+
 function requirePositiveInteger(
   value,
   label
@@ -447,6 +453,35 @@ function serializableSummary(
   };
 }
 
+function appendObservation(
+  summary,
+  observationLog =
+    DEFAULT_OBSERVATION_LOG
+) {
+  const dir =
+    path.dirname(
+      observationLog
+    );
+
+  fs.mkdirSync(
+    dir,
+    {
+      recursive: true
+    }
+  );
+
+  fs.appendFileSync(
+    observationLog,
+    JSON.stringify(
+      serializableSummary(
+        summary
+      )
+    ) + "\n"
+  );
+
+  return observationLog;
+}
+
 function saveEvidence(
   summary,
   evidenceDir =
@@ -676,6 +711,8 @@ async function watchOpportunities({
     Infinity,
   evidenceDir =
     DEFAULT_EVIDENCE_DIR,
+  observationLog =
+    DEFAULT_OBSERVATION_LOG,
   heartbeatEvery = 10
 }) {
   if (!provider) {
@@ -726,6 +763,11 @@ async function watchOpportunities({
       summarizeQualification(
         qualification
       );
+
+    appendObservation(
+      summary,
+      observationLog
+    );
 
     const fingerprint =
       stateFingerprint(
@@ -918,11 +960,13 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_POLL_MS,
   DEFAULT_EVIDENCE_DIR,
+  DEFAULT_OBSERVATION_LOG,
   calculateGasCeiling,
   diagnosticForRow,
   summarizeQualification,
   stateFingerprint,
   serializableSummary,
+  appendObservation,
   saveEvidence,
   shouldPrintHeartbeat,
   printHeartbeat,

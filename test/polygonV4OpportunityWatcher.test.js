@@ -6,6 +6,15 @@ const test =
 const assert =
   require("node:assert/strict");
 
+const fs =
+  require("node:fs");
+
+const os =
+  require("node:os");
+
+const path =
+  require("node:path");
+
 const { ethers } =
   require("ethers");
 
@@ -21,6 +30,7 @@ const {
   calculateGasCeiling,
   diagnosticForRow,
   stateFingerprint,
+  appendObservation,
   shouldPrintHeartbeat
 } = require(
   "../scripts/research/watchPolygonV4LiveOpportunities"
@@ -343,5 +353,173 @@ test(
         }),
       /heartbeatEvery must be a positive safe integer/
     );
+  }
+);
+
+test(
+  "observation logger appends durable JSONL records",
+  () => {
+    const tempDir =
+      fs.mkdtempSync(
+        path.join(
+          os.tmpdir(),
+          "polygon-v4-watcher-"
+        )
+      );
+
+    const observationLog =
+      path.join(
+        tempDir,
+        "nested",
+        "observations.jsonl"
+      );
+
+    const summary = {
+      quoteBlock: 123456,
+      policySnapshot: {
+        currentBlock: 123456,
+        gasPriceWei:
+          ethers.utils.parseUnits(
+            "25",
+            "gwei"
+          ),
+        premiumBps: 5
+      },
+      diagnostics: [
+        {
+          id: "TEST_ROUTE",
+          liveReady: false,
+          stage: "PREFLIGHT",
+          reason:
+            "Candidate has negative expected net profit",
+          amountIn:
+            ethers.utils.parseEther(
+              "0.125"
+            ),
+          finalAmount:
+            ethers.utils.parseEther(
+              "0.140"
+            ),
+          grossDelta:
+            ethers.utils.parseEther(
+              "0.015"
+            ),
+          protectedFinalOutput:
+            ethers.utils.parseEther(
+              "0.139"
+            ),
+          gasPriceWei:
+            ethers.utils.parseUnits(
+              "25",
+              "gwei"
+            ),
+          gasBudget:
+            ethers.utils.parseEther(
+              "0.010"
+            ),
+          maxGasPriceWei:
+            ethers.utils.parseUnits(
+              "14",
+              "gwei"
+            ),
+          aboveCeilingWei:
+            ethers.utils.parseUnits(
+              "11",
+              "gwei"
+            )
+        }
+      ],
+      ready: []
+    };
+
+    try {
+      appendObservation(
+        summary,
+        observationLog
+      );
+
+      appendObservation(
+        summary,
+        observationLog
+      );
+
+      const lines =
+        fs.readFileSync(
+          observationLog,
+          "utf8"
+        )
+          .trim()
+          .split("\n");
+
+      assert.equal(
+        lines.length,
+        2
+      );
+
+      const first =
+        JSON.parse(
+          lines[0]
+        );
+
+      const second =
+        JSON.parse(
+          lines[1]
+        );
+
+      assert.equal(
+        first.quoteBlock,
+        123456
+      );
+
+      assert.equal(
+        first.policySnapshot
+          .gasPriceWei,
+        ethers.utils
+          .parseUnits(
+            "25",
+            "gwei"
+          )
+          .toString()
+      );
+
+      assert.equal(
+        first.diagnostics[0]
+          .id,
+        "TEST_ROUTE"
+      );
+
+      assert.equal(
+        first.diagnostics[0]
+          .grossDelta,
+        ethers.utils
+          .parseEther(
+            "0.015"
+          )
+          .toString()
+      );
+
+      assert.deepEqual(
+        first.liveReadyIds,
+        []
+      );
+
+      assert.equal(
+        first.broadcast,
+        false
+      );
+
+      assert.equal(
+        second.quoteBlock,
+        123456
+      );
+    } finally {
+      fs.rmSync(
+        tempDir,
+        {
+          recursive: true,
+          force: true
+        }
+      );
+    }
   }
 );
