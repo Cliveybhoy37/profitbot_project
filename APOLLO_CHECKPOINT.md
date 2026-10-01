@@ -608,3 +608,217 @@ Do not assume any watcher process survived a Codespaces suspension.
 8. Verify GitHub SSH inside WSL.
 9. Clone ProfitBot and reproduce the tested read-only environment.
 10. Run Bugs from a more persistent machine.
+
+---
+
+## 2026-10-01 Persistent Observation Logging Milestone
+
+Repository state at completion:
+
+Branch:
+
+repair/simulation-safety
+
+Code commit:
+
+cf56677 Add persistent Polygon V4 watcher observations
+
+Persistent observation logging is now implemented in:
+
+scripts/research/watchPolygonV4LiveOpportunities.js
+
+The watcher appends one JSON object per completed qualification cycle to:
+
+research/runtime/polygon-v4/live-opportunities/observations.jsonl
+
+The runtime directory is already excluded by `.gitignore`.
+
+This means completed observations survive terminal scroll and watcher
+process termination while remaining outside normal Git commits.
+
+The logger reuses the existing `serializableSummary()` representation.
+
+Logging occurs only after a qualification cycle has completed and a
+summary has been constructed.
+
+It does not modify:
+
+- candidate qualification
+- slippage policy
+- gas policy
+- minimum-profit policy
+- freshness policy
+- worst-case profitability policy
+- LIVE_READY authority
+- execution parameters
+
+The watcher remains:
+
+provider only
+NO SIGNER
+NO TRANSACTION
+NO BROADCAST
+
+BROADCAST=false
+
+Protected production files remained unchanged:
+
+contracts/ProfitBot.sol
+scripts/utils/polygonExecutionRoute.js
+scripts/utils/polygonExecutionCandidate.js
+scripts/scanAndExecute.js
+
+### Regression Validation
+
+Focused V4 regression suite:
+
+35 tests
+35 passed
+0 failed
+
+Included:
+
+- watcher
+- live candidate set
+- live qualification
+- candidate preflight
+- observed candidate
+- execution route
+
+`git diff --check` passed.
+
+### Controlled Live Polygon Validation
+
+Provider:
+
+ALCHEMY_POLYGON
+
+No RPC credential value was printed or stored in this checkpoint.
+
+Controlled run:
+
+3 iterations
+30-second polling
+heartbeat every 2 iterations
+
+Result:
+
+RUN_STATUS=0
+LIVE_READY=false
+BROADCAST=false
+
+Three JSONL observations were successfully persisted.
+
+Observed blocks:
+
+94767807
+94767829
+94767851
+
+Observation 1:
+
+block 94767807
+gas 275.707044585 gwei
+best candidate V3_125_OPTIMIZED
+gross 0.015487101534649177 WPOL
+protected gas ceiling 12.460237181 gwei
+LIVE_READY=false
+BROADCAST=false
+
+Observation 2:
+
+block 94767829
+gas 277.439228614 gwei
+best candidate V3_125_OPTIMIZED
+gross 0.015444545977764108 WPOL
+protected gas ceiling 12.399747496 gwei
+LIVE_READY=false
+BROADCAST=false
+
+Observation 3:
+
+block 94767851
+gas 273.994804609 gwei
+best candidate V3_125_OPTIMIZED
+gross 0.015512403142962512 WPOL
+protected gas ceiling 12.49620161 gwei
+LIVE_READY=false
+BROADCAST=false
+
+Current conclusion:
+
+The historical route family remains gross-positive, and
+V3_125_OPTIMIZED remained the best candidate during this controlled
+sample.
+
+Current Polygon gas remained far above the protected profitability
+ceiling.
+
+The current blocker remains gas economics rather than absence of gross
+route spread.
+
+Do not weaken profitability, slippage, gas, freshness, or worst-case
+safety policy to force LIVE_READY.
+
+### Runtime Evidence
+
+Controlled validation file:
+
+research/runtime/polygon-v4/live-opportunities/controlled-observations.jsonl
+
+Record count at validation:
+
+3
+
+This file is intentionally Git-ignored.
+
+The normal long-running watcher uses:
+
+research/runtime/polygon-v4/live-opportunities/observations.jsonl
+
+### Next Work
+
+Immediate next step:
+
+Run the committed persistent watcher and accumulate a larger observation
+sample.
+
+Then add read-only summary statistics over the JSONL observations,
+including:
+
+- observation count
+- minimum gas
+- maximum gas
+- maximum gross delta
+- maximum protected gas ceiling
+- closest gas-to-ceiling ratio
+- candidate changes
+- qualification-state changes
+
+Do not introduce a signer or broadcast capability during this stage.
+
+If LIVE_READY is ever observed:
+
+1. Stop/freeze the relevant evidence.
+2. Do not broadcast.
+3. Requalify against current head and current gas.
+4. Run the final fork/execution-path simulation.
+5. Preserve evidence.
+6. Only consider signer/execution work as a separate reviewed stage.
+
+### Updated Recovery Anchor
+
+Current durable code anchor:
+
+cf56677 Add persistent Polygon V4 watcher observations
+
+The watcher process itself remains transient.
+
+Codespaces suspension can terminate it.
+
+Persisted project files and Git commits survive independently of the
+watcher process.
+
+Runtime JSONL files persist only for as long as the Codespace filesystem
+itself remains available and should not be treated as a substitute for
+Git or external durable storage.
