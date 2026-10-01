@@ -822,3 +822,196 @@ watcher process.
 Runtime JSONL files persist only for as long as the Codespace filesystem
 itself remains available and should not be treated as a substitute for
 Git or external durable storage.
+
+## 2026-10-01 Polygon V4 Observation Analyzer Milestone
+
+### Source milestone
+
+Observation analysis was added in:
+
+- `9629a87 Add Polygon V4 observation analysis`
+
+Files added:
+
+- `scripts/research/analyzePolygonV4Observations.js`
+- `test/polygonV4ObservationAnalyzer.test.js`
+
+The analyzer is read-only research tooling. It consumes persistent Polygon V4 watcher JSONL observations and does not create or alter qualification readiness.
+
+It does not add a signer, submit transactions, broadcast, or modify production execution.
+
+### Analyzer capabilities
+
+The analyzer reports:
+
+- observation count
+- monitoring period and duration
+- first and last quote blocks
+- minimum, average, and maximum observed gas price
+- minimum, average, and maximum best-candidate gross delta
+- minimum, average, and maximum protected gas ceiling
+- candidate win frequency
+- candidate changes
+- qualification-state changes
+- LIVE_READY event count
+- qualification failure reasons
+- closest protected gas-ceiling-to-actual-gas observation
+- best historical gross observation
+- contiguous economics trend periods classified as:
+  - `IMPROVING`
+  - `DETERIORATING`
+  - `FLAT`
+
+Economics trend direction is based on the protected gas-ceiling / actual gas-price ratio. A higher ratio moves toward executable economics; a lower ratio moves away.
+
+### Validation
+
+Analyzer unit tests:
+
+- 9 tests
+- 9 passed
+- 0 failed
+
+Focused Polygon V4 regression after analyzer changes:
+
+- 44 tests
+- 44 passed
+- 0 failed
+
+`git diff --check` was clean.
+
+Protected execution files were unchanged.
+
+The regression was run under:
+
+- Node `v24.21.0`
+
+Repository `.nvmrc` still specifies:
+
+- Node `18.20.8`
+
+The restarted Codespace did not have Node 18.20.8 installed. No Node installation, dependency installation, dependency upgrade, or environment migration was performed during this milestone.
+
+### 744-observation research sample
+
+Persistent Mac/Codespace observation data survived the Codespace restart and contained:
+
+- observations: `744`
+- period: `2026-10-01T12:21:35.456Z -> 2026-10-01T19:11:09.203Z`
+- blocks: `94768101 -> 94784484`
+- duration: `6h 49m 33s`
+
+Observed gas:
+
+- minimum: `239.124478139 gwei`
+- average: `275.880224531 gwei`
+- maximum: `290.266772552 gwei`
+
+Best-candidate gross delta:
+
+- minimum: `0.014028934154687933 WPOL`
+- average: `0.016716184249653561 WPOL`
+- maximum: `0.019998569388452416 WPOL`
+
+Best protected gas ceiling:
+
+- minimum: `10.387556405 gwei`
+- average: `14.207290468 gwei`
+- maximum: `18.872966487 gwei`
+
+Candidate results:
+
+- `V3_125_OPTIMIZED` won `744 / 744`
+- candidate changes: `0`
+- qualification-state changes: `0`
+- LIVE_READY events: `0`
+
+Qualification failures:
+
+- `Candidate has negative expected net profit`: `2976`
+
+This is `744 observations * 4 candidates`.
+
+Economics trend periods:
+
+- total: `418`
+- improving: `209`
+- deteriorating: `208`
+- flat: `1`
+
+These are contiguous direction periods, not individual observation counts. The near-even improving/deteriorating split indicates frequent oscillation rather than a sustained move toward executable economics.
+
+Closest observation to the protected gas ceiling:
+
+- capturedAt: `2026-10-01T17:04:13.939Z`
+- block: `94779407`
+- candidate: `V3_125_OPTIMIZED`
+- actual gas: `266.30043875 gwei`
+- protected gas ceiling: `18.872966487 gwei`
+- ceiling / actual gas: `7.0870%`
+
+Best historical gross observation:
+
+- capturedAt: `2026-10-01T17:01:28.301Z`
+- block: `94779297`
+- candidate: `V3_125_OPTIMIZED`
+- gross: `0.019998569388452416 WPOL`
+- actual gas: `273.269376763 gwei`
+- protected gas ceiling: `18.872966487 gwei`
+- stage: `PREFLIGHT`
+- reason: `Candidate has negative expected net profit`
+
+Interpretation:
+
+The monitored route continued to show positive gross spread, but observed Polygon gas remained far above the protected execution ceiling. No observation qualified for LIVE_READY. The safety policy was not weakened to manufacture readiness.
+
+### HP / watcher operational boundary
+
+HP Bugs remains the primary persistent monitoring machine.
+
+The Mac/Codespace watcher was retired after HP persistence was proven.
+
+The analyzer milestone did not modify or restart the HP watcher service.
+
+Current operational policy remains:
+
+- provider-only monitoring
+- no signer
+- no transaction submission
+- no broadcast
+- `LIVE_READY=false` unless all existing qualification and safety-policy checks pass
+
+Do not weaken profitability, slippage, gas, freshness, minimum-profit, or worst-case policy to create readiness.
+
+### Current development boundary
+
+Continue to keep production integration isolated.
+
+Do not modify without a separately reviewed production-integration stage:
+
+- `ProfitBot.sol`
+- `ThreeLegExecution`
+- production execution route helpers
+- frontend / MetaMask integration
+- deployment addresses
+- `.env`
+
+Do not resurrect legacy `scanAndExecute.js`.
+
+Do not submit a live-network transaction during research/qualification work.
+
+### Recovery anchor
+
+Current analyzer code milestone:
+
+- `9629a87 Add Polygon V4 observation analysis`
+
+Before further development, verify branch, HEAD, origin state, and worktree status from Git.
+
+Next immediate repository action after this checkpoint update:
+
+1. inspect the checkpoint diff
+2. verify only `APOLLO_CHECKPOINT.md` changed
+3. commit the checkpoint separately if clean
+4. push the analyzer and checkpoint milestones to GitHub
+5. leave HP Bugs running unchanged
