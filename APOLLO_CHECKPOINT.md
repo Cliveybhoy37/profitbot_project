@@ -3290,3 +3290,93 @@ Next boundary:
 - Any real repeated observation cadence should remain a separate reviewed responsibility.
 - Do not introduce signer, transaction, broadcast, or production execution behavior as part of this provider-backed research composition.
 - Preserve the separation between provider observation, block-advancement attempt policy, wall-clock waiting, snapshot acquisition, gated acquisition, and stability analysis.
+
+## Milestone 1O — Polygon V4 protected peak provider cadence
+
+Status: code complete, locally validated, pushed, and exact-SHA CI green.
+
+### Code commit
+
+- SHA: `fd91be5d07e3c9fca3a3660d84eac404e632940b`
+- Subject: `Add Polygon V4 protected peak provider cadence`
+- Parent: `30968333c41e16dada0e5f7aabedfab2b1457a7d`
+- Scope:
+  - `scripts/research/runPolygonV4ProtectedPeakProviderCadence.js`
+  - `test/polygonV4ProtectedPeakProviderCadence.test.js`
+- Change size: 2 new files, 568 insertions.
+
+### Purpose and behavior
+
+1O adds a bounded orchestration layer above unchanged 1N provider-backed gated stability.
+
+- Runs exactly `maxCycles` unless an invoked dependency throws.
+- `maxCycles` must be a positive safe integer.
+- `waitMs` must be a non-negative safe integer.
+- Waiting is injected through `waitFn`; the core 1O implementation does not own `setTimeout`.
+- The first cycle runs immediately.
+- Waiting occurs only between cycles, never before the first cycle or after the final cycle.
+- Each cycle delegates to 1N with the exact provider, count, minimum block gap, maximum attempt budget, and optional amounts override.
+- Omitted `amounts` remains omitted.
+- Each exact 1N result is preserved in the returned cycle evidence.
+- An incomplete gated acquisition is preserved as cycle evidence and does not by itself terminate later bounded cycles.
+- Cycle failures propagate unchanged.
+- Wait failures propagate unchanged and prevent the next cycle from starting.
+- Wall-clock waiting never counts as block advancement. Existing 1I block observation and minimum-gap policy remain authoritative.
+
+### Responsibility boundaries
+
+- 1I remains responsible for deterministic bounded block-advancement observation.
+- 1J remains responsible for block-gated snapshot acquisition.
+- 1K remains responsible for composing gated acquisition with protected-peak stability.
+- 1L remains responsible for one provider block-number observation.
+- 1M remains responsible for provider-to-zero-argument observer binding.
+- 1N remains responsible for provider-backed gated-stability composition.
+- 1O owns only bounded multi-cycle orchestration and injected between-cycle waiting.
+- No existing 1I through 1N implementation was modified.
+
+### Safety boundary
+
+1O remains research-only and provider-only.
+
+- No signer.
+- No wallet or private key.
+- No transaction construction or submission.
+- No broadcast.
+- No direct provider reads in 1O.
+- No `setInterval` or internal daemon.
+- No persistence or filesystem writes.
+- No environment-variable policy.
+- No production execution integration.
+- No profitability, slippage, gas, freshness, block-gap, or worst-case policy weakening.
+- `LIVE_READY` remains independently gated by the existing qualification and safety policy.
+
+### Validation
+
+- Focused 1O tests: 7/7 passing.
+- Maintained Node suite: 405/405 passing.
+- Canonical Hardhat suite: 29/29 passing.
+- Maintained total: 434 passing.
+- Safety scan: empty.
+- Direct provider-read scan: empty.
+- Existing 1I through 1N change check: unchanged.
+- Final pre-commit scope: exactly the two intended 1O files.
+- Generated Hardhat artifact/cache churn was restored before commit.
+
+### Exact-SHA CI
+
+- Workflow: `ProfitBot CI`
+- Run: `37060384205`
+- Event: `push`
+- Head SHA: `fd91be5d07e3c9fca3a3660d84eac404e632940b`
+- Created: `2026-10-02T20:24:34Z`
+- Updated: `2026-10-02T20:25:15Z`
+- Status: `completed`
+- Conclusion: `success`
+
+### Next boundary
+
+The next stage may provide a controlled provider-only runner around 1O for real multi-block stability observation.
+
+That stage must remain bounded and read-only. Real wall-clock waiting may be supplied outside the 1O core, but elapsed time must never substitute for observed block advancement.
+
+Do not add signer, transaction, broadcast, or production execution behavior. If future evidence reaches `LIVE_READY`, freeze and preserve the evidence, requalify against current head and gas, perform final fork/execution simulation, and keep any execution integration as a separate reviewed stage.
