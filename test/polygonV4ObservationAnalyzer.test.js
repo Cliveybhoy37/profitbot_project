@@ -10,6 +10,7 @@ const {
   parseObservationLines,
   bestDiagnostic,
   ratioPpm,
+  qualificationEnvelope,
   validateObservation,
   analyzeObservations,
   formatDuration
@@ -152,6 +153,73 @@ test(
         "100"
       ),
       250000n
+    );
+  }
+);
+
+test(
+  "qualification envelope measures distance without changing policy",
+  () => {
+    const envelope =
+      qualificationEnvelope(
+        "13944000000",
+        "279238000000"
+      );
+
+    assert.equal(
+      envelope.maxGasPriceWei,
+      13944000000n
+    );
+
+    assert.equal(
+      envelope.gasPriceWei,
+      279238000000n
+    );
+
+    assert.equal(
+      envelope.gasPriceDeficitWei,
+      265294000000n
+    );
+
+    assert.equal(
+      envelope.coveragePpm,
+      49935n
+    );
+
+    assert.equal(
+      envelope.gasReductionRequiredPpm,
+      950064n
+    );
+
+    assert.equal(
+      envelope.qualifiesAtObservedGas,
+      false
+    );
+  }
+);
+
+test(
+  "qualification envelope reports no deficit inside protected ceiling",
+  () => {
+    const envelope =
+      qualificationEnvelope(
+        "100",
+        "80"
+      );
+
+    assert.equal(
+      envelope.gasPriceDeficitWei,
+      0n
+    );
+
+    assert.equal(
+      envelope.gasReductionRequiredPpm,
+      0n
+    );
+
+    assert.equal(
+      envelope.qualifiesAtObservedGas,
+      true
     );
   }
 );

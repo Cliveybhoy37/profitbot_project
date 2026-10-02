@@ -167,6 +167,61 @@ function ratioPpm(
   );
 }
 
+function qualificationEnvelope(
+  ceilingWei,
+  gasPriceWei
+) {
+  const ceiling =
+    bigIntValue(
+      ceilingWei
+    );
+
+  const gas =
+    bigIntValue(
+      gasPriceWei
+    );
+
+  if (
+    ceiling === null ||
+    gas === null ||
+    ceiling < 0n ||
+    gas <= 0n
+  ) {
+    return null;
+  }
+
+  const coveragePpm =
+    ratioPpm(
+      ceiling,
+      gas
+    );
+
+  const gasPriceDeficitWei =
+    gas > ceiling
+      ? gas - ceiling
+      : 0n;
+
+  const gasReductionRequiredPpm =
+    gas > ceiling
+      ? (
+          gasPriceDeficitWei *
+          1000000n
+        ) / gas
+      : 0n;
+
+  return {
+    gasPriceWei:
+      gas,
+    maxGasPriceWei:
+      ceiling,
+    coveragePpm,
+    gasPriceDeficitWei,
+    gasReductionRequiredPpm,
+    qualifiesAtObservedGas:
+      gas <= ceiling
+  };
+}
+
 function validateObservation(
   observation,
   index
@@ -672,6 +727,13 @@ function analyzeObservations(
     failureReasons,
     closestGasToCeiling:
       closest,
+    closestQualificationEnvelope:
+      closest
+        ? qualificationEnvelope(
+            closest.maxGasPriceWei,
+            closest.gasPriceWei
+          )
+        : null,
     bestHistorical
   };
 }
@@ -952,6 +1014,24 @@ function printAnalysis(
     console.log(
       `ceilingToGas=${formatPercentFromPpm(closest.ratioPpm)}`
     );
+
+    const envelope =
+      analysis
+        .closestQualificationEnvelope;
+
+    if (envelope) {
+      console.log(
+        `gasDeficit=${formatGwei(envelope.gasPriceDeficitWei)} gwei`
+      );
+
+      console.log(
+        `gasReductionRequired=${formatPercentFromPpm(envelope.gasReductionRequiredPpm)}`
+      );
+
+      console.log(
+        `qualifiesAtObservedGas=${envelope.qualifiesAtObservedGas}`
+      );
+    }
   }
 
   if (
@@ -1056,6 +1136,7 @@ module.exports = {
   parseObservationLines,
   bestDiagnostic,
   ratioPpm,
+  qualificationEnvelope,
   validateObservation,
   analyzeObservations,
   formatDuration
