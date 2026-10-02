@@ -167,6 +167,89 @@ function ratioPpm(
   );
 }
 
+const QUALIFICATION_GAS_UNITS =
+  700000n;
+
+function economicEnvelope(
+  gasBudgetWei,
+  gasPriceWei,
+  gasUnits =
+    QUALIFICATION_GAS_UNITS
+) {
+  const budget =
+    bigIntValue(
+      gasBudgetWei
+    );
+
+  const gas =
+    bigIntValue(
+      gasPriceWei
+    );
+
+  const units =
+    bigIntValue(
+      gasUnits
+    );
+
+  if (
+    budget === null ||
+    gas === null ||
+    units === null ||
+    budget < 0n ||
+    gas <= 0n ||
+    units <= 0n
+  ) {
+    return null;
+  }
+
+  const observedGasCostWei =
+    gas * units;
+
+  const additionalProtectedBudgetRequiredWei =
+    observedGasCostWei >
+      budget
+      ? observedGasCostWei -
+        budget
+      : 0n;
+
+  const coveragePpm =
+    observedGasCostWei > 0n
+      ? (
+          budget *
+          1000000n
+        ) /
+        observedGasCostWei
+      : null;
+
+  const budgetUpliftRequiredPpm =
+    additionalProtectedBudgetRequiredWei >
+      0n
+      ? budget > 0n
+        ? (
+            additionalProtectedBudgetRequiredWei *
+            1000000n
+          ) /
+          budget
+        : null
+      : 0n;
+
+  return {
+    gasBudgetWei:
+      budget,
+    gasPriceWei:
+      gas,
+    gasUnits:
+      units,
+    observedGasCostWei,
+    additionalProtectedBudgetRequiredWei,
+    coveragePpm,
+    budgetUpliftRequiredPpm,
+    qualifiesAtObservedGas:
+      budget >=
+      observedGasCostWei
+  };
+}
+
 function qualificationEnvelope(
   ceilingWei,
   gasPriceWei
@@ -335,6 +418,11 @@ function analyzeObservations(
 
   let closest = null;
   let bestHistorical = null;
+
+  let smallestProtectedBudgetShortfall =
+    null;
+  let bestProtectedBudgetCoverage =
+    null;
 
   let liveReadyEvents = 0;
 
@@ -594,6 +682,55 @@ function analyzeObservations(
             ] || 0
           ) + 1;
       }
+
+      const envelope =
+        economicEnvelope(
+          row.gasBudget,
+          row.gasPriceWei ??
+            observation
+              .policySnapshot
+              ?.gasPriceWei
+        );
+
+      if (envelope) {
+        const economicRow = {
+          index,
+          capturedAt:
+            observation
+              .capturedAt,
+          quoteBlock:
+            observation
+              .quoteBlock,
+          candidateId:
+            row.id,
+          ...envelope
+        };
+
+        if (
+          !smallestProtectedBudgetShortfall ||
+          envelope
+            .additionalProtectedBudgetRequiredWei <
+            smallestProtectedBudgetShortfall
+              .additionalProtectedBudgetRequiredWei
+        ) {
+          smallestProtectedBudgetShortfall =
+            economicRow;
+        }
+
+        if (
+          envelope.coveragePpm !==
+            null &&
+          (
+            !bestProtectedBudgetCoverage ||
+            envelope.coveragePpm >
+              bestProtectedBudgetCoverage
+                .coveragePpm
+          )
+        ) {
+          bestProtectedBudgetCoverage =
+            economicRow;
+        }
+      }
     }
 
     const state =
@@ -734,6 +871,8 @@ function analyzeObservations(
             closest.gasPriceWei
           )
         : null,
+    smallestProtectedBudgetShortfall,
+    bestProtectedBudgetCoverage,
     bestHistorical
   };
 }
@@ -1035,6 +1174,82 @@ function printAnalysis(
   }
 
   if (
+    analysis
+      .smallestProtectedBudgetShortfall
+  ) {
+    const row =
+      analysis
+        .smallestProtectedBudgetShortfall;
+
+    console.log("");
+    console.log(
+      "SMALLEST_PROTECTED_BUDGET_SHORTFALL"
+    );
+    console.log(
+      `capturedAt=${row.capturedAt}`
+    );
+    console.log(
+      `block=${row.quoteBlock}`
+    );
+    console.log(
+      `candidate=${row.candidateId}`
+    );
+    console.log(
+      `protectedGasBudget=${formatWpol(row.gasBudgetWei)} WPOL`
+    );
+    console.log(
+      `observedGasCost=${formatWpol(row.observedGasCostWei)} WPOL`
+    );
+    console.log(
+      `additionalProtectedBudgetRequired=${formatWpol(row.additionalProtectedBudgetRequiredWei)} WPOL`
+    );
+    console.log(
+      `budgetCoverage=${formatPercentFromPpm(row.coveragePpm)}`
+    );
+    console.log(
+      `budgetUpliftRequired=${formatPercentFromPpm(row.budgetUpliftRequiredPpm)}`
+    );
+  }
+
+  if (
+    analysis
+      .bestProtectedBudgetCoverage
+  ) {
+    const row =
+      analysis
+        .bestProtectedBudgetCoverage;
+
+    console.log("");
+    console.log(
+      "BEST_PROTECTED_BUDGET_COVERAGE"
+    );
+    console.log(
+      `capturedAt=${row.capturedAt}`
+    );
+    console.log(
+      `block=${row.quoteBlock}`
+    );
+    console.log(
+      `candidate=${row.candidateId}`
+    );
+    console.log(
+      `protectedGasBudget=${formatWpol(row.gasBudgetWei)} WPOL`
+    );
+    console.log(
+      `observedGasCost=${formatWpol(row.observedGasCostWei)} WPOL`
+    );
+    console.log(
+      `additionalProtectedBudgetRequired=${formatWpol(row.additionalProtectedBudgetRequiredWei)} WPOL`
+    );
+    console.log(
+      `budgetCoverage=${formatPercentFromPpm(row.coveragePpm)}`
+    );
+    console.log(
+      `budgetUpliftRequired=${formatPercentFromPpm(row.budgetUpliftRequiredPpm)}`
+    );
+  }
+
+  if (
     analysis.bestHistorical
   ) {
     const best =
@@ -1137,6 +1352,8 @@ module.exports = {
   bestDiagnostic,
   ratioPpm,
   qualificationEnvelope,
+  QUALIFICATION_GAS_UNITS,
+  economicEnvelope,
   validateObservation,
   analyzeObservations,
   formatDuration

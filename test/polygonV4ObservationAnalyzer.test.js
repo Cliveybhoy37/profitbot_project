@@ -11,6 +11,8 @@ const {
   bestDiagnostic,
   ratioPpm,
   qualificationEnvelope,
+  QUALIFICATION_GAS_UNITS,
+  economicEnvelope,
   validateObservation,
   analyzeObservations,
   formatDuration
@@ -26,6 +28,8 @@ function observation({
   firstCeiling,
   secondGross,
   secondCeiling,
+  firstGasBudget = null,
+  secondGasBudget = null,
   liveReadyIds = []
 }) {
   return {
@@ -47,6 +51,12 @@ function observation({
           firstGross.toString(),
         maxGasPriceWei:
           firstCeiling.toString(),
+        ...(firstGasBudget === null
+          ? {}
+          : {
+              gasBudget:
+                firstGasBudget.toString()
+            }),
         liveReady:
           false,
         stage:
@@ -61,6 +71,12 @@ function observation({
           secondGross.toString(),
         maxGasPriceWei:
           secondCeiling.toString(),
+        ...(secondGasBudget === null
+          ? {}
+          : {
+              gasBudget:
+                secondGasBudget.toString()
+            }),
         liveReady:
           liveReadyIds.includes(
             "SECOND"
@@ -225,6 +241,84 @@ test(
 );
 
 test(
+  "economic envelope measures protected budget shortfall without changing policy",
+  () => {
+    const envelope =
+      economicEnvelope(
+        "13211076541510153",
+        "266300438750"
+      );
+
+    assert.equal(
+      QUALIFICATION_GAS_UNITS,
+      700000n
+    );
+
+    assert.equal(
+      envelope.observedGasCostWei,
+      186410307125000000n
+    );
+
+    assert.equal(
+      envelope.additionalProtectedBudgetRequiredWei,
+      173199230583489847n
+    );
+
+    assert.equal(
+      envelope.coveragePpm,
+      70870n
+    );
+
+    assert.equal(
+      envelope.budgetUpliftRequiredPpm,
+      13110152n
+    );
+
+    assert.equal(
+      envelope.qualifiesAtObservedGas,
+      false
+    );
+  }
+);
+
+test(
+  "economic envelope reports no shortfall when budget covers observed gas",
+  () => {
+    const envelope =
+      economicEnvelope(
+        "1000",
+        "1",
+        "500"
+      );
+
+    assert.equal(
+      envelope.observedGasCostWei,
+      500n
+    );
+
+    assert.equal(
+      envelope.additionalProtectedBudgetRequiredWei,
+      0n
+    );
+
+    assert.equal(
+      envelope.coveragePpm,
+      2000000n
+    );
+
+    assert.equal(
+      envelope.budgetUpliftRequiredPpm,
+      0n
+    );
+
+    assert.equal(
+      envelope.qualifiesAtObservedGas,
+      true
+    );
+  }
+);
+
+test(
   "analysis summarizes observations without changing readiness",
   () => {
     const rows = [
@@ -242,7 +336,11 @@ test(
         secondGross:
           20n,
         secondCeiling:
-          8n
+          8n,
+        firstGasBudget:
+          500n,
+        secondGasBudget:
+          400n
       }),
       observation({
         capturedAt:
@@ -259,6 +357,10 @@ test(
           40n,
         secondCeiling:
           20n,
+        firstGasBudget:
+          1000n,
+        secondGasBudget:
+          2000n,
         liveReadyIds: [
           "SECOND"
         ]
@@ -338,6 +440,34 @@ test(
     assert.equal(
       result.bestHistorical.diagnostic.id,
       "SECOND"
+    );
+
+    assert.equal(
+      result
+        .smallestProtectedBudgetShortfall
+        .candidateId,
+      "SECOND"
+    );
+
+    assert.equal(
+      result
+        .smallestProtectedBudgetShortfall
+        .additionalProtectedBudgetRequiredWei,
+      55998000n
+    );
+
+    assert.equal(
+      result
+        .bestProtectedBudgetCoverage
+        .candidateId,
+      "SECOND"
+    );
+
+    assert.equal(
+      result
+        .bestProtectedBudgetCoverage
+        .coveragePpm,
+      35n
     );
   }
 );
