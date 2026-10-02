@@ -3138,3 +3138,73 @@ them.
 
 Do not introduce signer, transaction, broadcast, or production
 execution behavior as part of provider-observer integration.
+## Milestone 1M — Polygon V4 protected peak provider observer binding
+
+Status: code complete, locally validated, pushed, and exact-SHA CI green.
+
+Code commit:
+- SHA: `67bda0bbff61d034fa8418c4bdbb47db87c387b8`
+- Subject: `Add Polygon V4 protected peak provider observer binding`
+- Parent: `df84d2b6efc6d28d9788bb383e229b514b273779`
+- Scope: exactly two new files, 191 insertions:
+  - `scripts/research/runPolygonV4ProtectedPeakProviderObserver.js`
+  - `test/polygonV4ProtectedPeakProviderObserver.test.js`
+
+Purpose:
+- Bind a provider to the 1L provider-block observer and expose the zero-argument `observeBlockFn()` contract consumed by 1I/1J.
+- Resolve only the interface mismatch between 1L `{ provider }` observation and the existing zero-argument observer boundary.
+
+Behavior:
+- `createProtectedPeakProviderObserver({ provider, observeProviderBlockFn })` returns an async zero-argument observer.
+- Creating the observer performs zero provider reads.
+- Each observer invocation delegates exactly once to the provider-block dependency with the exact provider.
+- The default dependency is 1L `observeProtectedPeakProviderBlock`.
+- Provider validation remains owned by 1L rather than duplicated in 1M.
+- Invalid injected provider-block dependencies fail before observation.
+- Provider-block failures propagate unchanged.
+
+Architecture boundaries:
+- 1M does not implement retry, sleep, polling, cadence, or wall-clock timeout.
+- 1M does not decide how often observation occurs.
+- 1M does not acquire snapshots or perform stability analysis.
+- 1M does not directly call provider methods.
+- 1I remains responsible for deterministic bounded block-advancement attempts.
+- 1J remains responsible for gated snapshot acquisition and remains provider-abstract.
+- 1K remains responsible for gated acquisition -> stability composition.
+- 1L remains responsible for one provider-backed block-number observation.
+- 1I, 1J, and 1K were not modified by 1M.
+- Wiring 1M into a higher composition layer remains a separate reviewed milestone.
+
+Safety:
+- Provider-only/read-only architecture.
+- No signer.
+- No wallet/private key handling.
+- No transaction creation.
+- No broadcast.
+- No persistence or watcher modification.
+- No production contract or execution-route modification.
+- No profitability, slippage, gas, freshness, minimum-profit, or worst-case policy weakening.
+- `LIVE_READY` remains policy-gated.
+
+Validation:
+- Focused 1M: 6/6 passing.
+- Maintained Node suite: 392/392 passing.
+- Canonical Hardhat suite: 29/29 passing.
+- Maintained total: 421 passing.
+- Pre/post `git diff --check`: passing.
+- Safety scan: empty.
+- Direct provider-read scan in 1M implementation: empty.
+- Final implementation scope: exactly the intended two files.
+
+CI:
+- Workflow: `ProfitBot checks`
+- Run: `37055510322`
+- Event: `push`
+- Exact head SHA: `67bda0bbff61d034fa8418c4bdbb47db87c387b8`
+- Status: `completed`
+- Conclusion: `success`
+
+Next boundary:
+- Do not add timers or hidden polling to 1M.
+- Any integration of the bound observer into the gated acquisition/stability chain must be a separate additive, reviewed milestone.
+- Keep provider observation, block-advancement attempt policy, wall-clock waiting/cadence, snapshot acquisition, and stability analysis as distinct responsibilities unless repository evidence justifies a later composition.
