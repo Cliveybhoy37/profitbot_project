@@ -1937,3 +1937,82 @@ This differs from the earlier 1C snapshot, whose sampled maximum was near `0.123
 Observed gas remained far above the protected ceiling, so nothing became `LIVE_READY`. Do not weaken gas, slippage, reserve, minimum-profit, freshness, or worst-case policy to manufacture readiness.
 
 A useful next research direction is provider-only peak/stability analysis across multiple pinned snapshots rather than repeatedly narrowing around one historical amount. Keep that research isolated from `ProfitBot.sol`, production execution helpers, deployment configuration, `.env`, signing, transactions, and broadcasting.
+
+## 2026-10-02 — Polygon V4 Protected Peak Stability (1E)
+
+### Verified code boundary
+
+- Commit: `e07a7c2900a51e36437b1a00da4cda23c522d6fa`
+- Subject: `Add Polygon V4 protected peak stability analysis`
+- ProfitBot CI: run `37033982901`
+- CI conclusion: success
+- CI elapsed: 44s
+- Local and `origin/repair/simulation-safety` matched after push.
+
+### Scope
+
+Added deterministic provider-independent orchestration for comparing the protected amount-surface peak across explicit snapshots:
+
+- `scripts/research/runPolygonV4ProtectedPeakStability.js`
+- `test/polygonV4ProtectedPeakStability.test.js`
+
+The runner reuses the existing 1C protected fine surface rather than implementing economics again.
+
+Each input snapshot explicitly carries:
+
+- `blockTag`
+- `gasPriceWei`
+- `premiumBps`
+
+Peak observations are classified as:
+
+- `NONE`
+- `LOWER_BOUNDARY`
+- `INTERIOR`
+- `UPPER_BOUNDARY`
+
+Boundary classifications are evidence that the sampled observation window may not bracket the peak. They are not proof of an optimum.
+
+Malformed delegated surface results and malformed peak classifications fail closed.
+
+### Validation
+
+- 1E focused tests: 5/5
+- Combined 1B + 1C + 1D + 1E: 17/17
+- Full Node suite: 336/336
+- Canonical Hardhat suite: 29/29
+- Total maintained Node + canonical Hardhat tests: 365/365
+- `git diff --check`: clean
+- prohibited execution-surface scan: empty
+- Solidity compilation: 35 files, EVM target `paris`
+- only existing SPDX warnings observed
+
+A bare `npx hardhat test` also discovers legacy tracked `test/Lock.js`, which imports absent Hardhat Toolbox helpers. The repository's canonical `test:hardhat` script intentionally runs `test/ProfitBot.js`, `test/execution.js`, and `test/threeLegExecution.js`; that maintained suite passed 29/29. No dependency/toolchain change was made for the unrelated legacy test.
+
+### Safety boundary
+
+1E adds no signer, transaction, broadcast, wallet, production execution, deployment, `.env`, or policy changes.
+
+Do not weaken profitability, slippage, gas, freshness, minimum-profit, or worst-case qualification policy to manufacture readiness.
+
+`LIVE_READY` remains false unless the existing safety policy genuinely passes.
+
+### Next research step
+
+Add provider-only snapshot acquisition around the deterministic 1E core.
+
+Important gas provenance rule:
+
+`provider.getGasPrice()` represents gas observed at acquisition time. It must not be represented as historical gas for an older `blockTag`.
+
+Historical/block-pinned Aave premium data and current observed gas therefore require explicit provenance. Never compare snapshots as though their inputs were contemporaneous unless they actually were.
+
+Continue with:
+
+- provider only
+- read/call only
+- no signer
+- no transaction
+- no broadcast
+
+Keep 1D unchanged as historical experimental evidence.
