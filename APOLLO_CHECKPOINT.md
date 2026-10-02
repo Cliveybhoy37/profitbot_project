@@ -1879,3 +1879,61 @@ Next research direction:
 - If continuing amount-surface investigation, isolate the local peak with a provider-only micro-surface around approximately `0.1210–0.1250 WPOL` at `0.0001 WPOL` increments.
 - Keep the experiment read-only and isolated.
 - Do not modify `ProfitBot.sol`, production execution helpers, deployment addresses, `.env`, or live execution policy.
+
+## Milestone 1D — Polygon V4 Protected Micro Amount Surface
+
+### Code / CI anchor
+
+- Code commit: `3b46fb3d82451b315fe76a2ea4c8bc6bc1df14a5`
+- Subject: `Add Polygon V4 protected micro amount surface`
+- Independent `ProfitBot CI`: run `37030696495`, success in 35s.
+- Additive files only:
+  - `scripts/research/runPolygonV4ProtectedMicroSurface.js`
+  - `test/polygonV4ProtectedMicroSurface.test.js`
+- Code diff: 499 insertions across exactly those two files.
+- No production contract, execution path, deployment address, `.env`, profitability policy, signer, transaction, or broadcast changes.
+
+### Design / validation
+
+- Provider-only protected micro-surface.
+- Exact integer grid: `0.1210` through `0.1250 WPOL`, inclusive.
+- Step: `0.0001 WPOL`.
+- Observations: 41.
+- Reuses the protected fine-surface / amount-surface mechanics and one shared pinned block, gas price, and Aave premium snapshot.
+- Focused 1C + 1D regression: 6/6 passed.
+- Full Node regression: 331/331 passed.
+- Hardhat regression: 29/29 passed.
+- Total local tests: 360/360 passed.
+- Hardhat compiled 35 Solidity files successfully; SPDX warnings only.
+- Generated `artifacts/` and `cache/` churn was restored before staging.
+- Staged diff check passed and safety scan found no signer / transaction / broadcast / execution calls.
+
+### First provider-only 1D observation
+
+- Pinned quote block: `94834040`.
+- PoolId: `0x6c6627aba26b073dd60b88b472b608f4f48f4e9eb5635efbd32095a76bea6c60`.
+- Route: `WPOL -> DAI -> APEPE -> WPOL`.
+- Shared gas price: `278281592114 wei/gas`.
+- Aave premium: `5 bps`.
+- Quote result: 41/41 `QUOTE_OK`.
+- No signer, transaction, or broadcast.
+
+Best sampled protected row in this micro-grid:
+
+- Amount: `0.125 WPOL`.
+- Gross delta: `17606578371831757 wei`.
+- Protected gas budget: `10831045479972598 wei`.
+- Gas ceiling: `15472922114 wei/gas`.
+- Gas coverage: `55601 ppm`.
+- Economic deficit at observed gas: `183966068999827402 wei`.
+- Qualifies at observed gas: `false`.
+
+### Interpretation / next research boundary
+
+The protected gas budget increased across the entire sampled `0.1210` through `0.1250 WPOL` interval at block `94834040`. Therefore `0.125 WPOL` is only the upper-boundary maximum of this sampled grid; this observation does not establish an interior or permanent optimum.
+
+This differs from the earlier 1C snapshot, whose sampled maximum was near `0.123 WPOL`, and is evidence that the best protected amount can move with market state. Do not hard-code either sampled amount as a permanent optimum.
+
+Observed gas remained far above the protected ceiling, so nothing became `LIVE_READY`. Do not weaken gas, slippage, reserve, minimum-profit, freshness, or worst-case policy to manufacture readiness.
+
+A useful next research direction is provider-only peak/stability analysis across multiple pinned snapshots rather than repeatedly narrowing around one historical amount. Keep that research isolated from `ProfitBot.sol`, production execution helpers, deployment configuration, `.env`, signing, transactions, and broadcasting.
