@@ -2817,3 +2817,143 @@ Next research boundary:
 - Decide whether incomplete research evidence requires durable persistence before any long-running orchestration.
 - Preserve the distinction between observed block advancement, pinned snapshot separation, elapsed time, and economically independent market states.
 - Do not introduce signer, transaction, or broadcast behavior as part of provider adaptation or research orchestration.
+
+---
+
+## 1K.1 Corrective Milestone — Provider Forwarding
+
+### Supersession
+
+This section corrects and supersedes the earlier 1K closure
+claims recorded by checkpoint commit
+`0f5b1225478136840502598ee587b15438f46df8`.
+
+Published history is retained unchanged.
+
+Original 1K code commit:
+`c965e652ec7482f6d2ba609b33634e977855441e`
+
+The original 1K composition omitted forwarding `provider` into
+the default 1E protected-peak stability runner.
+
+1E requires provider. Therefore the original statement that 1K
+had no provider dependency was incorrect.
+
+### Why original CI passed
+
+The original 1K tests injected `runStabilityFn` stubs that did
+not require provider.
+
+Those tests validated the injected composition behavior but did
+not expose the missing provider requirement of the default 1E
+integration.
+
+The original green CI therefore did not prove correct default
+1K-to-1E provider forwarding.
+
+### Additive 1K.1 correction
+
+Corrective commit:
+`8d24d18678f8a1262d4a9509c2e8908f57c440ff`
+
+Subject:
+`Fix Polygon V4 gated stability provider forwarding`
+
+Corrected behavior:
+
+- 1K accepts `provider`.
+- 1K forwards that exact provider to stability.
+- 1K makes no direct provider calls.
+- Provider is not passed into 1J gated acquisition.
+- 1J remains provider-abstract through injected acquisition and
+  observation dependencies.
+- Default 1E remains responsible for provider validation and use.
+- Incomplete acquisition still returns before stability runs.
+- Omitted `amounts` remains omitted.
+- Completed-empty-snapshot hardening remains unchanged.
+
+No signer, wallet, transaction, broadcast, timer, polling loop,
+persistence, production execution change, or safety-policy
+weakening was introduced.
+
+### Regression and validation evidence
+
+A dedicated regression test verifies exact provider identity is
+forwarded to stability after complete acquisition.
+
+Validation after the correction:
+
+- focused 1K: 10/10 passing
+- full Node suite: 381/381 passing
+- canonical Hardhat suite: 29/29 passing
+- maintained total: 410 passing
+- `git diff --check`: pass
+- intended corrective scope: exactly two files
+- Hardhat-generated artifacts/cache churn restored
+- corrective diff preserved unchanged
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+An accidental broader Hardhat invocation included Polygon fork
+tests and produced three fork/environment failures. It was not
+the canonical maintained Hardhat gate. The explicit canonical
+29-test suite was subsequently rerun and passed 29/29.
+
+### Exact-SHA CI
+
+Corrective SHA:
+`8d24d18678f8a1262d4a9509c2e8908f57c440ff`
+
+Workflow:
+`ProfitBot CI`
+
+Run ID:
+`37050797742`
+
+Status:
+`completed`
+
+Conclusion:
+`success`
+
+The CI `headSha` exactly matched the corrective SHA.
+
+### Corrected layering
+
+1J remains the provider-abstract gated acquisition layer.
+
+1K accepts provider only so it can forward provider, together
+with the completed acquired snapshots, into 1E.
+
+1E validates and consumes provider for protected-peak stability.
+
+Therefore accepting/forwarding provider in 1K does not make 1K
+a direct RPC/provider layer.
+
+### Recovery anchor
+
+The corrected 1K code anchor is:
+
+`8d24d18678f8a1262d4a9509c2e8908f57c440ff`
+
+Do not use the original 1K closure statements in checkpoint
+`0f5b1225478136840502598ee587b15438f46df8`
+as current truth. This 1K.1 section supersedes them.
+
+### Next boundary
+
+No 1L modifying work should begin until this corrective
+checkpoint itself is committed, pushed, and exact-SHA CI-green.
+
+Existing safety boundaries remain unchanged:
+
+- no signer
+- no transaction
+- no broadcast
+- no production execution-path modification
+- no profitability/slippage/gas/freshness/worst-case weakening
+- `LIVE_READY=false` unless existing policy independently passes
