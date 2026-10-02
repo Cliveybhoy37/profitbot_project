@@ -2499,3 +2499,159 @@ Next research boundary:
 - Define partial-acquisition behavior if advancement succeeds but subsequent snapshot acquisition fails.
 - Decide whether completed or partially completed research sets require durable persistence.
 - Do not conflate block advancement or minimum block gap with proof of economically independent market states.
+
+## Milestone 1J — Polygon V4 Protected Peak Gated Acquisition
+
+Status:
+- Implemented.
+- Locally validated.
+- Pushed.
+- Exact-SHA CI confirmed.
+- Provider/execution safety boundary remains unchanged.
+
+Purpose:
+- Compose deterministic 1I block-advancement gating with protected-peak snapshot acquisition without modifying the existing 1G, 1H, or 1I primitives.
+- Acquire the first research snapshot immediately.
+- Require successful block-advancement evidence before every later acquisition.
+- Gate each later acquisition relative to the last successfully acquired snapshot.
+- Revalidate actual acquired snapshot separation with 1H rather than assuming observed advancement proves the subsequently pinned snapshot is sufficiently separated.
+- Preserve bounded exhaustion as a structured incomplete research result rather than accepting an under-separated snapshot.
+
+Files:
+- `scripts/research/runPolygonV4ProtectedPeakGatedAcquisition.js`
+- `test/polygonV4ProtectedPeakGatedAcquisition.test.js`
+
+Composition semantics:
+- `validateCount(count)` requires a positive safe integer.
+- `collectGatedProtectedPeakSnapshots(...)` validates count, minimum block gap, maximum observation attempts, acquisition dependency, block-observation dependency, and advancement dependency before acquiring the first snapshot.
+- Snapshot number one is acquired without an advancement gate because no prior acquired snapshot exists.
+- Before each subsequent snapshot, advancement is evaluated relative to the `blockTag` of the last successfully acquired snapshot.
+- The configured `minimumBlockGap`, `maxAttempts`, and injected `observeBlockFn` are passed into the advancement dependency.
+- An advancement result must be an object containing a boolean `advanced`.
+- Advancement policy provenance must match the gate:
+  - `previousBlockTag` must equal the last successfully acquired snapshot block.
+  - `minimumBlockGap` must equal the caller-selected gap.
+  - `maxAttempts` must equal the caller-selected attempt budget.
+- A successful advancement result must contain a safe-integer `observedBlockTag` satisfying the required block gap.
+- `advanced: false` stops acquisition before another snapshot is requested and returns a structured incomplete result with:
+  - `complete: false`
+  - requested and acquired counts
+  - configured gap and attempt budget
+  - successfully acquired snapshots
+  - advancement evidence
+  - `stopReason: BLOCK_ADVANCEMENT_EXHAUSTED`
+- `advanced: true` permits the next acquisition attempt but is not itself accepted as proof that the resulting snapshot is sufficiently separated.
+- After the next snapshot is acquired, the candidate snapshot sequence is revalidated through the existing 1H `validateProtectedPeakBlockSeparation` policy.
+- Therefore inconsistent provider behavior cannot turn observed head advancement into acceptance of an actually under-separated pinned snapshot.
+- Successful completion returns all acquired snapshots and advancement evidence with `complete: true` and `stopReason: null`.
+- Acquisition exceptions after successful advancement propagate as exceptions; 1J does not invent a completed or partial success result for that failure.
+- Malformed advancement evidence and policy-provenance mismatches fail closed before another snapshot is acquired.
+
+Important interpretation:
+- 1J composes deterministic research primitives; it does not itself access a provider.
+- `observeBlockFn` remains injected.
+- `acquireSnapshotFn` remains injected.
+- The default advancement dependency is the deterministic 1I `observeProtectedPeakBlockAdvancement`.
+- Block advancement evidence and actual pinned snapshot separation remain distinct evidence.
+- Minimum block separation remains caller-selected research policy and is not proof of economically independent market states.
+- Attempt count remains an observation budget, not a wall-clock timeout.
+- Partial structured return is used specifically for ordinary bounded block-advancement exhaustion.
+- Acquisition failures, malformed dependencies, malformed evidence, and actual snapshot separation violations remain exceptions.
+
+Tests:
+- 10 dedicated 1J tests cover:
+  - positive safe-integer snapshot-count validation
+  - first acquisition without an advancement gate
+  - gating each later acquisition from the last successfully acquired snapshot
+  - structured incomplete return on exhausted advancement without another acquisition
+  - revalidation of actual acquired snapshot separation after successful advancement
+  - propagation of acquisition failure after successful advancement
+  - rejection of malformed advancement results
+  - rejection of invalid dependencies before first acquisition
+  - rejection of advancement policy-provenance mismatch
+  - rejection of successful advancement evidence below the required block gap
+
+Deliberately excluded:
+- No modification to 1G acquisition.
+- No modification to 1H separation policy.
+- No modification to 1I advancement orchestration.
+- No direct provider or RPC dependency.
+- No `getBlockNumber`.
+- No timer, sleep, polling interval, daemon, watcher, or wall-clock timeout.
+- No persistence, JSONL, filesystem writes, or implementation checkpointing.
+- No RPC configuration or environment handling.
+- No `main`.
+- No signer, wallet, private key, transaction, or broadcast.
+- No production execution integration.
+- No changes to `ProfitBot.sol`.
+- No changes to `ThreeLegExecution`.
+- No changes to production route helpers.
+- No changes to profitability, slippage, gas, freshness, reserve, minimum-profit, or worst-case qualification policy.
+- No changes to `LIVE_READY`.
+
+Validation:
+- Implementation syntax: pass.
+- Test syntax: pass.
+- Dedicated 1J focused tests: 10/10 pass.
+- Corrected protected research regression: 46/46 pass.
+- Full Node suite: 371/371 pass.
+- Canonical Hardhat suite: 29/29 pass.
+- Maintained passing total: 400 tests.
+- `npm test`: rc=0.
+- `git diff --check`: pass.
+- Execution/timer/persistence/network safety scan: empty.
+- Hardhat-generated tracked `artifacts/` and `cache/` churn was identified as generated-only and restored after validation.
+- An initial focused-regression command supplied during 1J validation referenced the nonexistent file `test/polygonV4ProtectedAmountSurface.test.js`; that command returned rc=1 before the intended focused tests ran. This was a validation-command filename mistake, not an implementation or test failure. A subsequent discovery-based command used the actual protected research test filenames and passed 46/46.
+
+Immutable 1J code anchor:
+- Commit: `89f041a62567338c2f951291f5e9a41d259278ff`
+- Subject: `Add Polygon V4 protected peak gated acquisition`
+- Parent: `8818361e5dbbbd06e7bd83910c50da308b4152f9`
+- Scope: exactly 2 files, 781 insertions.
+- Implementation: 211 lines.
+- Tests: 570 lines.
+- No production files changed.
+- Local and remote branch SHAs matched exactly after push.
+
+Exact-SHA CI evidence:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37045905719`
+- Head SHA: `89f041a62567338c2f951291f5e9a41d259278ff`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T18:12:47Z`
+- Updated: `2026-10-02T18:13:28Z`
+- Job: `test`
+- Job ID: `110967151613`
+- Job started: `2026-10-02T18:12:50Z`
+- Job completed: `2026-10-02T18:13:27Z`
+- Exact run watch returned rc=0.
+- CI passed setup, checkout, Node setup, tracked-environment-file guard, `npm ci`, `npm test`, scanner syntax checks, Hardhat compile, and post steps.
+- CI emitted infrastructure notices that Node.js 20-targeting actions are being forced to Node.js 24 and that `ubuntu-latest` is scheduled to migrate to Ubuntu 26 beginning October 19, 2026; these were notices rather than test failures.
+- The push also reported existing Dependabot vulnerability counts on the repository default branch. Dependency remediation remains separate from this milestone and no dependency changes were made for 1J.
+
+Safety state:
+- 1J remains provider-abstract deterministic research composition.
+- No signer exists in this milestone.
+- No transaction is constructed or submitted.
+- No broadcast path is introduced.
+- Existing execution safety policy is unchanged.
+- `LIVE_READY` remains false unless the existing complete policy independently qualifies a candidate.
+
+Layering through 1J:
+- 1F snapshot acquisition primitive.
+- 1G repeated acquisition/stability composition primitive.
+- 1H minimum block-separation policy.
+- 1I bounded block-advancement observation primitive.
+- 1J advancement-gated acquisition composition with actual snapshot separation revalidation.
+- 1E protected-peak stability analysis remains a separate downstream analysis layer.
+
+Next research boundary:
+- Decide whether 1J should next be composed with 1E stability analysis in a separate additive layer rather than modifying 1J.
+- Decide whether a future provider adapter should supply `getBlockNumber` to the injected block observer.
+- Define waiting/cadence separately from deterministic advancement observation.
+- Define wall-clock timeout semantics separately from `maxAttempts`.
+- Decide whether incomplete research sets require durable persistence before introducing any long-running orchestration.
+- Preserve the distinction between observed block advancement, pinned snapshot separation, elapsed time, and economically independent market states.
+- Do not introduce signer, transaction, or broadcast behavior as part of this research composition.
