@@ -1,6 +1,6 @@
 # Apollo / ProfitBot Development Checkpoint
 
-Updated: 2026-09-30
+Updated: 2026-10-02
 
 ## Current Objective
 
@@ -33,7 +33,7 @@ repair/simulation-safety
 
 Last confirmed code commit:
 
-42d11b8 Add heartbeat to Polygon V4 opportunity watcher
+0ba0ef2 Add Polygon V4 qualification envelope analysis
 
 Previous commits:
 
@@ -1055,3 +1055,171 @@ Any future ethers, Hardhat, or Solidity compiler upgrade must:
 - Dated `APOLLO_CHECKPOINT_*.md` files are independent historical snapshots.
 - Do not merge, overwrite, rewrite, or synchronize historical checkpoint contents into each other.
 - New dated checkpoints must remain separate files alongside the existing checkpoints.
+
+---
+
+## 2026-10-02 Polygon V4 Qualification Envelope Milestone
+
+### Repository state
+
+Qualification-envelope code milestone:
+
+- `0ba0ef2 Add Polygon V4 qualification envelope analysis`
+- branch: `repair/simulation-safety`
+- local HEAD and `origin/repair/simulation-safety` confirmed at `0ba0ef2`
+- worktree clean after push and generated Hardhat artifact/cache cleanup
+
+GitHub Actions validation:
+
+- workflow: `ProfitBot CI`
+- run: `37000380171`
+- result: SUCCESS
+- elapsed: `39s`
+
+Validated local toolchain:
+
+- Node: `18.20.8`
+- npm: `10.8.2`
+- ethers remains `5.x` (`^5.8.0`)
+- Hardhat remains `2.x` (`^2.20.2`)
+- no toolchain compatibility boundary was changed
+
+### Qualification-envelope implementation
+
+The observation analyzer now reports diagnostic distance from the existing
+protected gas ceiling.
+
+For the closest observation it reports:
+
+- observed gas price
+- existing protected `maxGasPriceWei`
+- ceiling-to-observed-gas coverage
+- gas-price deficit
+- gas-price reduction required to reach that existing ceiling
+- `qualifiesAtObservedGas`
+
+`qualifiesAtObservedGas` is diagnostic only. It means the observed gas price
+is at or below the already-computed protected gas ceiling. It is NOT a
+replacement for, or equivalent to, the complete `LIVE_READY` qualification.
+
+The analyzer does not alter candidate readiness and does not weaken or replace
+the existing qualification policy.
+
+### Regression validation
+
+Focused observation-analyzer suite:
+
+- tests: `11`
+- passed: `11`
+- failed: `0`
+
+Complete normal regression:
+
+- Node-native tests: `309`
+- Hardhat tests: `29`
+- total: `338`
+- passed: `338`
+- failed: `0`
+
+Additional validation:
+
+- analyzer syntax check: PASS
+- `git diff --check`: PASS
+- real observation analysis: PASS
+
+The normal regression count increased from 336 to 338 because this milestone
+added two deterministic qualification-envelope tests.
+
+### Real 744-observation envelope result
+
+Observation dataset:
+
+- observations: `744`
+- period: `2026-10-01T12:21:35.456Z -> 2026-10-01T19:11:09.203Z`
+- blocks: `94768101 -> 94784484`
+- duration: `6h 49m 33s`
+- `V3_125_OPTIMIZED` wins: `744 / 744`
+- candidate changes: `0`
+- qualification-state changes: `0`
+- LIVE_READY events: `0`
+- negative expected-net-profit failures: `2976`
+
+Closest observation to the existing protected gas ceiling:
+
+- capturedAt: `2026-10-01T17:04:13.939Z`
+- block: `94779407`
+- candidate: `V3_125_OPTIMIZED`
+- observed gas: `266.30043875 gwei`
+- protected gas ceiling: `18.872966487 gwei`
+- ceiling / observed gas: `7.0870%`
+- gas-price deficit: `247.427472263 gwei`
+- gas-price reduction required: `92.9129%`
+- `qualifiesAtObservedGas=false`
+
+This is a diagnostic statement about that observed candidate under the
+existing protected policy. It does not manufacture or predict LIVE_READY.
+
+### Safety boundary remains unchanged
+
+This milestone did NOT change:
+
+- the `700000` gas-unit qualification assumption
+- Aave premium treatment
+- safety reserve
+- minimum net-profit requirement
+- slippage protection
+- freshness / `maxAgeBlocks`
+- worst-case protected-profit checks
+- candidate qualification logic
+- execution contracts
+- production routing
+- deployment addresses
+- `.env`
+- signer behavior
+- transaction submission
+- broadcast behavior
+
+Current research/monitoring boundary remains:
+
+- provider only
+- no signer
+- no transaction
+- no broadcast
+- fail closed
+- `LIVE_READY=false` unless every existing qualification and safety check passes
+
+Do not reduce the safety policy to make observed opportunities appear ready.
+
+### Machine boundary
+
+HP Bugs remains the stable persistent monitoring machine and should remain
+unchanged unless a separate monitoring change is deliberately reviewed.
+
+The Codespace remains the development environment.
+
+Do not assume Codespace processes survive suspension. Persist important state
+in project files and Git; terminal processes and runtime state are transient.
+
+### Recovery anchor
+
+For recovery after chat/session loss:
+
+1. `cd /workspaces/profitbot_project`
+2. `nvm use`
+3. `git status -sb`
+4. `git --no-pager log -5 --oneline --decorate`
+5. inspect this live `APOLLO_CHECKPOINT.md`
+
+Expected code milestone before this checkpoint update is committed:
+
+- branch: `repair/simulation-safety`
+- code HEAD: `0ba0ef2`
+- origin: `0ba0ef2`
+- qualification-envelope CI: SUCCESS (`37000380171`)
+- normal regression: `338 / 338`
+- LIVE_READY events in analyzed 744-record dataset: `0`
+
+`APOLLO_CHECKPOINT.md` is the live recovery checkpoint.
+
+Dated `APOLLO_CHECKPOINT_*.md` files remain independent historical snapshots
+and must not be merged, overwritten, or synchronized by this update.
