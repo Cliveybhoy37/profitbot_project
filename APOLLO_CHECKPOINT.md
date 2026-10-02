@@ -2957,3 +2957,184 @@ Existing safety boundaries remain unchanged:
 - no production execution-path modification
 - no profitability/slippage/gas/freshness/worst-case weakening
 - `LIVE_READY=false` unless existing policy independently passes
+
+## 1L — Provider-Backed Block Observer
+
+### Milestone
+
+1L adds the isolated provider-backed block-observation adapter
+needed by the protected-peak research stack.
+
+Code commit:
+
+`1e2ea71ef940692b95b8d1f70d2a75125878c682`
+
+Subject:
+
+`Add Polygon V4 protected peak provider block observer`
+
+Files:
+
+- `scripts/research/runPolygonV4ProtectedPeakProviderBlock.js`
+- `test/polygonV4ProtectedPeakProviderBlock.test.js`
+
+Commit scope:
+
+- exactly 2 files
+- 156 insertions
+
+### Responsibility
+
+1L exports:
+
+`observeProtectedPeakProviderBlock({ provider })`
+
+The adapter:
+
+- requires a provider
+- requires `provider.getBlockNumber`
+- performs exactly one `getBlockNumber()` observation per call
+- requires the returned block tag to be a positive safe integer
+- returns that block tag unchanged
+- propagates provider observation failure unchanged
+
+The adapter intentionally requires only `getBlockNumber`.
+
+It does not require `getGasPrice`, because gas-price acquisition
+belongs to the 1F snapshot-acquisition responsibility rather than
+the block-observation responsibility.
+
+### Layering
+
+1I remains the deterministic bounded block-advancement layer and
+continues to consume an injected zero-argument `observeBlockFn`.
+
+1J remains provider-abstract gated acquisition.
+
+1K remains gated-acquisition-to-stability composition. It accepts
+provider only for forwarding to 1E stability and makes no direct
+provider calls.
+
+1L supplies the small provider-backed primitive capable of
+satisfying the block-observer shape expected by 1I/1J.
+
+1L is not yet wired into 1J or 1K. Integration remains a separate
+reviewed milestone rather than silently changing established
+layers.
+
+### Explicit non-responsibilities
+
+1L does not:
+
+- retry provider reads
+- sleep or poll
+- define cadence
+- define wall-clock timeout semantics
+- read gas price
+- perform a network check
+- acquire protected-peak snapshots
+- run stability analysis
+- persist observations
+- modify watcher behavior
+- create or use a signer or wallet
+- construct or submit a transaction
+- broadcast anything
+- modify production execution paths
+- weaken profitability, slippage, gas, freshness, or worst-case policy
+
+Observed block advancement, elapsed wall-clock time, snapshot
+separation, and economically independent market states remain
+distinct concepts.
+
+### Tests and validation
+
+Focused 1L tests:
+
+- 5/5 passing
+
+The focused tests verify:
+
+- exact valid provider block is returned
+- exactly one provider block observation is made
+- missing provider is rejected
+- provider without `getBlockNumber` is rejected
+- malformed block evidence is rejected
+- provider observation failure is propagated unchanged
+
+Full maintained validation:
+
+- Node: 386/386 passing
+- canonical Hardhat: 29/29 passing
+- maintained total: 415 passing
+- `git diff --check`: pass
+- safety scan: clean
+- final code scope: exactly two intended files
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+### Exact-SHA CI
+
+Code SHA:
+
+`1e2ea71ef940692b95b8d1f70d2a75125878c682`
+
+Workflow:
+
+`ProfitBot checks`
+
+Run ID:
+
+`37053807292`
+
+Event:
+
+`push`
+
+Status:
+
+`completed`
+
+Conclusion:
+
+`success`
+
+Created:
+
+`2026-10-02T19:23:32Z`
+
+Updated:
+
+`2026-10-02T19:24:02Z`
+
+The CI `headSha` exactly matched the 1L code SHA.
+
+### Safety state
+
+1L remains provider-only research infrastructure.
+
+No signer exists in this milestone.
+
+No transaction is constructed or submitted.
+
+No broadcast path is introduced.
+
+Existing execution safety policy is unchanged.
+
+`LIVE_READY` remains false unless the existing complete policy
+independently qualifies a candidate.
+
+### Next boundary
+
+Any integration of the 1L provider observer into 1J/1K should be
+handled as a separate additive milestone with explicit tests.
+
+Waiting/cadence and wall-clock timeout semantics should remain
+separate unless later repository evidence justifies combining
+them.
+
+Do not introduce signer, transaction, broadcast, or production
+execution behavior as part of provider-observer integration.
