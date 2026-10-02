@@ -137,11 +137,20 @@ async function runProtectedPeakStability({
   snapshots,
   amounts = fineProtectedAmounts(),
   runSurfaceFn =
-    runProtectedFineSurface
+    runProtectedFineSurface,
+  nowFn = Date.now
 }) {
   if (!provider) {
     throw new Error(
       "provider required"
+    );
+  }
+
+  if (
+    typeof nowFn !== "function"
+  ) {
+    throw new Error(
+      "nowFn must be a function"
     );
   }
 
@@ -166,6 +175,9 @@ async function runProtectedPeakStability({
       );
     }
 
+    const startedAtMs =
+      nowFn();
+
     const surface =
       await runSurfaceFn({
         provider,
@@ -177,6 +189,24 @@ async function runProtectedPeakStability({
           snapshot.premiumBps,
         amounts
       });
+
+    const finishedAtMs =
+      nowFn();
+
+    const durationMs =
+      finishedAtMs -
+      startedAtMs;
+
+    if (
+      !Number.isSafeInteger(
+        durationMs
+      ) ||
+      durationMs < 0
+    ) {
+      throw new Error(
+        "surface duration must be a non-negative safe integer"
+      );
+    }
 
     if (
       !surface ||
@@ -205,6 +235,7 @@ async function runProtectedPeakStability({
         ).length,
       rowCount:
         rows.length,
+      durationMs,
       bestProtected,
       peakPosition:
         classifyPeakPosition(
@@ -214,13 +245,22 @@ async function runProtectedPeakStability({
     });
   }
 
+  const summary =
+    summarizePeakStability(
+      results
+    );
+
+  summary.totalSurfaceDurationMs =
+    results.reduce(
+      (total, row) =>
+        total + row.durationMs,
+      0
+    );
+
   return {
     snapshots:
       results,
-    summary:
-      summarizePeakStability(
-        results
-      )
+    summary
   };
 }
 

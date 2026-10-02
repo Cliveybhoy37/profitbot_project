@@ -328,3 +328,193 @@ test(
     );
   }
 );
+
+test(
+  "records deterministic sequential surface durations",
+  async () => {
+    const provider = {};
+
+    const snapshots = [
+      {
+        blockTag: 100,
+        gasPriceWei: "200",
+        premiumBps: 5
+      },
+      {
+        blockTag: 101,
+        gasPriceWei: "300",
+        premiumBps: 5
+      }
+    ];
+
+    const amounts = [
+      {
+        display: "0.105",
+        amount: "105"
+      }
+    ];
+
+    const times = [
+      1000,
+      1250,
+      2000,
+      2600
+    ];
+
+    let timeIndex = 0;
+
+    const result =
+      await runProtectedPeakStability({
+        provider,
+        snapshots,
+        amounts,
+        nowFn:
+          () =>
+            times[
+              timeIndex++
+            ],
+        runSurfaceFn:
+          async args => {
+            const rows = [
+              {
+                status:
+                  "QUOTE_OK",
+                startAmount:
+                  args.amounts[0]
+                    .amount
+              }
+            ];
+
+            return {
+              snapshot: {
+                blockTag:
+                  args.blockTag
+              },
+              rows,
+              bestProtected:
+                rows[0]
+            };
+          }
+      });
+
+    assert.equal(
+      timeIndex,
+      4
+    );
+
+    assert.equal(
+      result.snapshots[0]
+        .durationMs,
+      250
+    );
+
+    assert.equal(
+      result.snapshots[1]
+        .durationMs,
+      600
+    );
+
+    assert.equal(
+      result.summary
+        .totalSurfaceDurationMs,
+      850
+    );
+  }
+);
+
+test(
+  "rejects invalid timing dependency before surface work",
+  async () => {
+    let calls = 0;
+
+    await assert.rejects(
+      runProtectedPeakStability({
+        provider: {},
+        snapshots: [
+          {
+            blockTag: 100,
+            gasPriceWei: "200",
+            premiumBps: 5
+          }
+        ],
+        amounts: [
+          {
+            display: "0.105",
+            amount: "105"
+          }
+        ],
+        nowFn: null,
+        runSurfaceFn:
+          async () => {
+            calls += 1;
+            return {};
+          }
+      }),
+      /nowFn must be a function/
+    );
+
+    assert.equal(
+      calls,
+      0
+    );
+  }
+);
+
+test(
+  "rejects invalid measured surface duration",
+  async () => {
+    const times = [
+      2000,
+      1999
+    ];
+
+    let timeIndex = 0;
+
+    await assert.rejects(
+      runProtectedPeakStability({
+        provider: {},
+        snapshots: [
+          {
+            blockTag: 100,
+            gasPriceWei: "200",
+            premiumBps: 5
+          }
+        ],
+        amounts: [
+          {
+            display: "0.105",
+            amount: "105"
+          }
+        ],
+        nowFn:
+          () =>
+            times[
+              timeIndex++
+            ],
+        runSurfaceFn:
+          async args => {
+            const rows = [
+              {
+                status:
+                  "QUOTE_OK",
+                startAmount:
+                  args.amounts[0]
+                    .amount
+              }
+            ];
+
+            return {
+              snapshot: {
+                blockTag:
+                  args.blockTag
+              },
+              rows,
+              bestProtected:
+                rows[0]
+            };
+          }
+      }),
+      /surface duration must be a non-negative safe integer/
+    );
+  }
+);
