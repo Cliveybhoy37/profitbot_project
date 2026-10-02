@@ -1820,3 +1820,62 @@ Keep the HP monitoring appliance isolated from Codespace research unless a delib
 3. Preserve `c52ed05` as the clean Milestone 1B code anchor underneath the checkpoint commit.
 4. Continue provider-only economic research without weakening established safety policy.
 5. Do not modify production execution contracts or submit live-network transactions as part of this research milestone.
+
+## Milestone 1C — Polygon V4 Protected Fine Amount Surface
+
+Recovery code anchor:
+- Commit: `9f4aee476faf024b1027a3a32a69fac1a6900ae2`
+- Subject: `Add Polygon V4 protected fine amount surface`
+- Independent CI: `ProfitBot CI` run `37027778583`
+- CI result: GREEN
+- CI elapsed: 42s
+
+Scope:
+- Added `scripts/research/runPolygonV4ProtectedFineSurface.js`.
+- Added `test/polygonV4ProtectedFineSurface.test.js`.
+- No production contract, execution path, deployment address, policy, signer, transaction, or broadcast changes.
+- Fine runner delegates protected economics and pinned observation behavior to the existing protected amount-surface runner.
+- Exact fine grid is `0.105` through `0.130 WPOL` inclusive in `0.001 WPOL` increments: 26 observations.
+
+Validation:
+- Focused amount-surface regression: 13/13 passing.
+- Full Node regression: 328/328 passing.
+- Hardhat regression: 29/29 passing.
+- Total local tests: 357/357 passing.
+- Hardhat compiled 35 Solidity files successfully; SPDX warnings only.
+- Generated `artifacts/` and `cache/` churn was restored before commit.
+- Staged diff check passed.
+- Independent CI passed after push.
+
+First provider-only 1C observation:
+- Pinned quote block: `94833132`.
+- PoolId: `0x6c6627aba26b073dd60b88b472b608f4f48f4e9eb5635efbd32095a76bea6c60`.
+- Route: `WPOL -> DAI -> APEPE -> WPOL`.
+- Shared observed gas price: `277605756458 wei/gas`.
+- Aave premium: `5 bps`.
+- Samples: 26.
+- Quote result: 26/26 `QUOTE_OK`.
+- No signer.
+- No transaction.
+- No broadcast.
+
+Best protected row in this pinned sample:
+- Amount: `0.123 WPOL`.
+- Gross delta: `16742610294200132 wei` (`0.016742610294200132 WPOL`).
+- Protected gas budget: `9982397242729131 wei` (`0.009982397242729131 WPOL`).
+- Protected gas ceiling: `14260567489 wei/gas` (`14.260567489 gwei`).
+- Gas coverage: `51369 ppm`.
+- Economic deficit at observed gas: `184341632277870869 wei` (`0.184341632277870869 WPOL`).
+- `observedGasQualifies=false`.
+
+Interpretation:
+- The finer sample moved the observed protected-budget maximum from the earlier coarse neighborhood toward `0.123 WPOL`.
+- The protected-budget surface rises through `0.122`, reaches the largest sampled value at `0.123`, and declines from `0.124` onward.
+- The top is shallow; `0.123 WPOL` is a historical sampled maximum at block `94833132`, not a permanent or globally optimal trade size.
+- Observed gas remained far above the protected gas ceiling.
+- This observation does not make the route `LIVE_READY` and does not justify weakening gas, slippage, reserve, minimum-profit, freshness, or worst-case policy.
+
+Next research direction:
+- If continuing amount-surface investigation, isolate the local peak with a provider-only micro-surface around approximately `0.1210–0.1250 WPOL` at `0.0001 WPOL` increments.
+- Keep the experiment read-only and isolated.
+- Do not modify `ProfitBot.sol`, production execution helpers, deployment addresses, `.env`, or live execution policy.
