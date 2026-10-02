@@ -2,9 +2,11 @@
   "name": "profitbot_project",
   "version": "1.0.0",
   "scripts": {
-    "test": "node --test test/*.test.js && npx hardhat test test/ProfitBot.js test/execution.js",
+    "test": "npm run test:node && npm run test:hardhat",
     "manual:flashloan": "node scripts/manualTrigger.js",
-    "scan:routes": "node scripts/autoScanner.js"
+    "scan:routes": "node scripts/autoScanner.js",
+    "test:node": "node --test $(grep -l 'node:test' test/*.test.js | sort | tr '\\n' ' ')",
+    "test:hardhat": "hardhat test test/ProfitBot.js test/execution.js test/threeLegExecution.js"
   },
   "dependencies": {
     "@aave/contract-helpers": "^1.33.3",
