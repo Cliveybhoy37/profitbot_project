@@ -2016,3 +2016,82 @@ Continue with:
 - no broadcast
 
 Keep 1D unchanged as historical experimental evidence.
+
+## Milestone 1F — Protected Peak Snapshot Acquisition
+
+Status: COMPLETE / PROVIDER-ONLY / CI-CONFIRMED
+
+1F adds a deterministic acquisition boundary for producing snapshots compatible
+with the 1E protected peak stability analysis.
+
+Code:
+- `scripts/research/runPolygonV4ProtectedPeakSnapshot.js`
+- `test/polygonV4ProtectedPeakSnapshot.test.js`
+
+Acquisition semantics:
+- Acquire the current Polygon block number first.
+- Require `blockTag` to be a positive safe integer.
+- Observe `gasPriceWei` from the provider during acquisition.
+- Resolve Aave economics with the acquired `blockTag`.
+- Require `gasPriceWei` to be positive.
+- Require `premiumBps` to be an integer from 0 through 9999.
+- Preserve `gasPriceWei` as an ethers `BigNumber`.
+- Return explicit provenance:
+  - quote block: `PINNED`
+  - Aave premium: `BLOCK_PINNED`
+  - gas price: `OBSERVED_AT_ACQUISITION`
+
+Important provenance boundary:
+- The Aave premium is legitimately block-pinned because
+  `resolveAaveEconomics(..., blockTag)` passes the block override through the
+  relevant on-chain reads.
+- `provider.getGasPrice()` is a current observation and is NOT historical or
+  block-pinned.
+- Do not describe the observed gas price as belonging to the pinned quote block.
+
+Safety boundary:
+- Provider-only.
+- No signer.
+- No wallet.
+- No transaction.
+- No broadcast.
+- No timer or daemon.
+- No production-contract modification.
+- No `.env` modification.
+- No profitability, slippage, gas, freshness, reserve, or minimum-profit policy
+  weakening.
+- 1E remains unchanged.
+
+Validation before commit:
+- Focused 1B–1F: 21/21 passing.
+- Full Node suite: 340/340 passing.
+- Canonical Hardhat suite: 29/29 passing.
+- Maintained validation total: 369 passing tests.
+- `git diff --check`: clean.
+- Execution safety scan: no execution-capable matches.
+
+1F code commit:
+- Full SHA: `6f28413714c2566d53e6b946e66036b1a1ffdba4`
+- Short SHA: `6f28413`
+- Subject: `Add Polygon V4 protected peak snapshot acquisition`
+
+Exact-SHA CI:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37036687450`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T16:50:46Z`
+- Updated: `2026-10-02T16:51:24Z`
+- `gh run watch` return code: 0
+- Exact head SHA:
+  `6f28413714c2566d53e6b946e66036b1a1ffdba4`
+
+Recovery anchor:
+`6f28413714c2566d53e6b946e66036b1a1ffdba4`
+
+Next research direction:
+Build a separate provider-only orchestration layer that can collect multiple
+independent 1F snapshots and feed those snapshots into the existing 1E
+protected peak stability analysis. Preserve the distinction between pinned
+quote/Aave state and observed gas. Do not add execution or broadcast behavior.
