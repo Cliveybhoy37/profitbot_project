@@ -1015,3 +1015,43 @@ Next immediate repository action after this checkpoint update:
 3. commit the checkpoint separately if clean
 4. push the analyzer and checkpoint milestones to GitHub
 5. leave HP Bugs running unchanged
+
+## 2026-10-02 CI Repair and Toolchain Compatibility Guardrail
+
+### CI repair confirmed
+- Repair commit: `d954213` — `Fix CI test runner separation and Node alignment`
+- GitHub Actions run: `36992951559`
+- Result: SUCCESS
+- The CI failure was caused by the Node-native test wildcard including Hardhat/Mocha fork tests that depend on Mocha globals such as `describe` and `it`.
+- Normal tests are now separated by runner:
+  - Node-native tests run through `test:node`.
+  - Normal Hardhat/Mocha tests run through `test:hardhat`.
+- Fork-specific Polygon regression tests remain separate and must not be silently added to ordinary CI without deliberate fork/RPC gating.
+- GitHub Actions now takes its Node version from `.nvmrc`.
+- Local CI-equivalent validation passed under Node `18.20.8` before the repair was pushed.
+- GitHub's clean CI environment independently confirmed the repaired configuration passes.
+
+### Toolchain compatibility guardrail
+The currently validated build depends on the existing toolchain combination, including:
+- Node `18.20.8` via `.nvmrc`.
+- ethers `5.x` (currently `^5.8.0`).
+- Hardhat `2.x` (currently `^2.20.2`).
+- Existing Solidity compiler configuration, including Solidity `0.8.20` and the existing `0.7.6` fallback.
+
+Do NOT casually upgrade or change ethers, Hardhat, Solidity compiler versions, or their associated compatibility configuration.
+
+These versions are build-sensitive compatibility boundaries. A version change is not proven to break the build in every case, but it risks breaking the currently validated contract, test, plugin, ABI, fork, or deployment behavior.
+
+Any future ethers, Hardhat, or Solidity compiler upgrade must:
+1. Be performed as a separate, deliberate compatibility task.
+2. Not be bundled into unrelated ProfitBot or CI changes.
+3. Preserve the existing known-good configuration until the replacement is proven.
+4. Run the complete normal test and compile suite.
+5. Run applicable Polygon fork/execution regression tests before acceptance.
+6. Be committed separately with clear upgrade and compatibility evidence.
+
+### Checkpoint-file preservation rule
+- `APOLLO_CHECKPOINT.md` is the current/live recovery checkpoint.
+- Dated `APOLLO_CHECKPOINT_*.md` files are independent historical snapshots.
+- Do not merge, overwrite, rewrite, or synchronize historical checkpoint contents into each other.
+- New dated checkpoints must remain separate files alongside the existing checkpoints.
