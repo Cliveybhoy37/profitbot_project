@@ -2274,3 +2274,106 @@ multi-block sampling should handle:
 
 Keep those concerns outside the deterministic 1G core unless evidence
 shows they belong there.
+
+## Milestone 1H — Polygon V4 Protected Peak Block-Separation Policy
+
+Status:
+- Implemented.
+- Locally validated.
+- Pushed.
+- Exact-SHA CI confirmed.
+- Provider/execution safety boundary remains unchanged.
+
+Purpose:
+- Add a deterministic policy layer above the 1G protected-peak acquisition sequence.
+- Distinguish merely different quote blocks from snapshots separated by a caller-selected minimum number of blocks.
+- Preserve the existing 1G requirement that snapshot blockTags are positive safe integers and strictly increasing.
+- Keep block-separation qualification independent from acquisition mechanics.
+
+Files:
+- `scripts/research/runPolygonV4ProtectedPeakBlockSeparation.js`
+- `test/polygonV4ProtectedPeakBlockSeparation.test.js`
+
+Policy semantics:
+- `validateMinimumBlockGap(minimumBlockGap)` requires a positive safe integer.
+- `validateProtectedPeakBlockSeparation({ snapshots, minimumBlockGap })` first delegates snapshot-sequence validation to the existing 1G `validateSnapshotSequence`.
+- Every adjacent snapshot pair must satisfy:
+  - `currentBlockTag - previousBlockTag >= minimumBlockGap`.
+- Exact minimum separation is accepted.
+- Larger separation is accepted.
+- Any adjacent pair below the configured minimum fails closed.
+- Duplicate and backward blockTags continue to fail through the underlying 1G sequence policy.
+- The original snapshot array is returned unchanged.
+- A single valid snapshot vacuously satisfies any valid block-separation value because there is no adjacent pair; minimum sample-count requirements belong to orchestration/stability policy, not this validator.
+
+Important interpretation:
+- 1H validates the separation of snapshots that already exist.
+- 1H does NOT advance blocks.
+- 1H does NOT wait for blocks.
+- 1H does NOT acquire snapshots.
+- `minimumBlockGap` is caller-selected research policy; 1H does not claim a universal economically sufficient block separation.
+- Block separation is not wall-clock separation and does not prove market-state independence.
+
+Deliberately excluded:
+- No timer, sleep, polling loop, daemon, or watcher.
+- No provider or RPC calls.
+- No `getBlockNumber`.
+- No wall-clock timestamp or `capturedAt`.
+- No persistence, JSONL, filesystem writes, or checkpointing logic.
+- No RPC configuration or environment handling.
+- No `main`.
+- No signer, wallet, private key, transaction, or broadcast.
+- No production execution integration.
+- No changes to profitability, slippage, gas, freshness, reserve, minimum-profit, or worst-case qualification policy.
+- No changes to `LIVE_READY`.
+
+Validation:
+- Implementation syntax: pass.
+- Test syntax: pass.
+- Focused 1B–1H regression: 33/33 pass.
+- Full Node suite: 354/354 pass.
+- Canonical Hardhat suite: 29/29 pass.
+- Maintained passing total: 383 tests.
+- `git diff --check`: pass.
+- Execution/timer/persistence/network safety scan: empty.
+- Hardhat-generated tracked artifact/cache churn was restored after validation.
+- An intermediate manual Hardhat command used incorrect filenames and returned `MODULE_NOT_FOUND`; this was a validation-command mistake, not a code failure. The repository-defined canonical command `hardhat test test/ProfitBot.js test/execution.js test/threeLegExecution.js` was then run directly and passed 29/29.
+
+Immutable 1H code anchor:
+- Commit: `50e1245d795814c0e11436989d5c5d7932adeac1`
+- Subject: `Add Polygon V4 protected peak block separation policy`
+- Scope: exactly 2 files, 263 insertions.
+- No production files changed.
+- Local and remote branch SHAs matched exactly after push.
+
+Exact-SHA CI evidence:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37041580800`
+- Head SHA: `50e1245d795814c0e11436989d5c5d7932adeac1`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T17:34:09Z`
+- Updated: `2026-10-02T17:35:24Z`
+- Job: `test`
+- Job ID: `110952729450`
+- Job started: `2026-10-02T17:34:47Z`
+- Job completed: `2026-10-02T17:35:24Z`
+- Exact run watch returned rc=0.
+- CI passed checkout, Node setup, tracked-environment-file guard, `npm ci`, `npm test`, scanner syntax checks, Hardhat compile, and post steps.
+
+Safety state:
+- 1H is pure deterministic research-policy validation.
+- No signer exists in this milestone.
+- No transaction is constructed or submitted.
+- No broadcast path is introduced.
+- Existing execution safety policy is unchanged.
+- `LIVE_READY` remains false unless the existing complete policy independently qualifies a candidate.
+
+Next research boundary:
+- Decide whether 1G acquisition should remain caller-driven or gain a separate block-advancement orchestration layer.
+- If block advancement is added later, define retry behavior and timeout/failure semantics explicitly rather than embedding them in 1H.
+- Decide whether wall-clock separation is independently useful in addition to block separation.
+- Decide whether acquired research sets need durable persistence or should remain caller-owned.
+- Define partial-acquisition failure behavior before introducing any long-running acquisition process.
+- Do not conflate `minimumBlockGap` with proof of economically independent market states.
