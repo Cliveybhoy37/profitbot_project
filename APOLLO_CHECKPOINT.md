@@ -3208,3 +3208,85 @@ Next boundary:
 - Do not add timers or hidden polling to 1M.
 - Any integration of the bound observer into the gated acquisition/stability chain must be a separate additive, reviewed milestone.
 - Keep provider observation, block-advancement attempt policy, wall-clock waiting/cadence, snapshot acquisition, and stability analysis as distinct responsibilities unless repository evidence justifies a later composition.
+
+## Milestone 1N — Polygon V4 provider gated stability composition
+
+Status: code complete, locally validated, pushed, and exact-SHA CI green.
+
+Code commit:
+- SHA: `3e56841d3fca545b50ca1ad5770d8bfc6dae3338`
+- Subject: `Add Polygon V4 provider gated stability composition`
+- Parent: `6c8226e8ac1b075eace5c8c05964a9320d0f94fc`
+- Scope: exactly two new files, 402 insertions:
+  - `scripts/research/runPolygonV4ProtectedPeakProviderGatedStability.js`
+  - `test/polygonV4ProtectedPeakProviderGatedStability.test.js`
+
+Purpose:
+- Add the provider-backed composition layer above 1K without making 1J provider-aware or making 1K construct provider observers.
+- Bind the existing provider-backed snapshot and block-observation capabilities to the zero-argument function boundaries already consumed by 1J/1K.
+
+Behavior:
+- `runProviderGatedProtectedPeakStability(...)` composes the existing provider-only research layers.
+- The exact provider is supplied to the provider-observer factory.
+- The exact provider is captured by a zero-argument snapshot closure and supplied to the existing provider snapshot dependency only when snapshot acquisition is requested.
+- The resulting zero-argument `observeBlockFn` and `acquireSnapshotFn` are passed to 1K.
+- `provider`, `count`, `minimumBlockGap`, and `maxAttempts` are forwarded unchanged to 1K.
+- `amounts` is forwarded only when explicitly supplied.
+- Invalid composition dependencies fail before observer construction.
+- A malformed observer-factory result fails before gated stability execution.
+- Observer-factory and gated-stability failures propagate unchanged.
+
+Architecture boundaries:
+- 1N is a binding/composition layer only.
+- 1N performs no direct provider reads.
+- 1N does not itself acquire a snapshot during dependency composition.
+- 1N does not implement block-advancement attempt policy.
+- 1N does not implement retry, sleep, polling, cadence, or wall-clock timeout.
+- 1N does not perform stability calculations itself.
+- 1F remains responsible for provider-backed snapshot acquisition.
+- 1L remains responsible for one provider-backed block-number observation.
+- 1M remains responsible for binding provider observation to the zero-argument observer contract.
+- 1I remains responsible for deterministic bounded block-advancement attempts.
+- 1J remains provider-abstract and responsible for gated snapshot acquisition.
+- 1K remains responsible for gated acquisition -> stability composition.
+- 1E remains responsible for protected peak stability analysis.
+- Existing 1E through 1M implementation files were not modified by 1N.
+
+Safety:
+- Provider-only/read-only architecture.
+- No signer.
+- No wallet or private-key handling.
+- No transaction construction.
+- No transaction submission or broadcast.
+- No persistence or watcher modification.
+- No production contract or execution-route modification.
+- No profitability, slippage, gas, freshness, minimum-profit, or worst-case policy weakening.
+- `LIVE_READY` remains independently policy-gated.
+
+Validation:
+- Focused 1N: 6/6 passing.
+- Maintained Node suite: 398/398 passing.
+- Canonical Hardhat suite: 29/29 passing.
+- Maintained total: 427 passing.
+- Pre-validation `git diff --check`: passing.
+- Post-validation `git diff --check`: passing.
+- Safety scan: empty.
+- Direct provider-read scan in the 1N implementation: empty.
+- Final implementation scope: exactly the intended two files.
+
+CI:
+- Workflow: `ProfitBot checks`
+- Run: `37057302827`
+- Event: `push`
+- Exact head SHA: `3e56841d3fca545b50ca1ad5770d8bfc6dae3338`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T19:55:56Z`
+- Updated: `2026-10-02T19:57:11Z`
+- Note: the immediate `gh run list --commit` lookup returned an empty result, but the branch run listing independently reported this exact head SHA and completed successful run.
+
+Next boundary:
+- Do not add timers, hidden polling, cadence, or wall-clock waiting inside 1I through 1N.
+- Any real repeated observation cadence should remain a separate reviewed responsibility.
+- Do not introduce signer, transaction, broadcast, or production execution behavior as part of this provider-backed research composition.
+- Preserve the separation between provider observation, block-advancement attempt policy, wall-clock waiting, snapshot acquisition, gated acquisition, and stability analysis.
