@@ -2,6 +2,124 @@
 
 Updated: 2026-10-02
 
+## ProfitBot Transition / Recovery Map
+
+This section is the interpretation boundary for recovering ProfitBot from the
+checkpoint history and Git history.
+
+The repository records a continuous repair and development lineage, but that
+lineage must not be interpreted as permission to merge historical
+architectures into the current build.
+
+Historical ProfitBot contracts, scanners, deployment paths, research tools,
+and execution paths remain evidence of earlier project state unless later Git
+history or a later checkpoint explicitly shows that they were retained,
+replaced, disabled, or deliberately integrated.
+
+A component belongs to the current build only when the current source tree and
+later Git history retain it, or when a later checkpoint explicitly records its
+approved integration.
+
+When checkpoint descriptions overlap, use Git history and the current source
+tree to determine the implemented state. Later recovery anchors supersede
+earlier recovery state without erasing the earlier historical evidence.
+
+Dated `APOLLO_CHECKPOINT_*.md` files are independent historical snapshots.
+They must not be merged, rewritten, or synchronized merely to make them match
+the current architecture.
+
+### Development transition
+
+The current build should be recovered as a chronological transition:
+
+1. **2026-09-23 through 2026-09-27 — ProfitBot repair and safety foundation**
+   - Unsafe execution paths were disabled or guarded.
+   - Polygon quoting, discovery, economics, fork simulation, contract
+     hardening, deployment inspection, and deployment validation were
+     developed and tested.
+   - This period establishes the repaired ProfitBot foundation; it is not a
+     V4 architecture.
+
+2. **2026-09-28 — Verified Polygon deployment and Balancer research**
+   - A verified Polygon ProfitBot deployment was recorded.
+   - Balancer opportunity discovery and economic research expanded.
+   - The deployed/production ProfitBot remains an important historical and
+     protected boundary.
+
+3. **2026-09-29 — Opportunity research and Uniswap V3 coverage**
+   - Balancer observations, broader Polygon opportunity research, and
+     Uniswap V3 fee-tier coverage were checkpointed.
+   - These findings form research inputs to the later transition; they do not
+     imply that every researched route became part of the current execution
+     architecture.
+
+4. **2026-09-30 — Explicit Polygon V4 research transition**
+   - Polygon V4 discovery, structural screening, economics, targeted sweeps,
+     isolated fork probes, Aave-funded V4 execution probes, protected
+     execution legs, preflight safety, live qualification, and the read-only
+     V4 watcher were introduced incrementally.
+   - V4 work was kept isolated from the protected production ProfitBot unless
+     an explicit later integration step said otherwise.
+
+5. **2026-10-01 — Persistent V4 observation and analysis**
+   - Persistent provider-only observation logging was validated.
+   - V4 observation analysis was added.
+   - The HP/WSL Bugs observer became the stable monitoring appliance and was
+     kept isolated from Codespace research work.
+
+6. **2026-10-02 — Protected V4 economic qualification**
+   - CI/toolchain guardrails were repaired and recorded.
+   - Qualification-envelope, protected-budget, economic-waterfall, and
+     protected amount-surface analysis were added.
+   - The amount-surface runner remained provider-only: no signer, no
+     transaction submission, and no broadcast.
+
+### Current recovery boundary
+
+At recovery anchor
+`8487a3494b1416b456504ab3ffff37cc357d035c`
+(`Update checkpoint after V4 protected amount surface`):
+
+- branch: `repair/simulation-safety`
+- local and remote branch state were synchronized
+- `ProfitBot CI` run `37021761375` passed
+- underlying Milestone 1B code anchor:
+  `c52ed052229627c89907529fcd56c7b47305c62f`
+- production execution contracts were not modified by Milestone 1B
+- HP/WSL Bugs monitoring remained isolated and untouched
+- signer: none
+- transaction: none
+- broadcast: false
+- `LIVE_READY=false`
+
+The current development direction is therefore the protected Polygon V4
+research/qualification track built on top of the repaired ProfitBot project,
+not an automatic merger of every historical ProfitBot component into V4.
+
+Any future production integration must be explicit, reviewed, tested, and
+checkpointed as a new transition. Until such a milestone exists, historical
+production execution and current V4 research remain separate architectural
+boundaries.
+
+### Recovery rule for future Apollo sessions
+
+Recover in this order:
+
+1. Read this transition map.
+2. Read the current objective, safety boundaries, and latest recovery anchor
+   in `APOLLO_CHECKPOINT.md`.
+3. Use the dated checkpoint files for historical context only.
+4. Follow Git history chronologically when determining how the old ProfitBot
+   became the current build.
+5. Verify important claims against the current source tree and relevant Git
+   commits before modifying code.
+6. Never resurrect a disabled or historical execution path merely because it
+   appears in an older checkpoint.
+7. Never infer that an old production component is part of V4 unless Git or a
+   later checkpoint explicitly records that integration.
+
+---
+
 ## Current Objective
 
 Develop ProfitBot toward safe automated Polygon flashloan arbitrage.
