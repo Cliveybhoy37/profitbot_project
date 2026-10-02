@@ -3706,3 +3706,101 @@ to use the conservative `700000` gas-unit assumption. Do not change that
 assumption from latency evidence alone. Any future gas calibration should
 compare fork-measured gas, conservative qualification gas, and—only after a
 separately reviewed real transaction exists—actual receipt gas usage.
+
+## Milestone 1R.3 — live provider-only timing observation
+
+Status: completed successfully at durable head
+`d8817e186430a6f42a8af6190b912cd46c1b838f`.
+
+Safety and repository state:
+
+- provider-only Polygon observation;
+- no signer;
+- no transaction;
+- no broadcast;
+- executable transaction-primitive launch scan: none;
+- `LIVE_RUN_RC=0`;
+- `PROVIDER_ONLY_OBSERVATION_COMPLETE=yes`;
+- worktree remained clean;
+- local HEAD and remote remained identical.
+
+Operational policy remained unchanged:
+
+- snapshot count: `2`;
+- minimum block gap: `1`;
+- maximum advancement attempts: `3`;
+- maximum cadence cycles: `2`;
+- inter-cycle wait: `5000 ms`;
+- protected qualification gas units: `700000`;
+- no profitability, reserve, slippage, freshness, or worst-case policy change.
+
+Wall-clock evidence:
+
+- started: `2026-10-02T22:16:52Z`;
+- finished: `2026-10-02T22:28:21Z`;
+- outer wall time: `689 seconds`.
+
+Measured protected fine-surface durations:
+
+- cycle 1 / snapshot 1: `155530 ms`;
+- cycle 1 / snapshot 2: `182919 ms`;
+- cycle 1 total: `338449 ms`;
+- cycle 2 / snapshot 1: `156903 ms`;
+- cycle 2 / snapshot 2: `184150 ms`;
+- cycle 2 total: `341053 ms`;
+- all four surfaces total: `679502 ms`.
+
+Derived latency evidence:
+
+- protected surfaces consumed approximately `98.62%` of the measured
+  689-second outer wall time;
+- approximately `9.5 seconds` remained outside the four measured surfaces,
+  including acquisition, block advancement, the explicit 5-second inter-cycle
+  wait, output overhead, and timing granularity;
+- each surface contains 26 sequential amount observations;
+- average surface time per amount was approximately `5.98`, `7.04`, `6.03`,
+  and `7.08` seconds respectively;
+- this localizes the dominant measured latency to the protected amount-surface
+  path, but does not yet identify which RPC or quote operation inside each
+  amount observation is responsible;
+- do not infer from this evidence alone that provider latency causes Polygon
+  gas prices to be high.
+
+Acquisition / advancement evidence:
+
+- cycle 1 blocks: `94849515`, `94849516`;
+- cycle 2 blocks: `94849745`, `94849746`;
+- both block advancements succeeded on attempt `1`;
+- the large block movement during the complete run is consistent with the
+  directly measured serial surface runtime.
+
+Economic evidence:
+
+- all four surfaces returned `26 / 26` `QUOTE_OK`;
+- all four selected protected optimum `0.118 WPOL`;
+- all four peak positions were `INTERIOR`;
+- gross delta remained approximately `0.01456537 WPOL`;
+- protected gas-price ceiling remained approximately `11.205 gwei`;
+- observed acquisition gas was approximately `274.4-276.9 gwei`;
+- gas coverage remained approximately `4.05-4.08%`;
+- `qualifiesAtObservedGas=false` for all four protected optima;
+- this observation does not justify weakening or changing economic policy.
+
+Interpretation boundary:
+
+The observation proves that the current qualification/research path is too
+slow for freshness-sensitive execution if comparable latency persists. It does
+not prove that the latency causes high network gas prices, and it does not yet
+identify the slow operation inside each three-leg economic observation.
+
+Next engineering step:
+
+Instrument per-row observation duration at the existing amount-surface
+boundary while preserving sequential execution and all current economics.
+Use that evidence to determine whether latency is broadly uniform across rows
+or concentrated in particular observations before considering concurrency,
+batching, RPC-provider changes, timeout changes, caching, or other
+optimizations.
+
+Do not change `gasUnits=700000` as part of latency investigation. Gas
+calibration remains a separate evidence-driven workstream.
