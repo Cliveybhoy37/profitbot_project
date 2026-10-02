@@ -2377,3 +2377,125 @@ Next research boundary:
 - Decide whether acquired research sets need durable persistence or should remain caller-owned.
 - Define partial-acquisition failure behavior before introducing any long-running acquisition process.
 - Do not conflate `minimumBlockGap` with proof of economically independent market states.
+
+## Milestone 1I — Polygon V4 Protected Peak Block-Advancement Orchestration
+
+Status:
+- Implemented.
+- Locally validated.
+- Pushed.
+- Exact-SHA CI confirmed.
+- Provider/execution safety boundary remains unchanged.
+
+Purpose:
+- Add a deterministic bounded block-advancement orchestration primitive above the 1H block-separation policy.
+- Define explicitly what constitutes successful block advancement.
+- Bound observation work with a caller-selected attempt budget.
+- Distinguish ordinary insufficient advancement from malformed evidence or invalid dependencies.
+- Keep actual waiting, timers, polling cadence, provider access, and snapshot acquisition outside this deterministic core.
+
+Files:
+- `scripts/research/runPolygonV4ProtectedPeakBlockAdvancement.js`
+- `test/polygonV4ProtectedPeakBlockAdvancement.test.js`
+
+Orchestration semantics:
+- `validateBlockTag(blockTag, name)` requires a positive safe integer.
+- `validateMaxAttempts(maxAttempts)` requires a positive safe integer.
+- `observeProtectedPeakBlockAdvancement({ previousBlockTag, minimumBlockGap, maxAttempts, observeBlockFn })` reuses the 1H `validateMinimumBlockGap` policy.
+- Required advancement is:
+  - `requiredBlockTag = previousBlockTag + minimumBlockGap`.
+- The required block must remain within JavaScript's safe-integer range.
+- `maxAttempts` is exactly the maximum number of calls to `observeBlockFn`; there is no hidden attempt zero.
+- Each observer result must itself be a positive safe-integer block tag.
+- Success is the first observation satisfying:
+  - `observedBlockTag >= requiredBlockTag`.
+- Exact required advancement is accepted.
+- Larger advancement is accepted.
+- Success stops observation immediately and returns a structured `advanced: true` result.
+- Duplicate, backward, and intermediate positive safe-integer observations do not satisfy advancement but remain valid observations within the bounded attempt budget.
+- Exhausting the attempt budget without sufficient advancement returns a structured `advanced: false` result rather than throwing.
+- Invalid arguments, invalid dependencies, malformed observed block evidence, and safe-integer overflow fail immediately by exception.
+- Results record the previous block, configured gap, required block, final observed block, attempts used, maximum attempts, and all observations.
+
+Important interpretation:
+- 1I observes advancement evidence; it does not itself advance the chain.
+- `observeBlockFn` is injected and deliberately abstract.
+- 1I does not directly depend on an ethers provider or `getBlockNumber`.
+- 1I contains no delay between attempts.
+- Therefore repeated observations may occur immediately unless a future caller supplies waiting/cadence outside this primitive.
+- Attempt count is a bounded observation budget, not a wall-clock timeout.
+- A backward observation is not accepted as advancement, but a positive safe-integer backward block is treated as valid observed evidence and can consume an attempt.
+- Block advancement remains distinct from wall-clock separation and does not prove economically independent market states.
+- `minimumBlockGap` remains caller-selected research policy, not a universal economic-independence threshold.
+
+Deliberately excluded:
+- No timer, sleep, polling interval, daemon, or watcher.
+- No provider or RPC dependency.
+- No `getBlockNumber`.
+- No snapshot acquisition.
+- No integration into the existing 1G acquisition loop.
+- No wall-clock timestamp or `capturedAt`.
+- No persistence, JSONL, filesystem writes, or checkpointing logic in the implementation.
+- No RPC configuration or environment handling.
+- No `main`.
+- No signer, wallet, private key, transaction, or broadcast.
+- No production execution integration.
+- No changes to profitability, slippage, gas, freshness, reserve, minimum-profit, or worst-case qualification policy.
+- No changes to `LIVE_READY`.
+
+Validation:
+- Implementation syntax: pass.
+- Test syntax: pass.
+- Focused protected-peak 1B–1I regression: 40/40 pass.
+- Full Node suite: 361/361 pass.
+- Canonical Hardhat suite: 29/29 pass.
+- Maintained passing total: 390 tests.
+- `npm test`: rc=0.
+- `git diff --check`: pass before and after generated-artifact cleanup.
+- Execution/timer/persistence/network safety scan: empty.
+- Hardhat-generated tracked `artifacts/` and `cache/` churn was restored after validation.
+- An intermediate cleanup helper supplied during validation contained a malformed `awk` expression, so the first automatic generated-churn restoration did not run. This was a cleanup-command mistake, not a code or test failure. A guarded follow-up verified there were no unexpected non-generated tracked changes and restored only `artifacts/` and `cache/`; the final worktree scope returned exactly to the two intended 1I files before commit.
+
+Immutable 1I code anchor:
+- Commit: `5dd3622d67ae0143bc4dc66fa688e1f2708b68cd`
+- Subject: `Add Polygon V4 protected peak block advancement orchestration`
+- Scope: exactly 2 files, 423 insertions.
+- Implementation: 138 lines.
+- Tests: 285 lines.
+- No production files changed.
+- Local and remote branch SHAs matched exactly after push.
+
+Exact-SHA CI evidence:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37043983921`
+- Head SHA: `5dd3622d67ae0143bc4dc66fa688e1f2708b68cd`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T17:55:27Z`
+- Updated: `2026-10-02T17:56:12Z`
+- Job: `test`
+- Job ID: `110960713410`
+- Job started: `2026-10-02T17:55:31Z`
+- Job completed: `2026-10-02T17:56:11Z`
+- Exact run watch returned rc=0.
+- CI passed setup, checkout, Node setup, tracked-environment-file guard, `npm ci`, `npm test`, scanner syntax checks, Hardhat compile, and post steps.
+- CI emitted infrastructure notices that Node.js 20-targeting actions are being forced to Node.js 24 and that `ubuntu-latest` is scheduled to migrate to Ubuntu 26 beginning October 19, 2026; these were not test failures.
+
+Safety state:
+- 1I is deterministic research orchestration with an injected observation dependency.
+- No signer exists in this milestone.
+- No transaction is constructed or submitted.
+- No broadcast path is introduced.
+- Existing execution safety policy is unchanged.
+- `LIVE_READY` remains false unless the existing complete policy independently qualifies a candidate.
+
+Next research boundary:
+- Decide whether a separate caller should compose 1I block advancement between 1G snapshot acquisitions.
+- Define how that composition handles `advanced: false` without accepting an under-separated snapshot.
+- Decide whether the injected observation function should eventually be backed by provider `getBlockNumber` in a separate adapter.
+- Decide whether waiting/cadence should be another injected dependency rather than embedded into deterministic orchestration.
+- Define wall-clock timeout semantics separately from `maxAttempts`; attempt count alone is not elapsed-time protection.
+- Define partial-acquisition behavior if advancement succeeds but subsequent snapshot acquisition fails.
+- Decide whether completed or partially completed research sets require durable persistence.
+- Do not conflate block advancement or minimum block gap with proof of economically independent market states.
