@@ -33,7 +33,7 @@ repair/simulation-safety
 
 Last confirmed code commit:
 
-0ba0ef2 Add Polygon V4 qualification envelope analysis
+a9c7933 Add Polygon V4 protected budget envelope analysis
 
 Previous commits:
 
@@ -1109,16 +1109,16 @@ the existing qualification policy.
 
 Focused observation-analyzer suite:
 
-- tests: `11`
-- passed: `11`
+- tests: `13`
+- passed: `13`
 - failed: `0`
 
 Complete normal regression:
 
-- Node-native tests: `309`
+- Node-native tests: `311`
 - Hardhat tests: `29`
-- total: `338`
-- passed: `338`
+- total: `340`
+- passed: `340`
 - failed: `0`
 
 Additional validation:
@@ -1127,8 +1127,8 @@ Additional validation:
 - `git diff --check`: PASS
 - real observation analysis: PASS
 
-The normal regression count increased from 336 to 338 because this milestone
-added two deterministic qualification-envelope tests.
+The normal regression count increased from 338 to 340 because this milestone
+added two deterministic protected-budget economic-envelope tests.
 
 ### Real 744-observation envelope result
 
@@ -1158,6 +1158,55 @@ Closest observation to the existing protected gas ceiling:
 
 This is a diagnostic statement about that observed candidate under the
 existing protected policy. It does not manufacture or predict LIVE_READY.
+
+### Protected gas-budget economic envelope
+
+The analyzer now measures the protected gas budget directly against the
+observed gas cost using exact integer arithmetic and the existing `700000`
+gas-unit qualification assumption.
+
+No readiness or execution policy is changed by this analysis.
+
+Across all `744` observations / `2976` diagnostics:
+
+- qualifying at observed gas: `0`
+
+Smallest absolute protected gas-budget shortfall:
+
+- capturedAt: `2026-10-01T17:59:53.817Z`
+- block: `94781634`
+- candidate: `V3_125_OPTIMIZED`
+- protected gas budget: `0.009344708899712162 WPOL`
+- observed 700000-unit gas cost: `0.1673871346973 WPOL`
+- additional protected gas budget required: `0.158042425797587838 WPOL`
+- budget coverage: `5.5826%`
+- protected gas-budget uplift required: `1691.2503%`
+
+Best protected gas-budget coverage:
+
+- capturedAt: `2026-10-01T17:04:13.939Z`
+- block: `94779407`
+- candidate: `V3_125_OPTIMIZED`
+- protected gas budget: `0.013211076541510153 WPOL`
+- observed 700000-unit gas cost: `0.186410307125 WPOL`
+- additional protected gas budget required: `0.173199230583489847 WPOL`
+- budget coverage: `7.0870%`
+- protected gas-budget uplift required: `1311.0152%`
+
+The raw persisted observation at block `94781634` was independently checked:
+
+- `gasPriceWei=239124478139`
+- `gasBudgetWei=9344708899712162`
+- exact observed gas cost: `167387134697300000 wei`
+- exact protected-budget shortfall: `158042425797587838 wei`
+
+Use the terms `additional protected gas budget required` and
+`protected gas-budget uplift required`. These figures are not a pure
+required-profit calculation.
+
+The historical dataset therefore contains no observation whose protected gas
+budget covers the observed gas cost. This describes the analyzed dataset only;
+it is not a claim that future qualification is impossible.
 
 ### Safety boundary remains unchanged
 
@@ -1213,10 +1262,12 @@ For recovery after chat/session loss:
 Expected code milestone before this checkpoint update is committed:
 
 - branch: `repair/simulation-safety`
-- code HEAD: `0ba0ef2`
-- origin: `0ba0ef2`
-- qualification-envelope CI: SUCCESS (`37000380171`)
-- normal regression: `338 / 338`
+- code HEAD: `a9c7933`
+- origin: `a9c7933`
+- protected-budget-envelope CI: SUCCESS (`37004189565`)
+- normal regression: `340 / 340`
+- Node-native tests: `311 / 311`
+- Hardhat tests: `29 / 29`
 - LIVE_READY events in analyzed 744-record dataset: `0`
 
 `APOLLO_CHECKPOINT.md` is the live recovery checkpoint.
