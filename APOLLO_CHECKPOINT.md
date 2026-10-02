@@ -1274,3 +1274,279 @@ Expected code milestone before this checkpoint update is committed:
 
 Dated `APOLLO_CHECKPOINT_*.md` files remain independent historical snapshots
 and must not be merged, overwritten, or synchronized by this update.
+
+---
+
+## Polygon V4 economic-waterfall milestone — 2026-10-02
+
+### Durable code milestone
+
+Economic-waterfall analysis is committed and pushed:
+
+- branch: `repair/simulation-safety`
+- code commit: `69d5f10`
+- commit title: `Add Polygon V4 economic waterfall analysis`
+- origin: `69d5f10`
+- ProfitBot CI run: `37009894588`
+- CI result: SUCCESS
+- CI duration: `38s`
+
+The implementation remains research/analyzer-only.
+
+Modified code files in the milestone:
+
+- `scripts/research/analyzePolygonV4Observations.js`
+- `test/polygonV4ObservationAnalyzer.test.js`
+
+No production contract, execution route, deployment configuration, `.env`,
+signer, transaction-submission path, or broadcast path was modified.
+
+### Economic-waterfall reconstruction
+
+The analyzer now reconstructs the persisted protected gas budget from its
+economic components using the same premium arithmetic as the live V4
+watcher/preflight:
+
+`premium = amountIn * premiumBps / 10000`
+
+The reconstruction is:
+
+`protectedFinalOutput`
+`- amountIn`
+`- Aave premium`
+`- safety reserve`
+`- minimum net profit`
+`= protected gas budget`
+
+The analyzer sources the qualification gas-unit assumption, safety reserve,
+and minimum-net-profit requirement from the existing live qualification
+policy rather than duplicating new policy values.
+
+The analysis is diagnostic only. It does not alter qualification or execution
+policy and cannot create LIVE_READY.
+
+### Real 744-observation waterfall result
+
+Dataset:
+
+- observations: `744`
+- diagnostics: `2976`
+- period: `2026-10-01T12:21:35.456Z -> 2026-10-01T19:11:09.203Z`
+- blocks: `94768101 -> 94784484`
+
+Waterfall integrity:
+
+- eligible diagnostics: `2976`
+- exact protected-budget reconstructions: `2976`
+- reconstruction mismatches: `0`
+
+Aggregate diagnostic components:
+
+- total gross delta: `42.217370943598531775 WPOL`
+- total protection haircut: `1.513086854717994217 WPOL`
+- total Aave premium: `0.1302 WPOL`
+- total safety reserve: `2.976 WPOL`
+- total minimum net profit: `14.88 WPOL`
+- total protected gas budget: `22.718084088880537558 WPOL`
+- total modeled observed gas cost: `574.713683743822 WPOL`
+- total economic deficit: `551.995599654941462442 WPOL`
+
+These aggregate totals describe repeated diagnostic observations. They are
+NOT realized trading P&L and must not be interpreted as realized losses or
+profits.
+
+### Best protected-budget waterfall
+
+Best protected-budget coverage remains:
+
+- capturedAt: `2026-10-01T17:04:13.939Z`
+- block: `94779407`
+- candidate: `V3_125_OPTIMIZED`
+- gross delta: `0.019998569388452416 WPOL`
+- protection haircut: `0.000724992846942263 WPOL`
+- Aave premium: `0.0000625 WPOL`
+- safety reserve: `0.001 WPOL`
+- minimum net profit: `0.005 WPOL`
+- protected gas budget: `0.013211076541510153 WPOL`
+- reconstructed gas budget: `0.013211076541510153 WPOL`
+- gas-budget difference: `0 wei`
+- exact reconstruction: `true`
+- modeled observed gas cost: `0.186410307125 WPOL`
+- economic deficit: `0.173199230583489847 WPOL`
+
+The observed modeled gas cost at this best-coverage point is therefore far
+larger than the protected gas budget. The historical sample remains
+economically unqualified under the existing policy.
+
+This is evidence about the analyzed historical window only. It does not prove
+that future qualification is impossible.
+
+### Readiness result
+
+For this dataset:
+
+- qualification-state changes: `0`
+- LIVE_READY events: `0`
+- broadcast: `false`
+
+Do not weaken profitability, gas, reserve, slippage, freshness, deadline,
+minimum-profit, or worst-case protected-output policy to manufacture
+readiness.
+
+### Defensive reporting correctness
+
+The final analyzer change also prevents a stale
+`bestProtectedBudgetWaterfall` from being retained if a newer best protected-
+budget-coverage row lacks the additional persisted fields required for
+waterfall reconstruction.
+
+The reporting path fails closed in that case rather than presenting the
+waterfall from an older row as if it belonged to the current best-coverage
+row.
+
+A dedicated regression test covers this case.
+
+### Validation
+
+Pinned development/CI toolchain:
+
+- Node: `18.20.8`
+- npm: `10.8.2`
+
+Before the final defensive reporting guard:
+
+- Node-native tests: `314 / 314`
+- Hardhat tests: `29 / 29`
+- total normal regression: `343 / 343`
+- failures: `0`
+- analyzer syntax: PASS
+- real observation analysis: PASS
+
+After the final defensive reporting guard:
+
+- focused observation-analyzer tests: `17 / 17`
+- analyzer syntax: PASS
+- real 744-observation analysis: PASS
+- waterfall reconstruction: `2976 / 2976` exact
+- waterfall mismatches: `0`
+- `git diff --check`: PASS
+
+Independent GitHub ProfitBot CI for commit `69d5f10`:
+
+- run: `37009894588`
+- result: SUCCESS
+- duration: `38s`
+
+### Codespace Node recovery note
+
+After the Codespace restarted/rebuilt, its active runtime was temporarily:
+
+- Node `24.21.0`
+- npm `11.19.0`
+
+Repository metadata had NOT been overwritten:
+
+- `.nvmrc` still pinned `18.20.8`
+- `package.json` unchanged
+- `package-lock.json` unchanged
+- declared `ethers` remained `^5.8.0`
+- declared `hardhat` remained `^2.20.2`
+- declared `@nomiclabs/hardhat-ethers` remained `^2.2.3`
+
+The rebuilt Codespace simply did not have Node `18.20.8` installed in its
+current NVM environment.
+
+Installing the exact `.nvmrc` version restored:
+
+- Node `18.20.8`
+- npm `10.8.2`
+
+No dependency upgrade or package-metadata change was required.
+
+On future Codespace recovery, verify the active runtime rather than assuming
+the runtime survived the rebuild.
+
+### Current research interpretation
+
+The economic waterfall confirms that the protected-budget calculation stored
+by the watcher is internally consistent across every diagnostic in this
+dataset.
+
+For the observed window, gas cost dominates the available protected budget by
+a large margin even at the best protected-budget-coverage observation.
+
+Research should therefore focus on discovering materially larger genuine
+gross edge and/or legitimately cheaper execution conditions while preserving
+the existing safety requirements.
+
+Do not interpret the historical deficit as proof that profitable future
+conditions cannot occur.
+
+### Safety boundary remains unchanged
+
+Continue to enforce:
+
+- provider only
+- no signer
+- no transaction
+- no broadcast
+- fail closed
+- `LIVE_READY=false` unless every existing qualification check passes
+
+Do NOT modify yet:
+
+- `ProfitBot.sol`
+- `ThreeLegExecution`
+- production execution route helpers
+- frontend / MetaMask integration
+- production deployment addresses
+- `.env`
+
+Do not increase `maxAgeBlocks` or weaken minimum profit, reserve, slippage,
+gas, deadline, or worst-case-output checks to make a candidate qualify.
+
+### Machine boundary
+
+HP Bugs remains the stable persistent monitoring machine and should remain
+unchanged unless a separate monitoring change is deliberately reviewed.
+
+The Codespace remains the development environment.
+
+Codespace processes, shell state, dev servers, and installed runtime state are
+transient across suspension/rebuild. Project files and committed/pushed Git
+history are the durable recovery source.
+
+### Superseding recovery anchor
+
+For recovery after chat/session loss:
+
+1. `cd /workspaces/profitbot_project`
+2. inspect `.nvmrc`
+3. verify `node --version` and `npm --version`
+4. install/select the exact `.nvmrc` Node version if the rebuilt Codespace no
+   longer has it
+5. `git status -sb`
+6. `git --no-pager log -5 --oneline --decorate`
+7. inspect this live `APOLLO_CHECKPOINT.md`
+
+Expected state at this recovery anchor:
+
+- branch: `repair/simulation-safety`
+- code HEAD: `69d5f10`
+- origin: `69d5f10`
+- economic-waterfall CI: SUCCESS (`37009894588`)
+- pinned Node: `18.20.8`
+- pinned npm: `10.8.2`
+- normal regression: `343 / 343`
+- focused final analyzer regression: `17 / 17`
+- waterfall reconstruction: `2976 / 2976` exact
+- waterfall mismatches: `0`
+- LIVE_READY events in analyzed 744-record dataset: `0`
+- signer: none
+- transaction: none
+- broadcast: false
+
+`APOLLO_CHECKPOINT.md` remains the live recovery checkpoint.
+
+Dated `APOLLO_CHECKPOINT_*.md` files remain independent historical snapshots
+and must not be merged, overwritten, or synchronized by this update.
