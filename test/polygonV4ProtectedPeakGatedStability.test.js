@@ -111,6 +111,7 @@ test(
     assert.deepEqual(
       stabilityArgs,
       {
+        provider: undefined,
         snapshots:
           acquisition.snapshots,
         amounts: [
@@ -220,6 +221,7 @@ test(
     assert.deepEqual(
       stabilityArgs,
       {
+        provider: undefined,
         snapshots:
           acquisition.snapshots
       }
@@ -493,6 +495,74 @@ test(
     assert.equal(
       stabilityCalls,
       0
+    );
+  }
+);
+
+test(
+  "forwards the exact provider to stability after complete acquisition",
+  async () => {
+    const provider = {
+      marker: "exact-provider"
+    };
+
+    const acquisition = {
+      complete: true,
+      snapshots: [
+        snapshot(1000)
+      ]
+    };
+
+    let stabilityArgs = null;
+
+    const result =
+      await runGatedProtectedPeakStability({
+        provider,
+        count: 1,
+        minimumBlockGap: 1,
+        maxAttempts: 1,
+        acquireSnapshotFn:
+          async () => snapshot(1000),
+        observeBlockFn:
+          async () => 1001,
+        collectGatedFn:
+          async () => acquisition,
+        runStabilityFn:
+          async args => {
+            stabilityArgs = args;
+
+            return {
+              providerForwarded: true
+            };
+          }
+      });
+
+    assert.equal(
+      stabilityArgs.provider,
+      provider
+    );
+
+    assert.equal(
+      stabilityArgs.snapshots,
+      acquisition.snapshots
+    );
+
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(
+        stabilityArgs,
+        "amounts"
+      ),
+      false
+    );
+
+    assert.deepEqual(
+      result,
+      {
+        acquisition,
+        stability: {
+          providerForwarded: true
+        }
+      }
     );
   }
 );

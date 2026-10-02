@@ -13,6 +13,7 @@ const {
 );
 
 async function runGatedProtectedPeakStability({
+  provider,
   count,
   minimumBlockGap,
   maxAttempts,
@@ -87,6 +88,7 @@ async function runGatedProtectedPeakStability({
 
   const stability =
     await runStabilityFn({
+      provider,
       snapshots:
         acquisition.snapshots,
       ...(amounts === undefined
