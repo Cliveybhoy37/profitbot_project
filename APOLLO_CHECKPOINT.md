@@ -2095,3 +2095,182 @@ Build a separate provider-only orchestration layer that can collect multiple
 independent 1F snapshots and feed those snapshots into the existing 1E
 protected peak stability analysis. Preserve the distinction between pinned
 quote/Aave state and observed gas. Do not add execution or broadcast behavior.
+
+## 1G — Protected Peak Multi-Snapshot Acquisition Orchestration
+
+Status: implemented, locally validated, pushed, and exact-SHA CI-confirmed.
+
+### Purpose
+
+1G joins the existing provider-only research components without adding
+execution capability:
+
+1F snapshot acquisition
+-> 1G multi-snapshot collection
+-> 1E protected peak stability
+-> existing 1C / 1B protected surface economics.
+
+The milestone remains research-only and provider-only.
+
+### Files
+
+- `scripts/research/runPolygonV4ProtectedPeakAcquisition.js`
+- `test/polygonV4ProtectedPeakAcquisition.test.js`
+
+### Snapshot independence boundary
+
+For this milestone, independent snapshots are defined conservatively by
+strictly increasing positive `blockTag` values.
+
+A duplicate block or a backward-moving block fails closed.
+
+1G does not claim that strictly increasing blocks imply a minimum elapsed
+wall-clock time or minimum block separation.
+
+### Collection semantics
+
+`collectProtectedPeakSnapshots(...)`:
+
+- requires a provider;
+- requires a positive safe-integer snapshot count;
+- acquires snapshots sequentially through the injected/default 1F
+  acquisition function;
+- validates the accumulated block sequence after every acquisition;
+- rejects duplicate or backward block tags;
+- returns the acquired snapshots without adding timing or persistence
+  semantics.
+
+### Stability orchestration
+
+`runAcquiredProtectedPeakStability(...)`:
+
+- collects the requested snapshot set;
+- delegates the completed set to existing
+  `runProtectedPeakStability(...)`;
+- preserves the same provider;
+- forwards an `amounts` override only when the caller supplied one;
+- otherwise leaves 1E's existing default amount grid intact.
+
+### Deliberately excluded
+
+1G adds no:
+
+- timer;
+- sleep/retry loop;
+- daemon/watcher;
+- filesystem persistence;
+- `capturedAt`;
+- RPC/environment configuration;
+- executable `main()` entrypoint;
+- signer or wallet;
+- transaction construction;
+- transaction submission or broadcast;
+- production integration;
+- policy weakening.
+
+If a real caller acquires the same block twice, 1G rejects the second
+sample rather than manufacturing independent evidence.
+
+Waiting for block advancement, retry policy, timestamps, and durable
+observation persistence remain separate future orchestration decisions.
+
+### Validation
+
+Local validation before commit:
+
+- runner syntax: pass;
+- test syntax: pass;
+- focused 1B-1G regression: 26 / 26 pass;
+- full Node suite: 347 / 347 pass;
+- canonical Hardhat suite: 29 / 29 pass;
+- maintained total: 376 passing tests;
+- `git diff --check`: pass;
+- execution/timer/persistence safety scan: empty.
+
+Hardhat-generated tracked `artifacts/` and `cache/` churn was restored
+before commit scope was finalized.
+
+### Exact code anchor
+
+Commit:
+
+`484cc4353eba175f30494d39f7e09a85a1ab2048`
+
+Subject:
+
+`Add Polygon V4 protected peak acquisition orchestration`
+
+Commit scope:
+
+- 2 files changed;
+- 569 insertions;
+- no production files changed.
+
+Local and remote branch heads matched this exact SHA after push.
+
+### Exact-SHA CI evidence
+
+Workflow: `ProfitBot CI`
+
+Run name: `ProfitBot checks`
+
+Run ID:
+
+`37039177840`
+
+Head SHA:
+
+`484cc4353eba175f30494d39f7e09a85a1ab2048`
+
+Status: `completed`
+
+Conclusion: `success`
+
+Created:
+
+`2026-10-02T17:12:51Z`
+
+Updated:
+
+`2026-10-02T17:13:30Z`
+
+CI job ID:
+
+`110944773777`
+
+All CI steps passed, including environment-file guard, `npm ci`,
+`npm test`, scanner syntax checks, and Hardhat compile.
+
+The GitHub Actions Node.js 20 -> 24 compatibility notice and upcoming
+`ubuntu-latest` Ubuntu 26 migration are infrastructure notices, not 1G
+failures.
+
+### Safety state after 1G
+
+1G does not change live readiness.
+
+No signer, transaction, or broadcast path was added.
+
+No profitability, slippage, gas, freshness, minimum-profit, or
+worst-case policy was weakened.
+
+`LIVE_READY=false` remains the safe state unless the existing full
+qualification policy independently passes.
+
+### Next research boundary
+
+Do not automatically add a timer or persistent watcher merely to gather
+more snapshots.
+
+Before the next implementation milestone, decide explicitly how real
+multi-block sampling should handle:
+
+- waiting for block advancement;
+- retry/timeout limits;
+- minimum block separation, if any;
+- wall-clock acquisition timestamps;
+- persistence versus caller-owned storage;
+- partial acquisition failure.
+
+Keep those concerns outside the deterministic 1G core unless evidence
+shows they belong there.
