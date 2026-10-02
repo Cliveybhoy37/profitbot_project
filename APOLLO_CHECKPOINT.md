@@ -2655,3 +2655,165 @@ Next research boundary:
 - Decide whether incomplete research sets require durable persistence before introducing any long-running orchestration.
 - Preserve the distinction between observed block advancement, pinned snapshot separation, elapsed time, and economically independent market states.
 - Do not introduce signer, transaction, or broadcast behavior as part of this research composition.
+
+## Milestone 1K — Polygon V4 Gated Protected Peak Stability Composition
+
+Status:
+- Implemented.
+- Locally validated.
+- Pushed.
+- Exact-SHA CI confirmed.
+- Provider/execution safety boundary remains unchanged.
+
+Purpose:
+- Compose the existing 1J advancement-gated protected-peak acquisition layer with the existing 1E protected-peak stability analysis in a separate additive research layer.
+- Preserve incomplete 1J acquisition evidence without incorrectly treating a partial snapshot set as a completed stability sample.
+- Run stability analysis only after gated acquisition explicitly reports completion.
+- Keep acquisition and stability dependencies injectable for deterministic testing without introducing provider, timer, persistence, signer, transaction, or broadcast behavior.
+
+Files:
+- `scripts/research/runPolygonV4ProtectedPeakGatedStability.js`
+- `test/polygonV4ProtectedPeakGatedStability.test.js`
+
+Composition semantics:
+- `runGatedProtectedPeakStability(...)` delegates acquisition to the existing 1J `collectGatedProtectedPeakSnapshots` by default.
+- The composition passes through:
+  - requested snapshot count
+  - caller-selected minimum block gap
+  - maximum advancement observation attempts
+  - injected snapshot acquisition dependency
+  - injected block-observation dependency
+  - optional injected advancement dependency
+- The composition validates its acquisition and stability dependencies before acquisition.
+- The returned acquisition envelope must be an object containing:
+  - boolean `complete`
+  - array `snapshots`
+- A malformed acquisition envelope fails closed before stability analysis.
+- `complete: false` is preserved as explicit incomplete research evidence.
+- An incomplete acquisition returns:
+  - the exact acquisition object
+  - `stability: null`
+- Stability analysis is not called for an incomplete acquisition.
+- `complete: true` requires at least one acquired snapshot.
+- A completed acquisition with an empty snapshot array fails closed before stability analysis.
+- A completed non-empty snapshot set is passed unchanged into the existing 1E `runProtectedPeakStability` by default.
+- An explicit `amounts` override is forwarded to stability analysis only when the caller supplied it.
+- If `amounts` is omitted, 1K does not invent an override.
+- The exact acquisition object is preserved in the composed result rather than reconstructing or flattening its evidence.
+- Acquisition exceptions propagate.
+- Stability-analysis exceptions propagate.
+- 1K intentionally does not duplicate all 1J internal provenance validation; the default 1J dependency remains responsible for its own acquisition, advancement, and separation evidence rules.
+- Existing 1E/default 1J validation remains responsible for the underlying snapshot/economic evidence.
+
+Incomplete-result interpretation:
+- Ordinary bounded block-advancement exhaustion remains a structured incomplete research outcome from 1J.
+- 1K does not reinterpret that incomplete set as completed stability evidence.
+- 1K does not require one specific future incomplete stop reason; it preserves the acquisition result and prevents analysis whenever `complete` is false.
+- This keeps partial acquisition evidence visible while avoiding false stability conclusions.
+
+Tests:
+- 9 dedicated 1K tests cover:
+  - gated acquisition argument pass-through and completed stability analysis
+  - no stability analysis for incomplete acquisition
+  - omission of an invented `amounts` override
+  - propagation of gated acquisition failure without stability execution
+  - propagation of stability failure after completed acquisition
+  - rejection of invalid composition dependencies before acquisition
+  - rejection of malformed acquisition envelopes without stability execution
+  - preservation of the exact acquisition evidence object
+  - rejection of a completed acquisition containing zero snapshots
+
+Deliberately excluded:
+- No modification to 1E stability analysis.
+- No modification to 1G acquisition/stability composition.
+- No modification to 1H separation policy.
+- No modification to 1I advancement observation.
+- No modification to 1J gated acquisition.
+- No direct provider or RPC dependency.
+- No `getBlockNumber`.
+- No timer, sleep, polling interval, daemon, watcher, or wall-clock timeout.
+- No persistence, JSONL, filesystem writes, or implementation checkpointing in the 1K code path.
+- No RPC configuration or environment handling.
+- No `main`.
+- No signer, wallet, private key, transaction, or broadcast.
+- No production execution integration.
+- No changes to `ProfitBot.sol`.
+- No changes to `ThreeLegExecution`.
+- No changes to production execution route helpers.
+- No changes to profitability, slippage, gas, freshness, reserve, minimum-profit, or worst-case qualification policy.
+- No changes to `LIVE_READY`.
+
+Validation:
+- Implementation syntax: pass.
+- Test syntax: pass.
+- Dedicated 1K focused tests: 9/9 pass.
+- Protected research regression discovered by filename rather than a hard-coded test list: 55/55 pass.
+- Full Node suite: 380/380 pass.
+- Canonical Hardhat suite: 29/29 pass.
+- Maintained passing total: 409 tests.
+- `npm test`: rc=0.
+- `git diff --check`: pass.
+- Execution/timer/persistence/network safety scan: empty.
+- Hardhat compiled 35 Solidity files successfully; only existing SPDX warnings were emitted for Uniswap V2 interface files.
+- Hardhat-generated tracked `artifacts/` and `cache/` churn was restored after validation.
+- During the first full-validation cleanup, an assistant-supplied `awk` expression intended to classify generated versus non-generated tracked changes was malformed. The `awk` commands failed, so generated Hardhat churn was not restored in that command and final scope correctly reported failure. This was a cleanup-command error, not an implementation or test failure.
+- A subsequent guarded cleanup verified there were no tracked changes outside `artifacts/` and `cache/`, verified the only untracked files were the two intended 1K files, restored only `artifacts/` and `cache/`, and confirmed:
+  - tracked worktree clean
+  - both 1K files preserved
+  - `git diff --check` pass
+  - exact intended two-file scope
+- The already-passing test suites were not unnecessarily rerun after that cleanup-only correction.
+
+Immutable 1K code anchor:
+- Commit: `c965e652ec7482f6d2ba609b33634e977855441e`
+- Subject: `Add Polygon V4 gated protected peak stability composition`
+- Parent: `8cc7b5cb15e5373ba5357759b62bef1a61eaca74`
+- Scope: exactly 2 files, 603 insertions.
+- Implementation: 105 lines.
+- Tests: 498 lines.
+- No production files changed.
+- Local and remote branch SHAs matched exactly after push.
+
+Exact-SHA CI evidence:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37048143940`
+- Head SHA: `c965e652ec7482f6d2ba609b33634e977855441e`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T18:32:37Z`
+- Updated: `2026-10-02T18:33:15Z`
+- Job: `test`
+- Job ID: `110974574243`
+- Job started: `2026-10-02T18:32:39Z`
+- Job completed: `2026-10-02T18:33:15Z`
+- Exact run watch returned rc=0.
+- CI passed setup, checkout, Node setup, tracked-environment-file guard, `npm ci`, `npm test`, scanner syntax checks, Hardhat compile, and post steps.
+- CI emitted infrastructure notices that Node.js 20-targeting actions are being forced to Node.js 24 and that `ubuntu-latest` is scheduled to migrate to Ubuntu 26 beginning October 19, 2026; these were notices rather than test failures.
+- The push also reported existing Dependabot vulnerability counts on the repository default branch: 228 total, including 12 critical, 99 high, 79 moderate, and 38 low. Dependency remediation remains separate from this milestone and no dependency changes were made for 1K.
+
+Safety state:
+- 1K remains deterministic research composition around injected dependencies.
+- No signer exists in this milestone.
+- No transaction is constructed or submitted.
+- No broadcast path is introduced.
+- Existing execution safety policy is unchanged.
+- `LIVE_READY` remains false unless the existing complete policy independently qualifies a candidate.
+
+Layering through 1K:
+- 1E protected-peak stability analysis.
+- 1F snapshot acquisition primitive.
+- 1G repeated acquisition/stability composition primitive.
+- 1H minimum block-separation policy.
+- 1I bounded block-advancement observation primitive.
+- 1J advancement-gated acquisition with actual snapshot separation revalidation.
+- 1K gated-acquisition-to-stability composition that refuses to analyze incomplete acquisition sets.
+
+Next research boundary:
+- Keep actual provider adaptation separate from the deterministic 1K composition.
+- Decide whether a future provider adapter should supply `getBlockNumber` to the existing injected block observer.
+- Define waiting/cadence separately from deterministic advancement observation.
+- Define wall-clock timeout semantics separately from `maxAttempts`.
+- Decide whether incomplete research evidence requires durable persistence before any long-running orchestration.
+- Preserve the distinction between observed block advancement, pinned snapshot separation, elapsed time, and economically independent market states.
+- Do not introduce signer, transaction, or broadcast behavior as part of provider adaptation or research orchestration.
