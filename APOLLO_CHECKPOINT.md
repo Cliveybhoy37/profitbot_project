@@ -3611,3 +3611,98 @@ Before any future execution-stage integration:
 6. only then consider any signer or transaction path.
 
 Do not weaken profitability, slippage, gas, freshness, reserve, protected-output, worst-case, or minimum-profit policy to manufacture readiness.
+
+## Milestone 1R.2 — protected peak surface timing instrumentation
+
+Status: code committed and pushed; live timing observation not yet rerun.
+
+Code commit:
+
+- `33c41aa18cfd4edfe808f55d31e06748707799c6`
+- subject: `Instrument Polygon V4 protected peak stability timing`
+- parent: `d8e7a7a867dbfaf655a08ae4dc3607a29605e784`
+
+Purpose:
+
+- measure the wall-clock duration of each complete protected fine surface;
+- preserve the existing sequential provider-only observation architecture;
+- gather evidence before considering any deeper per-row timing, concurrency,
+  timeout, batching, or quote-path changes.
+
+Implementation:
+
+- `runProtectedPeakStability` accepts injectable `nowFn`, defaulting to
+  `Date.now`;
+- each complete delegated protected surface records `durationMs`;
+- the returned stability summary records `totalSurfaceDurationMs`;
+- timing values must be non-negative safe integers;
+- invalid timing dependency is rejected before surface work;
+- deterministic tests use an injected clock.
+
+Scope intentionally unchanged:
+
+- protected amount grid remains unchanged;
+- surfaces remain sequential;
+- observations inside each surface remain sequential;
+- no concurrency was introduced;
+- no timeout/retry policy was changed;
+- no profitability policy was changed;
+- no slippage policy was changed;
+- no freshness policy was changed;
+- qualification gas remains `700000`;
+- no signer, transaction, or broadcast capability was added.
+
+Validation before commit:
+
+- focused protected-peak stability suite: `8 / 8` passing;
+- canonical Node suite: `422 / 422` passing;
+- canonical Hardhat suite: `29 / 29` passing;
+- maintained total: `451` passing tests;
+- pre-validation `git diff --check`: passing;
+- post-validation `git diff --check`: passing;
+- execution-safety diff scan: empty;
+- Hardhat-generated `artifacts/` and `cache/` churn restored before commit;
+- no live RPC run was performed during implementation or validation.
+
+Hardhat validation note:
+
+- a broader diagnostic Hardhat invocation temporarily included Polygon fork
+  tests and did not provide the required historical fork configuration;
+- that invocation was not the repository's maintained Hardhat regression gate;
+- repository discovery confirmed the canonical maintained command is
+  `hardhat test test/ProfitBot.js test/execution.js test/threeLegExecution.js`;
+- that canonical suite subsequently passed `29 / 29`;
+- no dependency or Hardhat configuration change was made.
+
+1R evidence motivating this instrumentation:
+
+- the completed provider-only 1R run performed four protected fine surfaces;
+- each surface contains 26 amounts;
+- therefore the run performed 104 sequential three-leg economic observations;
+- the stable protected peak was `0.118 WPOL` across all four snapshots;
+- qualification remained false because observed gas price was far above the
+  protected break-even ceiling;
+- policy must not be weakened to manufacture readiness.
+
+Next exact step:
+
+1. keep code commit `33c41aa18cfd4edfe808f55d31e06748707799c6`
+   unchanged;
+2. run one separately approved provider-only 1R observation using the existing
+   operational runner;
+3. capture the four new per-surface `durationMs` values and cycle-level
+   `totalSurfaceDurationMs` values;
+4. compare those timings with the prior apparent runtime;
+5. only after timing evidence exists decide whether per-row instrumentation is
+   justified;
+6. do not introduce concurrency, timeout changes, gas-policy changes, or live
+   transaction capability as part of the timing measurement.
+
+Separate future workstream:
+
+Gas calibration remains independent of 1R.2. The proven isolated Aave + V4
+historical fork measured `618122` gas while protected qualification continues
+to use the conservative `700000` gas-unit assumption. Do not change that
+assumption from latency evidence alone. Any future gas calibration should
+compare fork-measured gas, conservative qualification gas, and—only after a
+separately reviewed real transaction exists—actual receipt gas usage.
