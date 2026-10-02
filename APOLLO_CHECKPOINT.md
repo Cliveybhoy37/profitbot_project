@@ -3380,3 +3380,89 @@ The next stage may provide a controlled provider-only runner around 1O for real 
 That stage must remain bounded and read-only. Real wall-clock waiting may be supplied outside the 1O core, but elapsed time must never substitute for observed block advancement.
 
 Do not add signer, transaction, broadcast, or production execution behavior. If future evidence reaches `LIVE_READY`, freeze and preserve the evidence, requalify against current head and gas, perform final fork/execution simulation, and keep any execution integration as a separate reviewed stage.
+
+## Milestone 1P — Protected Peak Provider Timed Cadence
+
+Status: CODE COMPLETE, LOCALLY VALIDATED, PUSHED, EXACT-SHA CI GREEN
+
+Code commit:
+- SHA: `b5d0ac5bfea0fe2df369cf6ecc310d3b93bcd873`
+- Parent: `6f0ab1066c1213f15c8bd9640509fb65dba36703`
+- Subject: `Add Polygon V4 protected peak timed cadence`
+- Scope: exactly two new files, 283 insertions
+  - `scripts/research/runPolygonV4ProtectedPeakProviderTimedCadence.js`
+  - `test/polygonV4ProtectedPeakProviderTimedCadence.test.js`
+
+Purpose:
+- Add the smallest real wall-clock timing adapter above unchanged 1O.
+- Provide a concrete `sleep(ms)` implementation using `setTimeout`.
+- Delegate the supplied provider and bounded cadence policy exactly once to 1O.
+- Preserve the exact 1O result unchanged.
+- Preserve omitted `amounts` rather than inventing an override.
+
+Boundary:
+- 1P does not choose `count`.
+- 1P does not choose `minimumBlockGap`.
+- 1P does not choose `maxAttempts`.
+- 1P does not choose `maxCycles`.
+- 1P does not choose `waitMs`.
+- 1P does not construct a provider.
+- 1P does not read `process.env`.
+- 1P does not directly read the provider.
+- 1P does not interpret or rewrite cadence results.
+- 1P does not persist observations.
+- 1P does not create a daemon, heartbeat, interval, or unbounded loop.
+- 1P does not add signer, wallet, private-key, transaction, flashloan execution, or broadcast behavior.
+- Existing 1I through 1O remain unchanged.
+
+Timing semantics:
+- Real wall-clock waiting exists only through the wait function supplied to 1O.
+- 1O waits only between bounded cadence cycles.
+- There is no wait before the first cycle or after the final cycle.
+- Wall-clock elapsed time never counts as block advancement.
+- 1I/provider block observation remains authoritative for block advancement.
+- 1P does not add waiting inside 1I bounded block-observation attempts.
+- An incomplete 1N result remains an exact recorded cycle result; a later bounded 1O cycle may retry after the configured between-cycle wait.
+
+Validation:
+- Focused 1P tests: 6/6 passing.
+- Maintained Node suite: 411/411 passing.
+- Canonical Hardhat suite:
+  - `test/ProfitBot.js`
+  - `test/execution.js`
+  - `test/threeLegExecution.js`
+  - 29/29 passing.
+- Maintained Node + canonical Hardhat total: 440 passing.
+- 1P execution-safety scan: empty.
+- 1P direct-provider-read scan: empty.
+- Timer ownership: exactly one intentional `setTimeout`; no `setInterval`.
+- 1I through 1O unchanged.
+- Hardhat-generated `artifacts/` and `cache/` churn was restored before commit.
+
+Exact-SHA CI:
+- Workflow: `ProfitBot checks`
+- Run ID: `37062202993`
+- Event: `push`
+- Head SHA: `b5d0ac5bfea0fe2df369cf6ecc310d3b93bcd873`
+- Created: `2026-10-02T20:41:34Z`
+- Updated: `2026-10-02T20:42:18Z`
+- Status: `completed`
+- Conclusion: `success`
+
+Protected-peak layering now:
+- 1I: deterministic bounded block-advancement observation.
+- 1J: block-gated snapshot acquisition.
+- 1K: gated acquisition plus protected-peak stability.
+- 1L: one provider block-number observation.
+- 1M: provider-to-zero-argument observer binding.
+- 1N: provider-backed gated-stability composition.
+- 1O: bounded multi-cycle provider cadence with injected between-cycle waiting.
+- 1P: concrete timed-cadence adapter supplying real wall-clock waiting to 1O.
+
+Next boundary:
+- Keep the next layer provider-only and read-only.
+- A later operational runner may construct the Polygon provider and choose explicit bounded policy values.
+- Do not hide policy choices inside 1P.
+- Do not treat elapsed wall-clock time as evidence of block advancement.
+- Do not add signer, transaction, broadcast, or production integration as part of provider monitoring.
+- If `LIVE_READY` is ever observed, freeze the evidence, requalify against current head and gas, perform final fork/execution simulation, preserve the evidence, and keep any execution action as a separate reviewed stage.
