@@ -3466,3 +3466,148 @@ Next boundary:
 - Do not treat elapsed wall-clock time as evidence of block advancement.
 - Do not add signer, transaction, broadcast, or production integration as part of provider monitoring.
 - If `LIVE_READY` is ever observed, freeze the evidence, requalify against current head and gas, perform final fork/execution simulation, preserve the evidence, and keep any execution action as a separate reviewed stage.
+
+## Milestone 1Q — Polygon V4 protected peak operational runner
+
+Status: code complete, locally validated, pushed, and exact-SHA CI green.
+
+### Code identity
+
+- Commit: `1fedc1d602837853a21ff9f9cb0e18ee86d52974`
+- Parent: `d72f2e2ca4746c4da723ab50c9a02b5c4eb3a692`
+- Subject: `Add Polygon V4 protected peak operational runner`
+- Scope: exactly two new files, 390 insertions:
+  - `scripts/research/runPolygonV4ProtectedPeakProviderOperational.js`
+  - `test/polygonV4ProtectedPeakProviderOperational.test.js`
+
+### Purpose and boundary
+
+1Q adds the small provider-only operational layer above the unchanged 1P timed cadence adapter.
+
+It may:
+
+- read `INFURA_POLYGON` in `main()`;
+- construct an ethers v5 `JsonRpcProvider` pinned to Polygon chain ID 137;
+- choose explicit bounded monitoring configuration in `main()`;
+- invoke the 1P timed cadence path exactly once;
+- print the returned observation structure.
+
+It does not:
+
+- obtain a signer;
+- create or use a wallet or private key;
+- send or broadcast a transaction;
+- call flashloan execution;
+- persist observations;
+- create an interval, daemon, heartbeat, or unbounded loop;
+- directly read provider block, gas, transaction, or call data;
+- modify production execution integration;
+- interpret returned observations as execution authorization.
+
+### Policy ownership
+
+The reusable `runProtectedPeakProviderOperational(...)` function does not invent omitted monitoring policy.
+
+`main()` explicitly owns the current bounded operational monitoring configuration:
+
+- `OPERATIONAL_COUNT = 2`
+- `OPERATIONAL_MINIMUM_BLOCK_GAP = 1`
+- `OPERATIONAL_MAX_ATTEMPTS = 3`
+- `OPERATIONAL_MAX_CYCLES = 2`
+- `OPERATIONAL_WAIT_MS = 5000`
+
+These values are bounded observation/cadence configuration. They do not relax profitability, slippage, gas, freshness, reserve, protected-output, worst-case, or minimum-profit safety policy.
+
+Timing semantics remain important:
+
+- the 5000 ms wait is only between 1O cadence cycles;
+- there is no wait before the first cycle or after the final cycle;
+- 1I block-observation attempts remain immediate bounded observations;
+- elapsed wall-clock time never counts as block advancement;
+- provider-observed block evidence remains authoritative;
+- an incomplete cycle may be retried only by a later bounded cadence cycle.
+
+### Validation
+
+Focused 1Q:
+
+- 8 tests passed.
+
+Maintained Node suite:
+
+- 419 tests passed.
+
+Canonical Hardhat suite:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+- 29 tests passed.
+
+Maintained suite total:
+
+- 448 passing tests = 419 Node + 29 Hardhat.
+- The 8 focused 1Q tests are included in the 419 Node tests and are not double-counted.
+
+Validation return codes:
+
+- `FOCUSED_RC=0`
+- `NODE_RC=0`
+- `HARDHAT_RC=0`
+- `1I_TO_1P_UNCHANGED_RC=0`
+
+Safety verification:
+
+- 1Q execution-safety scan empty.
+- 1Q direct-provider-action scan empty.
+- 1Q timer scan empty.
+- Existing protected 1I through 1P files were byte-for-byte unchanged across validation.
+- Hardhat-generated `artifacts/` and `cache/` churn was restored only from those generated directories before commit.
+- Final code commit contained exactly the two intended 1Q files.
+
+### Exact-SHA CI
+
+GitHub Actions:
+
+- Workflow: `ProfitBot CI`
+- Run ID: `37065074015`
+- Event: `push`
+- Head SHA: `1fedc1d602837853a21ff9f9cb0e18ee86d52974`
+- Created: `2026-10-02T21:08:57Z`
+- Updated: `2026-10-02T21:09:44Z`
+- Status: `completed`
+- Conclusion: `success`
+- `WATCH_RC=0`
+
+### Current protected-peak layering
+
+The provider-only protected-peak path now extends through 1Q:
+
+- 1I: deterministic bounded block advancement
+- 1J: gated snapshot acquisition
+- 1K/1K.1: gated stability composition with exact provider forwarding
+- 1L: one provider block observation
+- 1M: zero-argument provider observer adapter
+- 1N: provider-backed gated stability composition
+- 1O: bounded cadence/orchestration
+- 1P: real wall-clock timed cadence adapter
+- 1Q: provider construction plus explicit bounded operational monitoring configuration
+
+### Safety boundary after 1Q
+
+1Q remains provider-only/read-only infrastructure.
+
+`LIVE_READY` remains false unless the existing protected qualification policy independently passes.
+
+No observation from 1Q authorizes execution.
+
+Before any future execution-stage integration:
+
+1. freeze qualifying evidence;
+2. requalify against current head and current gas;
+3. run final fork/execution simulation;
+4. preserve the evidence;
+5. review execution as a separate stage;
+6. only then consider any signer or transaction path.
+
+Do not weaken profitability, slippage, gas, freshness, reserve, protected-output, worst-case, or minimum-profit policy to manufacture readiness.
