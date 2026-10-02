@@ -1550,3 +1550,155 @@ Expected state at this recovery anchor:
 
 Dated `APOLLO_CHECKPOINT_*.md` files remain independent historical snapshots
 and must not be merged, overwritten, or synchronized by this update.
+
+---
+
+## Checkpoint — Polygon V4 Protected Amount Surface (Milestone 1B)
+
+### Recovery anchor
+
+- Branch: `repair/simulation-safety`
+- Code milestone commit: `c52ed052229627c89907529fcd56c7b47305c62f`
+- Commit subject: `Add Polygon V4 protected amount surface runner`
+- Local and `origin/repair/simulation-safety` were synchronized after push.
+- Independent GitHub Actions run: `37020767562`
+- Workflow: `ProfitBot CI`
+- Event: `push`
+- Result: success
+- Duration: 39 seconds
+- This supersedes `147ce78e8ec8ad0718098259cbf7110ca006fb9d` as the latest fully CI-confirmed code recovery anchor before this checkpoint-only commit.
+
+### Milestone 1B implementation
+
+Added exactly two code/test files:
+
+- `scripts/research/runPolygonV4AmountSurface.js`
+- `test/polygonV4AmountSurfaceRunner.test.js`
+
+Committed code delta:
+
+- 2 files changed
+- 904 insertions
+- Runner: 537 lines
+- Tests: 367 lines
+
+The runner is research/provider-only. It does not introduce a signer, transaction submission, or broadcast path.
+
+The amount surface reuses the established Polygon V4 route:
+
+`WPOL -> DAI -> APEPE -> WPOL`
+
+using the dominant V4 pool:
+
+`0x6c6627aba26b073dd60b88b472b608f4f48f4e9eb5635efbd32095a76bea6c60`
+
+The runner evaluates the existing fine-sweep amounts from `0.100` through `0.150` WPOL in `0.005` WPOL increments.
+
+All observations in one surface run share:
+
+- one pinned quote block
+- one gas-price snapshot
+- one Aave premium snapshot
+
+Protected economics use the authoritative policy constants and the existing `amountSurfaceEconomics` helper rather than weakening or duplicating execution policy.
+
+### Local regression validation
+
+Node regression:
+
+- 325 tests
+- 325 passed
+- 0 failed
+
+Hardhat regression:
+
+- 29 tests
+- 29 passed
+- 0 failed
+- 35 Solidity files compiled successfully
+- SPDX output was warning-only
+
+Combined local regression:
+
+- 354 tests
+- 354 passed
+
+Hardhat-generated `artifacts/` and `cache/` churn was restored after testing.
+
+Before commit:
+
+- `git diff --cached --check` passed
+- exactly the two intended Milestone 1B files were staged
+- no unstaged tracked changes remained
+
+### First live provider-only amount surface
+
+The first live Milestone 1B surface completed successfully with:
+
+- Pinned quote block: `94830650`
+- Shared gas price: `275399891388` wei (~275.400 gwei)
+- Aave premium: 5 bps
+- Amounts tested: 11
+- Range: `0.100` to `0.150` WPOL
+- Quote result: 11/11 `QUOTE_OK`
+- Observed-gas qualifications: 0/11
+
+Best protected size in this surface:
+
+- Amount: `0.115` WPOL
+- Gross delta: `15385817510297865` wei
+- Protected gas budget: `8676388422746375` wei
+- Gas ceiling: `12394840603` wei/gas (~12.395 gwei)
+- Observed-gas economic deficit: `184103535548853625` wei
+- `observedGasQualifies=false`
+
+The protected surface improved from `0.100` WPOL through `0.115` WPOL, was nearly flat at `0.120` WPOL, and then declined through `0.150` WPOL.
+
+The best tested point therefore occurred inside the tested interval rather than at either boundary.
+
+This observation is historical evidence for block `94830650`; it is not permission to execute and must not be treated as a permanent optimum.
+
+### Safety interpretation
+
+Observed gas remained far above the protected gas ceiling.
+
+At the best protected point:
+
+- observed gas was ~275.400 gwei
+- protected ceiling was ~12.395 gwei
+- observed gas was roughly 22.2x the protected ceiling
+
+No profitability, reserve, slippage, gas, freshness, minimum-profit, or worst-case policy was weakened to manufacture qualification.
+
+Safety state remains:
+
+- signer: none
+- transaction: none
+- broadcast: false
+- `LIVE_READY=false`
+
+If a future observation qualifies, freeze the evidence and independently requalify through the established safety path before any separate reviewed execution stage.
+
+### RPC handling
+
+The Codespace did not initially inherit `INFURA_POLYGON`.
+
+A temporary RPC endpoint was supplied directly to the Codespace shell environment for provider-only research.
+
+No API key, API secret, RPC URL, private key, seed phrase, password, or other credential is stored in this checkpoint.
+
+The Codespace research credential is logically separated from the HP watcher credential.
+
+### HP / Bugs isolation
+
+The HP/WSL Bugs observer was not modified, restarted, pulled forward, or reconfigured during Milestone 1B.
+
+Keep the HP monitoring appliance isolated from Codespace research unless a deliberate migration is reviewed separately.
+
+### Next steps
+
+1. Commit this checkpoint update separately from the Milestone 1B code commit.
+2. Push the checkpoint commit and independently verify `ProfitBot CI`.
+3. Preserve `c52ed05` as the clean Milestone 1B code anchor underneath the checkpoint commit.
+4. Continue provider-only economic research without weakening established safety policy.
+5. Do not modify production execution contracts or submit live-network transactions as part of this research milestone.
