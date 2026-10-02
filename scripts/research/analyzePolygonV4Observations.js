@@ -10,6 +10,14 @@ const {
   ethers
 } = require("ethers");
 
+const {
+  POLICY_GAS_UNITS,
+  SAFETY_RESERVE,
+  MINIMUM_NET_PROFIT
+} = require(
+  "./runPolygonV4LiveQualification"
+);
+
 const DEFAULT_OBSERVATION_LOG =
   path.join(
     "research",
@@ -168,7 +176,9 @@ function ratioPpm(
 }
 
 const QUALIFICATION_GAS_UNITS =
-  700000n;
+  BigInt(
+    POLICY_GAS_UNITS.toString()
+  );
 
 function economicEnvelope(
   gasBudgetWei,
@@ -247,6 +257,125 @@ function economicEnvelope(
     qualifiesAtObservedGas:
       budget >=
       observedGasCostWei
+  };
+}
+
+function economicWaterfall({
+  amountInWei,
+  finalAmountWei,
+  protectedFinalOutputWei,
+  premiumBps,
+  gasBudgetWei,
+  safetyReserveWei,
+  minimumNetProfitWei,
+  gasPriceWei,
+  gasUnits =
+    QUALIFICATION_GAS_UNITS
+}) {
+  const amountIn =
+    bigIntValue(amountInWei);
+  const finalAmount =
+    bigIntValue(finalAmountWei);
+  const protectedFinalOutput =
+    bigIntValue(
+      protectedFinalOutputWei
+    );
+  const premiumRate =
+    bigIntValue(premiumBps);
+  const persistedGasBudget =
+    bigIntValue(gasBudgetWei);
+  const safetyReserve =
+    bigIntValue(safetyReserveWei);
+  const minimumNetProfit =
+    bigIntValue(minimumNetProfitWei);
+  const gasPrice =
+    bigIntValue(gasPriceWei);
+  const units =
+    bigIntValue(gasUnits);
+
+  if (
+    amountIn === null ||
+    finalAmount === null ||
+    protectedFinalOutput === null ||
+    premiumRate === null ||
+    persistedGasBudget === null ||
+    safetyReserve === null ||
+    minimumNetProfit === null ||
+    gasPrice === null ||
+    units === null ||
+    amountIn < 0n ||
+    finalAmount < amountIn ||
+    protectedFinalOutput < 0n ||
+    protectedFinalOutput > finalAmount ||
+    premiumRate < 0n ||
+    premiumRate >= 10000n ||
+    persistedGasBudget < 0n ||
+    safetyReserve < 0n ||
+    minimumNetProfit < 0n ||
+    gasPrice <= 0n ||
+    units <= 0n
+  ) {
+    return null;
+  }
+
+  const grossDeltaWei =
+    finalAmount - amountIn;
+
+  const protectionHaircutWei =
+    finalAmount -
+    protectedFinalOutput;
+
+  // Mirror the live V4 watcher/preflight exactly:
+  // amountIn.mul(premiumBps).div(10000).
+  const premiumWei =
+    amountIn *
+    premiumRate /
+    10000n;
+
+  const reconstructedGasBudgetWei =
+    protectedFinalOutput -
+    amountIn -
+    premiumWei -
+    safetyReserve -
+    minimumNetProfit;
+
+  const gasBudgetDifferenceWei =
+    reconstructedGasBudgetWei -
+    persistedGasBudget;
+
+  const observedGasCostWei =
+    gasPrice * units;
+
+  const economicDeficitWei =
+    observedGasCostWei >
+      persistedGasBudget
+      ? observedGasCostWei -
+        persistedGasBudget
+      : 0n;
+
+  return {
+    amountInWei: amountIn,
+    finalAmountWei: finalAmount,
+    grossDeltaWei,
+    protectedFinalOutputWei:
+      protectedFinalOutput,
+    protectionHaircutWei,
+    premiumBps: premiumRate,
+    premiumWei,
+    safetyReserveWei:
+      safetyReserve,
+    minimumNetProfitWei:
+      minimumNetProfit,
+    persistedGasBudgetWei:
+      persistedGasBudget,
+    reconstructedGasBudgetWei,
+    gasBudgetDifferenceWei,
+    gasBudgetMatches:
+      gasBudgetDifferenceWei === 0n,
+    gasPriceWei: gasPrice,
+    gasUnits: units,
+    observedGasCostWei,
+    economicDeficitWei
   };
 }
 
@@ -422,6 +551,24 @@ function analyzeObservations(
   let smallestProtectedBudgetShortfall =
     null;
   let bestProtectedBudgetCoverage =
+    null;
+
+  let economicWaterfallEligible = 0;
+  let economicWaterfallExactMatches = 0;
+  let economicWaterfallMismatches = 0;
+
+  const economicWaterfallTotals = {
+    grossDeltaWei: 0n,
+    protectionHaircutWei: 0n,
+    premiumWei: 0n,
+    safetyReserveWei: 0n,
+    minimumNetProfitWei: 0n,
+    protectedGasBudgetWei: 0n,
+    observedGasCostWei: 0n,
+    economicDeficitWei: 0n
+  };
+
+  let bestProtectedBudgetWaterfall =
     null;
 
   let liveReadyEvents = 0;
@@ -729,6 +876,105 @@ function analyzeObservations(
         ) {
           bestProtectedBudgetCoverage =
             economicRow;
+
+          // Do not retain a waterfall from an older
+          // best-coverage row if this row lacks the
+          // additional persisted economics required
+          // for waterfall reconstruction.
+          bestProtectedBudgetWaterfall =
+            null;
+        }
+
+        const waterfall =
+          economicWaterfall({
+            amountInWei:
+              row.amountIn,
+            finalAmountWei:
+              row.finalAmount,
+            protectedFinalOutputWei:
+              row.protectedFinalOutput,
+            premiumBps:
+              row.premiumBps ??
+              observation
+                .policySnapshot
+                ?.premiumBps,
+            gasBudgetWei:
+              row.gasBudget,
+            safetyReserveWei:
+              SAFETY_RESERVE,
+            minimumNetProfitWei:
+              MINIMUM_NET_PROFIT,
+            gasPriceWei:
+              row.gasPriceWei ??
+              observation
+                .policySnapshot
+                ?.gasPriceWei
+          });
+
+        if (waterfall) {
+          economicWaterfallEligible +=
+            1;
+
+          if (
+            waterfall
+              .gasBudgetMatches
+          ) {
+            economicWaterfallExactMatches +=
+              1;
+          } else {
+            economicWaterfallMismatches +=
+              1;
+          }
+
+          economicWaterfallTotals
+            .grossDeltaWei +=
+              waterfall
+                .grossDeltaWei;
+
+          economicWaterfallTotals
+            .protectionHaircutWei +=
+              waterfall
+                .protectionHaircutWei;
+
+          economicWaterfallTotals
+            .premiumWei +=
+              waterfall
+                .premiumWei;
+
+          economicWaterfallTotals
+            .safetyReserveWei +=
+              waterfall
+                .safetyReserveWei;
+
+          economicWaterfallTotals
+            .minimumNetProfitWei +=
+              waterfall
+                .minimumNetProfitWei;
+
+          economicWaterfallTotals
+            .protectedGasBudgetWei +=
+              waterfall
+                .persistedGasBudgetWei;
+
+          economicWaterfallTotals
+            .observedGasCostWei +=
+              waterfall
+                .observedGasCostWei;
+
+          economicWaterfallTotals
+            .economicDeficitWei +=
+              waterfall
+                .economicDeficitWei;
+
+          if (
+            bestProtectedBudgetCoverage ===
+              economicRow
+          ) {
+            bestProtectedBudgetWaterfall = {
+              ...economicRow,
+              ...waterfall
+            };
+          }
         }
       }
     }
@@ -873,6 +1119,17 @@ function analyzeObservations(
         : null,
     smallestProtectedBudgetShortfall,
     bestProtectedBudgetCoverage,
+    economicWaterfall: {
+      eligible:
+        economicWaterfallEligible,
+      exactMatches:
+        economicWaterfallExactMatches,
+      mismatches:
+        economicWaterfallMismatches,
+      totals:
+        economicWaterfallTotals
+    },
+    bestProtectedBudgetWaterfall,
     bestHistorical
   };
 }
@@ -1250,6 +1507,110 @@ function printAnalysis(
   }
 
   if (
+    analysis.economicWaterfall
+  ) {
+    const waterfall =
+      analysis.economicWaterfall;
+
+    console.log("");
+    console.log(
+      "ECONOMIC_WATERFALL_INTEGRITY"
+    );
+    console.log(
+      `eligible=${waterfall.eligible}`
+    );
+    console.log(
+      `exactMatches=${waterfall.exactMatches}`
+    );
+    console.log(
+      `mismatches=${waterfall.mismatches}`
+    );
+
+    const totals =
+      waterfall.totals;
+
+    console.log(
+      `totalGrossDelta=${formatWpol(totals.grossDeltaWei)} WPOL`
+    );
+    console.log(
+      `totalProtectionHaircut=${formatWpol(totals.protectionHaircutWei)} WPOL`
+    );
+    console.log(
+      `totalPremium=${formatWpol(totals.premiumWei)} WPOL`
+    );
+    console.log(
+      `totalSafetyReserve=${formatWpol(totals.safetyReserveWei)} WPOL`
+    );
+    console.log(
+      `totalMinimumNetProfit=${formatWpol(totals.minimumNetProfitWei)} WPOL`
+    );
+    console.log(
+      `totalProtectedGasBudget=${formatWpol(totals.protectedGasBudgetWei)} WPOL`
+    );
+    console.log(
+      `totalObservedGasCost=${formatWpol(totals.observedGasCostWei)} WPOL`
+    );
+    console.log(
+      `totalEconomicDeficit=${formatWpol(totals.economicDeficitWei)} WPOL`
+    );
+  }
+
+  if (
+    analysis.bestProtectedBudgetWaterfall
+  ) {
+    const row =
+      analysis
+        .bestProtectedBudgetWaterfall;
+
+    console.log("");
+    console.log(
+      "BEST_PROTECTED_BUDGET_WATERFALL"
+    );
+    console.log(
+      `capturedAt=${row.capturedAt}`
+    );
+    console.log(
+      `block=${row.quoteBlock}`
+    );
+    console.log(
+      `candidate=${row.candidateId}`
+    );
+    console.log(
+      `grossDelta=${formatWpol(row.grossDeltaWei)} WPOL`
+    );
+    console.log(
+      `protectionHaircut=${formatWpol(row.protectionHaircutWei)} WPOL`
+    );
+    console.log(
+      `aavePremium=${formatWpol(row.premiumWei)} WPOL`
+    );
+    console.log(
+      `safetyReserve=${formatWpol(row.safetyReserveWei)} WPOL`
+    );
+    console.log(
+      `minimumNetProfit=${formatWpol(row.minimumNetProfitWei)} WPOL`
+    );
+    console.log(
+      `protectedGasBudget=${formatWpol(row.persistedGasBudgetWei)} WPOL`
+    );
+    console.log(
+      `reconstructedGasBudget=${formatWpol(row.reconstructedGasBudgetWei)} WPOL`
+    );
+    console.log(
+      `gasBudgetDifferenceWei=${row.gasBudgetDifferenceWei}`
+    );
+    console.log(
+      `gasBudgetMatches=${row.gasBudgetMatches}`
+    );
+    console.log(
+      `observedGasCost=${formatWpol(row.observedGasCostWei)} WPOL`
+    );
+    console.log(
+      `economicDeficit=${formatWpol(row.economicDeficitWei)} WPOL`
+    );
+  }
+
+  if (
     analysis.bestHistorical
   ) {
     const best =
@@ -1354,6 +1715,7 @@ module.exports = {
   qualificationEnvelope,
   QUALIFICATION_GAS_UNITS,
   economicEnvelope,
+  economicWaterfall,
   validateObservation,
   analyzeObservations,
   formatDuration

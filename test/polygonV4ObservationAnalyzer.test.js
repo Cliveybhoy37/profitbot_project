@@ -13,6 +13,7 @@ const {
   qualificationEnvelope,
   QUALIFICATION_GAS_UNITS,
   economicEnvelope,
+  economicWaterfall,
   validateObservation,
   analyzeObservations,
   formatDuration
@@ -282,6 +283,118 @@ test(
 );
 
 test(
+  "economic waterfall reconstructs protected gas budget exactly",
+  () => {
+    const waterfall =
+      economicWaterfall({
+        amountInWei:
+          "125000000000000000",
+        finalAmountWei:
+          "144998569388452416",
+        protectedFinalOutputWei:
+          "144273576541510153",
+        premiumBps:
+          "5",
+        gasBudgetWei:
+          "13211076541510153",
+        safetyReserveWei:
+          "1000000000000000",
+        minimumNetProfitWei:
+          "5000000000000000",
+        gasPriceWei:
+          "266300438750"
+      });
+
+    assert.equal(
+      waterfall.grossDeltaWei,
+      19998569388452416n
+    );
+
+    assert.equal(
+      waterfall.protectionHaircutWei,
+      724992846942263n
+    );
+
+    assert.equal(
+      waterfall.premiumWei,
+      62500000000000n
+    );
+
+    assert.equal(
+      waterfall.reconstructedGasBudgetWei,
+      13211076541510153n
+    );
+
+    assert.equal(
+      waterfall.gasBudgetDifferenceWei,
+      0n
+    );
+
+    assert.equal(
+      waterfall.gasBudgetMatches,
+      true
+    );
+
+    assert.equal(
+      waterfall.observedGasCostWei,
+      186410307125000000n
+    );
+
+    assert.equal(
+      waterfall.economicDeficitWei,
+      173199230583489847n
+    );
+  }
+);
+
+test(
+  "economic waterfall exposes a persisted budget mismatch",
+  () => {
+    const waterfall =
+      economicWaterfall({
+        amountInWei:
+          "100000",
+        finalAmountWei:
+          "120000",
+        protectedFinalOutputWei:
+          "119000",
+        premiumBps:
+          "5",
+        gasBudgetWei:
+          "12849",
+        safetyReserveWei:
+          "1000",
+        minimumNetProfitWei:
+          "5000",
+        gasPriceWei:
+          "1",
+        gasUnits:
+          "100"
+      });
+
+    assert.equal(
+      waterfall.premiumWei,
+      50n
+    );
+
+    assert.equal(
+      waterfall.reconstructedGasBudgetWei,
+      12950n
+    );
+
+    assert.equal(
+      waterfall.gasBudgetDifferenceWei,
+      101n
+    );
+
+    assert.equal(
+      waterfall.gasBudgetMatches,
+      false
+    );
+  }
+);
+
+test(
   "economic envelope reports no shortfall when budget covers observed gas",
   () => {
     const envelope =
@@ -468,6 +581,268 @@ test(
         .bestProtectedBudgetCoverage
         .coveragePpm,
       35n
+    );
+  }
+);
+
+test(
+  "analysis aggregates exact economic waterfall reconstruction",
+  () => {
+    const rows = [
+      {
+        capturedAt:
+          "2026-10-01T17:04:13.939Z",
+        quoteBlock:
+          94779407,
+        policySnapshot: {
+          currentBlock:
+            94779407,
+          gasPriceWei:
+            "266300438750",
+          premiumBps:
+            5
+        },
+        diagnostics: [
+          {
+            id:
+              "FIRST",
+            amountIn:
+              "125000000000000000",
+            finalAmount:
+              "144998569388452416",
+            grossDelta:
+              "19998569388452416",
+            protectedFinalOutput:
+              "144273576541510153",
+            premiumBps:
+              5,
+            gasPriceWei:
+              "266300438750",
+            gasBudget:
+              "13211076541510153",
+            maxGasPriceWei:
+              "18872966487",
+            liveReady:
+              false,
+            stage:
+              "PREFLIGHT",
+            reason:
+              "Candidate has negative expected net profit"
+          },
+          {
+            id:
+              "SECOND",
+            amountIn:
+              "75000000000000000",
+            finalAmount:
+              "91239253187209523",
+            grossDelta:
+              "16239253187209523",
+            protectedFinalOutput:
+              "90783056921273475",
+            premiumBps:
+              5,
+            gasPriceWei:
+              "266300438750",
+            gasBudget:
+              "9745556921273475",
+            maxGasPriceWei:
+              "13922224173",
+            liveReady:
+              false,
+            stage:
+              "PREFLIGHT",
+            reason:
+              "Candidate has negative expected net profit"
+          }
+        ],
+        liveReadyIds: [],
+        broadcast:
+          false
+      }
+    ];
+
+    const result =
+      analyzeObservations(rows);
+
+    assert.equal(
+      result.economicWaterfall
+        .eligible,
+      2
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .exactMatches,
+      2
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .mismatches,
+      0
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .totals
+        .grossDeltaWei,
+      36237822575661939n
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .totals
+        .protectionHaircutWei,
+      1181189112878311n
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .totals
+        .premiumWei,
+      100000000000000n
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .totals
+        .safetyReserveWei,
+      2000000000000000n
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .totals
+        .minimumNetProfitWei,
+      10000000000000000n
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .totals
+        .protectedGasBudgetWei,
+      22956633462783628n
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .totals
+        .observedGasCostWei,
+      372820614250000000n
+    );
+
+    assert.equal(
+      result.economicWaterfall
+        .totals
+        .economicDeficitWei,
+      349863980787216372n
+    );
+
+    assert.equal(
+      result
+        .bestProtectedBudgetWaterfall
+        .candidateId,
+      "FIRST"
+    );
+
+    assert.equal(
+      result
+        .bestProtectedBudgetWaterfall
+        .gasBudgetMatches,
+      true
+    );
+
+    assert.equal(
+      result
+        .bestProtectedBudgetWaterfall
+        .persistedGasBudgetWei,
+      13211076541510153n
+    );
+
+    assert.equal(
+      result
+        .bestProtectedBudgetWaterfall
+        .economicDeficitWei,
+      173199230583489847n
+    );
+  }
+);
+
+test(
+  "analysis does not retain stale waterfall when best coverage lacks waterfall fields",
+  () => {
+    const rows = [
+      {
+        capturedAt:
+          "2026-10-01T00:00:00.000Z",
+        quoteBlock:
+          100,
+        policySnapshot: {
+          currentBlock:
+            100,
+          gasPriceWei:
+            "100",
+          premiumBps:
+            5
+        },
+        diagnostics: [
+          {
+            id:
+              "COMPLETE",
+            amountIn:
+              "100000",
+            finalAmount:
+              "120000",
+            protectedFinalOutput:
+              "119000",
+            premiumBps:
+              5,
+            gasPriceWei:
+              "100",
+            gasBudget:
+              "12950",
+            maxGasPriceWei:
+              "1",
+            liveReady:
+              false
+          },
+          {
+            id:
+              "ENVELOPE_ONLY",
+            gasPriceWei:
+              "100",
+            gasBudget:
+              "70000",
+            maxGasPriceWei:
+              "1",
+            liveReady:
+              false
+          }
+        ],
+        liveReadyIds: [],
+        broadcast:
+          false
+      }
+    ];
+
+    const result =
+      analyzeObservations(rows);
+
+    assert.equal(
+      result.bestProtectedBudgetCoverage
+        .candidateId,
+      "ENVELOPE_ONLY"
+    );
+
+    assert.equal(
+      result.bestProtectedBudgetWaterfall,
+      null
+    );
+
+    assert.equal(
+      result.economicWaterfall.eligible,
+      1
     );
   }
 );
