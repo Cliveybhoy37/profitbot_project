@@ -47,6 +47,7 @@ async function qualifyGasEvidenceProtectedPeakHandoff({
   gasEvidence,
   safetyReserveWei,
   minimumNetProfitWei,
+  policySnapshot = null,
   selectProtectedPeakHandoffFn =
     selectProtectedPeakHandoff,
   buildObservedCandidateFn =
@@ -124,14 +125,17 @@ async function qualifyGasEvidenceProtectedPeakHandoff({
       evidence: gasEvidence
     });
 
-  const policySnapshot =
-    await acquirePolicySnapshot({
-      provider
-    });
+  const qualificationPolicySnapshot =
+    policySnapshot === null
+      ? await acquirePolicySnapshot({
+          provider
+        })
+      : policySnapshot;
 
   return qualifyHandoff({
     operationalResult,
-    policySnapshot,
+    policySnapshot:
+      qualificationPolicySnapshot,
     startToken,
     entryToken,
     exitToken,

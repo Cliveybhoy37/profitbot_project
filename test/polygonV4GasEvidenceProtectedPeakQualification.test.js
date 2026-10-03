@@ -858,3 +858,153 @@ test(
     );
   }
 );
+
+test(
+  "uses supplied authoritative policy snapshot without reacquisition",
+  async () => {
+    const h = harness();
+    const subject = loadSubject();
+
+    let acquisitionCalls = 0;
+    let receivedPolicySnapshot = null;
+
+    const result =
+      await subject({
+        provider: {},
+        operationalResult: {},
+        startToken: h.startToken,
+        entryToken: h.entryToken,
+        exitToken: h.exitToken,
+        slippageBps: 50,
+        maxSlippageBps: 50,
+        maxAgeBlocks: 2,
+        executionPlan:
+          h.executionPlan,
+        gasEvidence:
+          h.gasEvidence,
+        safetyReserveWei:
+          ethers.utils.parseEther(
+            "0.001"
+          ),
+        minimumNetProfitWei:
+          ethers.utils.parseEther(
+            "0.005"
+          ),
+        policySnapshot:
+          h.policySnapshot,
+        selectProtectedPeakHandoffFn:
+          h.selectProtectedPeakHandoffFn,
+        buildObservedCandidateFn:
+          h.buildObservedCandidateFn,
+        buildV4ExecutionLegsFn:
+          h.buildV4ExecutionLegsFn,
+        validateForkReceiptGasEvidenceFn:
+          h.validateForkReceiptGasEvidenceFn,
+        acquirePolicySnapshotFn:
+          async () => {
+            acquisitionCalls += 1;
+            throw new Error(
+              "policy reacquisition must not occur"
+            );
+          },
+        qualifyProtectedPeakHandoffFn:
+          input => {
+            receivedPolicySnapshot =
+              input.policySnapshot;
+
+            return {
+              qualified: true,
+              stage: "QUALIFIED"
+            };
+          }
+      });
+
+    assert.equal(
+      acquisitionCalls,
+      0
+    );
+
+    assert.strictEqual(
+      receivedPolicySnapshot,
+      h.policySnapshot
+    );
+
+    assert.equal(
+      result.qualified,
+      true
+    );
+  }
+);
+
+test(
+  "preserves acquisition path when no policy snapshot is supplied",
+  async () => {
+    const h = harness();
+    const subject = loadSubject();
+
+    let acquisitionCalls = 0;
+    let receivedPolicySnapshot = null;
+
+    const result =
+      await subject({
+        provider: {},
+        operationalResult: {},
+        startToken: h.startToken,
+        entryToken: h.entryToken,
+        exitToken: h.exitToken,
+        slippageBps: 50,
+        maxSlippageBps: 50,
+        maxAgeBlocks: 2,
+        executionPlan:
+          h.executionPlan,
+        gasEvidence:
+          h.gasEvidence,
+        safetyReserveWei:
+          ethers.utils.parseEther(
+            "0.001"
+          ),
+        minimumNetProfitWei:
+          ethers.utils.parseEther(
+            "0.005"
+          ),
+        selectProtectedPeakHandoffFn:
+          h.selectProtectedPeakHandoffFn,
+        buildObservedCandidateFn:
+          h.buildObservedCandidateFn,
+        buildV4ExecutionLegsFn:
+          h.buildV4ExecutionLegsFn,
+        validateForkReceiptGasEvidenceFn:
+          h.validateForkReceiptGasEvidenceFn,
+        acquirePolicySnapshotFn:
+          async () => {
+            acquisitionCalls += 1;
+            return h.policySnapshot;
+          },
+        qualifyProtectedPeakHandoffFn:
+          input => {
+            receivedPolicySnapshot =
+              input.policySnapshot;
+
+            return {
+              qualified: true,
+              stage: "QUALIFIED"
+            };
+          }
+      });
+
+    assert.equal(
+      acquisitionCalls,
+      1
+    );
+
+    assert.strictEqual(
+      receivedPolicySnapshot,
+      h.policySnapshot
+    );
+
+    assert.equal(
+      result.qualified,
+      true
+    );
+  }
+);
