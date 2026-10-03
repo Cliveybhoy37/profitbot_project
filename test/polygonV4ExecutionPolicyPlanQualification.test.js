@@ -597,3 +597,68 @@ test(
     );
   }
 );
+
+test(
+  "forwards supplied authoritative policy snapshot unchanged",
+  async () => {
+    const qualifyExecutionPolicyPlan =
+      loadSubject();
+
+    const h =
+      compositionHarness();
+
+    const policySnapshot = {
+      currentBlock: 94709817,
+      gasPriceWei:
+        ethers.BigNumber.from(
+          "30000000000"
+        ),
+      premiumBps: 9,
+      provenance: {
+        currentBlock:
+          "PROVIDER_OBSERVED",
+        gasPrice:
+          "OBSERVED_AT_QUALIFICATION",
+        aavePremium:
+          "QUALIFICATION_BLOCK_PINNED"
+      }
+    };
+
+    let received = null;
+
+    const result =
+      await qualifyExecutionPolicyPlan({
+        ...h,
+        policySnapshot,
+
+        qualifyGasEvidenceProtectedPeakHandoffFn:
+          async args => {
+            h.calls.qualify += 1;
+            received = args;
+
+            return {
+              qualified: true,
+              stage: "QUALIFIED"
+            };
+          }
+      });
+
+    assert.equal(
+      result.qualified,
+      true
+    );
+
+    assert.equal(
+      h.calls.qualify,
+      1
+    );
+
+    assert.ok(received);
+
+    assert.strictEqual(
+      received.policySnapshot,
+      policySnapshot,
+      "authoritative policy snapshot must be forwarded unchanged"
+    );
+  }
+);

@@ -48,6 +48,7 @@ async function qualifyExecutionPolicyPlan({
   gasEvidence,
   safetyReserveWei,
   minimumNetProfitWei,
+  policySnapshot = null,
 
   selectProtectedPeakHandoffFn =
     selectProtectedPeakHandoff,
@@ -135,7 +136,8 @@ async function qualifyExecutionPolicyPlan({
     gasEvidence,
     executionPlan,
     safetyReserveWei,
-    minimumNetProfitWei
+    minimumNetProfitWei,
+    policySnapshot
   });
 }
 
