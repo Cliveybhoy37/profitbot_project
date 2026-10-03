@@ -3804,3 +3804,169 @@ optimizations.
 
 Do not change `gasUnits=700000` as part of latency investigation. Gas
 calibration remains a separate evidence-driven workstream.
+
+## Milestone 1R.4 — V3 RPC bottleneck instrumentation and pinned-block pool cache
+
+Status: implementation and performance evidence validated locally at base durable
+head `be121dcd5e60da622f0dec72cac682258a18e076`; changes are not yet committed
+or pushed.
+
+Objective:
+
+Identify the actual RPC bottleneck inside each protected three-leg amount
+observation before attempting optimization, then apply the smallest
+evidence-supported optimization without weakening route coverage, economics,
+freshness, or execution safety.
+
+Instrumentation diagnosis:
+
+A controlled provider-only measurement on Polygon using `ALCHEMY_POLYGON`
+showed that a successful `0.118 WPOL` observation performed up to 17 sequential
+RPC operations:
+
+- 8 Uniswap V3 factory `getPool` lookups;
+- up to 8 amount-dependent Uniswap V3 Quoter calls;
+- 1 V4 quote.
+
+Five pre-cache observations on the same provider context measured:
+
+- total wall times: `2415`, `2410`, `2634`, `2351`, `2399 ms`;
+- mean total wall time: `2441.8 ms`;
+- mean measured RPC time: `2432.6 ms`;
+- mean V3 pool-lookup time: `1137.0 ms` (`46.56%`);
+- mean V3 quote time: `1154.6 ms` (`47.28%`);
+- mean V4 quote time: `141.0 ms` (`5.77%`);
+- mean unaccounted time: `9.2 ms` (`0.38%`).
+
+This localized the current-provider bottleneck to accumulated sequential V3
+network round trips, split approximately evenly between structural factory
+lookups and required amount-dependent V3 quotes. V4 and local processing were
+not the dominant bottlenecks.
+
+The approximately `2.4 second` current-provider observations must not be
+treated as directly interchangeable with the approximately `6-7 second`
+per-amount timings from 1R.3 because the provider/context differs.
+
+Implemented optimization:
+
+The strict V3 observer now supports an explicitly supplied, surface-scoped pool
+cache.
+
+Cache invariants:
+
+- no module-global cache was introduced;
+- one cache is created per amount-surface invocation;
+- the cache is shared by ENTRY and EXIT observations within that surface;
+- keys include the pinned block, unordered lowercase token pair, and fee tier;
+- all four V3 fee tiers remain enabled;
+- successful factory resolutions are cached, including zero-address `NO_POOL`
+  resolutions;
+- factory RPC failures are never cached;
+- amount-dependent V3 Quoter calls are never cached;
+- ENTRY -> V4 -> EXIT ordering remains unchanged;
+- no concurrency was introduced;
+- no retry or timeout behavior was changed;
+- no economic, slippage, reserve, freshness, worst-case, or gas-unit policy was
+  changed;
+- no-cache callers retain the prior lookup behavior.
+
+Timing evidence remains explicit:
+
+- actual factory lookups record measured `poolLookupDurationMs` and
+  `poolLookupCacheHit=false`;
+- cache hits record `poolLookupCacheHit=true` and
+  `poolLookupDurationMs=0`;
+- V3 Quoter and V4 quote durations remain independently measured.
+
+Validation:
+
+Focused cache/instrumentation gate:
+
+- `39 / 39` tests passed.
+
+Canonical regression gate under Node `18.20.8`:
+
+- Node tests: `434 / 434`;
+- Hardhat tests: `29 / 29`;
+- total: `463 / 463`;
+- `git diff --check` passed;
+- generated Hardhat artifact/cache churn was restored separately;
+- the intended implementation/test scope remained six files before this
+  checkpoint update.
+
+Controlled post-cache provider-only benchmark:
+
+- provider environment: `ALCHEMY_POLYGON`;
+- chain: Polygon `137`;
+- pinned block: `94858727`;
+- amount: `0.118 WPOL`;
+- repeats: `5`;
+- one cache shared across the five observations;
+- no signer;
+- no transaction;
+- no broadcast.
+
+Cold observation:
+
+- status: `QUOTE_OK`;
+- total: `2452 ms`;
+- V3 pool lookup: `1167 ms`;
+- V3 quote: `1128 ms`;
+- V4 quote: `146 ms`;
+- cache hits: `0`;
+- cache misses: `8`;
+- V3 quote calls: `8`;
+- resulting cache size: `8`.
+
+Warm observations:
+
+- wall times: `1227`, `1373`, `1275`, `1207 ms`;
+- mean wall time: `1270.5 ms`;
+- mean V3 pool-lookup time: `0 ms`;
+- mean V3 quote time: `1129.25 ms`;
+- mean V4 quote time: `138 ms`;
+- mean unaccounted time: `3.25 ms`;
+- cache hits per observation: `8`;
+- cache misses per observation: `0`;
+- V3 quote calls per observation: `8`;
+- final cache size: `8`;
+- all observations remained `QUOTE_OK`.
+
+Measured effect:
+
+- cold-to-warm reduction: `1181.5 ms`, approximately `48.2%`;
+- pre-cache five-run mean to warm mean reduction: `1171.3 ms`,
+  approximately `48.0%`;
+- the eliminated wall time closely matches the independently measured
+  structural V3 factory-lookup component;
+- required amount-dependent V3 Quoter work remains present.
+
+Interpretation:
+
+The evidence supports the pinned-block structural V3 pool cache as a targeted
+optimization of the measured bottleneck. It removes redundant factory network
+round trips without reducing fee-tier coverage or changing quote economics.
+
+After cache warming, the dominant measured latency is the required
+amount-dependent V3 Quoter work. This evidence does not by itself justify
+concurrency, fee-tier removal, retry/timeout changes, provider changes, or any
+weakening of qualification policy.
+
+The optimization does not change the separate gas-policy conclusion:
+`gasUnits=700000` remains unchanged. Gas calibration remains an independent
+evidence-driven workstream.
+
+Current closeout state:
+
+- six implementation/test files plus this checkpoint are modified;
+- implementation is not yet committed;
+- implementation is not yet pushed;
+- no live transaction was performed.
+
+Next exact step:
+
+1. review the final semantic diff and exact seven-file scope;
+2. verify prohibited execution/deployment/environment paths remain untouched;
+3. verify `git diff --check`;
+4. only after that review decide whether 1R.4 is ready to commit;
+5. do not push until explicitly approved.

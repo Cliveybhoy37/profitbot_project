@@ -276,7 +276,9 @@ async function observeV3Quote({
   blockTag,
   factory = null,
   quoter = null,
-  feeTiers = FULL_FEE_TIERS
+  feeTiers = FULL_FEE_TIERS,
+  poolCache = null,
+  nowFn = Date.now
 }) {
   const venue =
     validateObservationInput({
@@ -304,6 +306,24 @@ async function observeV3Quote({
     );
   }
 
+  if (typeof nowFn !== "function") {
+    throw new Error(
+      "V3 observation requires nowFn"
+    );
+  }
+
+  if (
+    poolCache !== null &&
+    (
+      typeof poolCache.get !== "function" ||
+      typeof poolCache.set !== "function"
+    )
+  ) {
+    throw new Error(
+      "V3 observation requires Map-like poolCache"
+    );
+  }
+
   const factoryContract =
     factory ||
     new ethers.Contract(
@@ -325,33 +345,110 @@ async function observeV3Quote({
 
   for (const fee of feeTiers) {
     let pool;
+    let poolLookupDurationMs;
+    let poolLookupCacheHit = false;
 
-    try {
+    const pair =
+      [
+        path[0].toLowerCase(),
+        path[1].toLowerCase()
+      ].sort();
+
+    const poolCacheKey =
+      [
+        blockTag,
+        pair[0],
+        pair[1],
+        fee
+      ].join(":");
+
+    const cachedPool =
+      poolCache === null
+        ? undefined
+        : poolCache.get(
+            poolCacheKey
+          );
+
+    if (cachedPool !== undefined) {
       pool =
-        await factoryContract.getPool(
-          path[0],
-          path[1],
+        cachedPool;
+
+      poolLookupCacheHit =
+        true;
+
+      poolLookupDurationMs =
+        0;
+    } else {
+      const poolLookupStartedAtMs =
+        nowFn();
+
+      try {
+        pool =
+          await factoryContract.getPool(
+            path[0],
+            path[1],
+            fee,
+            { blockTag }
+          );
+      } catch (error) {
+        poolLookupDurationMs =
+          nowFn() -
+          poolLookupStartedAtMs;
+
+        if (
+          !Number.isSafeInteger(
+            poolLookupDurationMs
+          ) ||
+          poolLookupDurationMs < 0
+        ) {
+          throw new Error(
+            "Invalid V3 pool lookup duration"
+          );
+        }
+
+        const failure =
+          classifyCallFailure(
+            error
+          );
+
+        // Factory lookup failures are deliberately not cached.
+        // They remain ambiguous/retryable evidence.
+        tierResults.push({
           fee,
-          { blockTag }
-        );
-    } catch (error) {
-      const failure =
-        classifyCallFailure(
-          error
-        );
+          status:
+            RPC_FAILURE,
+          errorCode:
+            failure.errorCode,
+          poolLookupCacheHit:
+            false,
+          poolLookupDurationMs,
+          quoteDurationMs: null
+        });
 
-      // Factory lookup is not a known-pool quote call.
-      // Even CALL_EXCEPTION here is ambiguous infrastructure/state
-      // evidence and must remain retryable.
-      tierResults.push({
-        fee,
-        status:
-          RPC_FAILURE,
-        errorCode:
-          failure.errorCode
-      });
+        continue;
+      }
 
-      continue;
+      poolLookupDurationMs =
+        nowFn() -
+        poolLookupStartedAtMs;
+
+      if (
+        !Number.isSafeInteger(
+          poolLookupDurationMs
+        ) ||
+        poolLookupDurationMs < 0
+      ) {
+        throw new Error(
+          "Invalid V3 pool lookup duration"
+        );
+      }
+
+      if (poolCache !== null) {
+        poolCache.set(
+          poolCacheKey,
+          pool
+        );
+      }
     }
 
     if (
@@ -363,14 +460,22 @@ async function observeV3Quote({
       tierResults.push({
         fee,
         status: NO_ROUTE,
-        reason: "NO_POOL"
+        reason: "NO_POOL",
+        poolLookupCacheHit,
+        poolLookupDurationMs,
+        quoteDurationMs: null
       });
 
       continue;
     }
 
+    const quoteStartedAtMs =
+      nowFn();
+
+    let amountOut;
+
     try {
-      const amountOut =
+      amountOut =
         await quoterContract
           .callStatic
           .quoteExactInputSingle(
@@ -381,50 +486,91 @@ async function observeV3Quote({
             0,
             { blockTag }
           );
+    } catch (error) {
+      const quoteDurationMs =
+        nowFn() -
+        quoteStartedAtMs;
 
       if (
-        !amountOut ||
-        typeof amountOut.gt !== "function" ||
-        !amountOut.gt(0)
+        !Number.isSafeInteger(
+          quoteDurationMs
+        ) ||
+        quoteDurationMs < 0
       ) {
-        tierResults.push({
-          fee,
-          pool,
-          status: NO_ROUTE,
-          reason:
-            "ZERO_OUTPUT"
-        });
-
-        continue;
+        throw new Error(
+          "Invalid V3 quote duration"
+        );
       }
 
-      const quote = {
-        fee,
-        pool,
-        amountOut:
-          amountOut.toString()
-      };
-
-      successfulQuotes.push(
-        quote
-      );
-
       tierResults.push({
         fee,
         pool,
-        status: QUOTE_OK,
-        amountOut:
-          quote.amountOut
-      });
-    } catch (error) {
-      tierResults.push({
-        fee,
-        pool,
+        poolLookupCacheHit,
         ...classifyCallFailure(
           error
-        )
+        ),
+        poolLookupDurationMs,
+        quoteDurationMs
       });
+
+      continue;
     }
+
+    const quoteDurationMs =
+      nowFn() -
+      quoteStartedAtMs;
+
+    if (
+      !Number.isSafeInteger(
+        quoteDurationMs
+      ) ||
+      quoteDurationMs < 0
+    ) {
+      throw new Error(
+        "Invalid V3 quote duration"
+      );
+    }
+
+    if (
+      !amountOut ||
+      typeof amountOut.gt !== "function" ||
+      !amountOut.gt(0)
+    ) {
+      tierResults.push({
+        fee,
+        pool,
+        poolLookupCacheHit,
+        status: NO_ROUTE,
+        reason:
+          "ZERO_OUTPUT",
+        poolLookupDurationMs,
+        quoteDurationMs
+      });
+
+      continue;
+    }
+
+    const quote = {
+      fee,
+      pool,
+      amountOut:
+        amountOut.toString()
+    };
+
+    successfulQuotes.push(
+      quote
+    );
+
+    tierResults.push({
+      fee,
+      pool,
+      poolLookupCacheHit,
+      status: QUOTE_OK,
+      amountOut:
+        quote.amountOut,
+      poolLookupDurationMs,
+      quoteDurationMs
+    });
   }
 
   if (

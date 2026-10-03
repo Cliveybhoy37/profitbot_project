@@ -179,6 +179,186 @@ test(
 );
 
 test(
+  "V4 records deterministic quote duration",
+  async () => {
+    const times = [
+      1000,
+      1047
+    ];
+
+    const nowFn = () => {
+      if (times.length === 0) {
+        throw new Error(
+          "unexpected nowFn call"
+        );
+      }
+
+      return times.shift();
+    };
+
+    const quoter = {
+      callStatic: {
+        async quoteExactInputSingle() {
+          return {
+            amountOut:
+              ethers.BigNumber.from(
+                "456"
+              ),
+            gasEstimate:
+              ethers.BigNumber.from(
+                "789"
+              )
+          };
+        }
+      }
+    };
+
+    const result =
+      await observeV4Quote({
+        provider: {},
+        blockTag: BLOCK,
+        poolKey: POOL_KEY,
+        zeroForOne: false,
+        amountIn:
+          ethers.BigNumber.from(
+            "123"
+          ),
+        quoter,
+        nowFn
+      });
+
+    assert.equal(
+      result.status,
+      QUOTE_OK
+    );
+
+    assert.equal(
+      result.quoteDurationMs,
+      47
+    );
+
+    assert.equal(
+      times.length,
+      0
+    );
+  }
+);
+
+test(
+  "V4 successful quote rejects invalid duration without reclassification",
+  async () => {
+    const times = [
+      1000,
+      999
+    ];
+
+    let quoteCalls = 0;
+
+    const nowFn = () => {
+      if (times.length === 0) {
+        throw new Error(
+          "unexpected nowFn call"
+        );
+      }
+
+      return times.shift();
+    };
+
+    const quoter = {
+      callStatic: {
+        async quoteExactInputSingle() {
+          quoteCalls += 1;
+
+          return {
+            amountOut:
+              ethers.BigNumber.from(
+                "456"
+              ),
+            gasEstimate:
+              ethers.BigNumber.from(
+                "789"
+              )
+          };
+        }
+      }
+    };
+
+    await assert.rejects(
+      observeV4Quote({
+        provider: {},
+        blockTag: BLOCK,
+        poolKey: POOL_KEY,
+        zeroForOne: false,
+        amountIn:
+          ethers.BigNumber.from(
+            "123"
+          ),
+        quoter,
+        nowFn
+      }),
+      /Invalid V4 quote duration/
+    );
+
+    assert.equal(
+      quoteCalls,
+      1
+    );
+
+    assert.equal(
+      times.length,
+      0
+    );
+  }
+);
+
+test(
+  "V4 rejects invalid timing dependency before RPC work",
+  async () => {
+    let quoteCalls = 0;
+
+    const quoter = {
+      callStatic: {
+        async quoteExactInputSingle() {
+          quoteCalls += 1;
+
+          return {
+            amountOut:
+              ethers.BigNumber.from(
+                "456"
+              ),
+            gasEstimate:
+              ethers.BigNumber.from(
+                "789"
+              )
+          };
+        }
+      }
+    };
+
+    await assert.rejects(
+      observeV4Quote({
+        provider: {},
+        blockTag: BLOCK,
+        poolKey: POOL_KEY,
+        zeroForOne: false,
+        amountIn:
+          ethers.BigNumber.from(
+            "123"
+          ),
+        quoter,
+        nowFn: null
+      }),
+      /V4 observation requires nowFn/
+    );
+
+    assert.equal(
+      quoteCalls,
+      0
+    );
+  }
+);
+
+test(
   "V4 deterministic revert is NO_ROUTE",
   async () => {
     const error =
@@ -395,6 +575,97 @@ test(
     assert.equal(
       result.grossBpsScaled,
       "100000000"
+    );
+  }
+);
+
+test(
+  "three-leg economics forwards one supplied V3 pool cache to both outer legs",
+  async () => {
+    const v3PoolCache =
+      new Map();
+
+    const seenCaches = [];
+
+    async function outer(args) {
+      seenCaches.push(
+        args.poolCache
+      );
+
+      if (seenCaches.length === 1) {
+        return {
+          venue:
+            args.venueName,
+          status:
+            QUOTE_OK,
+          amountOut:
+            "250"
+        };
+      }
+
+      return {
+        venue:
+          args.venueName,
+        status:
+          QUOTE_OK,
+        amountOut:
+          "1010"
+      };
+    }
+
+    async function v4() {
+      return {
+        status:
+          QUOTE_OK,
+        amountOut:
+          "400",
+        gasEstimate:
+          "1"
+      };
+    }
+
+    const result =
+      await observeThreeLegEconomics({
+        provider: {},
+        blockTag: BLOCK,
+        startToken: WPOL,
+        startAmount: "1000",
+        entryVenue:
+          "UNISWAP_V3",
+        entryToken:
+          USDT0,
+        poolKey:
+          POOL_KEY,
+        zeroForOne: false,
+        exitToken:
+          WETH,
+        exitVenue:
+          "UNISWAP_V3",
+        v3PoolCache,
+        observeOuterQuoteFn:
+          outer,
+        observeV4QuoteFn:
+          v4
+      });
+
+    assert.equal(
+      result.status,
+      QUOTE_OK
+    );
+
+    assert.equal(
+      seenCaches.length,
+      2
+    );
+
+    assert.equal(
+      seenCaches[0],
+      v3PoolCache
+    );
+
+    assert.equal(
+      seenCaches[1],
+      v3PoolCache
     );
   }
 );

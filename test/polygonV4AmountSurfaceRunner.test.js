@@ -365,3 +365,125 @@ test(
     );
   }
 );
+
+test(
+  "runner scopes one V3 pool cache to each surface invocation",
+  async () => {
+    const firstSurfaceCaches = [];
+    const secondSurfaceCaches = [];
+
+    const makeObserveFn =
+      seenCaches =>
+        async args => {
+          seenCaches.push(
+            args.v3PoolCache
+          );
+
+          const start =
+            ethers.BigNumber.from(
+              args.startAmount
+            );
+
+          return {
+            status:
+              "QUOTE_OK",
+            amounts: {
+              start:
+                start.toString(),
+              afterEntry:
+                start.toString(),
+              afterV4:
+                start.toString(),
+              final:
+                start
+                  .add(
+                    ethers.utils
+                      .parseEther(
+                        "0.020"
+                      )
+                  )
+                  .toString()
+            },
+            grossDelta:
+              ethers.utils
+                .parseEther(
+                  "0.020"
+                )
+                .toString()
+          };
+        };
+
+    const common = {
+      provider: {},
+      blockTag: 999,
+      gasPriceWei:
+        "1000000000",
+      premiumBps: 5,
+      amounts: [
+        {
+          display:
+            "0.100",
+          amount:
+            "100000000000000000"
+        },
+        {
+          display:
+            "0.125",
+          amount:
+            "125000000000000000"
+        }
+      ]
+    };
+
+    await runAmountSurface({
+      ...common,
+      observeFn:
+        makeObserveFn(
+          firstSurfaceCaches
+        )
+    });
+
+    await runAmountSurface({
+      ...common,
+      observeFn:
+        makeObserveFn(
+          secondSurfaceCaches
+        )
+    });
+
+    assert.equal(
+      firstSurfaceCaches.length,
+      2
+    );
+
+    assert.ok(
+      firstSurfaceCaches[0]
+        instanceof Map
+    );
+
+    assert.equal(
+      firstSurfaceCaches[0],
+      firstSurfaceCaches[1]
+    );
+
+    assert.equal(
+      secondSurfaceCaches.length,
+      2
+    );
+
+    assert.ok(
+      secondSurfaceCaches[0]
+        instanceof Map
+    );
+
+    assert.equal(
+      secondSurfaceCaches[0],
+      secondSurfaceCaches[1]
+    );
+
+    assert.notEqual(
+      firstSurfaceCaches[0],
+      secondSurfaceCaches[0]
+    );
+  }
+);

@@ -271,6 +271,12 @@ async function runAmountSurface({
 
   const rows = [];
 
+  // Pool existence at a pinned block is structural rather than
+  // amount-dependent. Reuse successful V3 factory resolutions only
+  // within this one surface acquisition.
+  const v3PoolCache =
+    new Map();
+
   for (
     const {
       display,
@@ -282,6 +288,7 @@ async function runAmountSurface({
         provider,
         blockTag:
           snapshot.blockTag,
+        v3PoolCache,
         startToken:
           WPOL,
         startAmount:

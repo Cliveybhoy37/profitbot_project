@@ -184,11 +184,18 @@ async function observeV4Quote({
   poolKey,
   zeroForOne,
   amountIn,
-  quoter = null
+  quoter = null,
+  nowFn = Date.now
 }) {
   if (!provider && !quoter) {
     throw new Error(
       "V4 quote requires provider"
+    );
+  }
+
+  if (typeof nowFn !== "function") {
+    throw new Error(
+      "V4 observation requires nowFn"
     );
   }
 
@@ -220,8 +227,13 @@ async function observeV4Quote({
       provider
     );
 
+  const quoteStartedAtMs =
+    nowFn();
+
+  let result;
+
   try {
-    const result =
+    result =
       await contract.callStatic
         .quoteExactInputSingle(
           {
@@ -235,42 +247,77 @@ async function observeV4Quote({
             blockTag
           }
         );
+  } catch (error) {
+    const quoteDurationMs =
+      nowFn() -
+      quoteStartedAtMs;
 
-    const amountOut =
-      ethers.BigNumber.from(
-        result?.amountOut ??
-        result?.[0] ??
-        0
+    if (
+      !Number.isSafeInteger(
+        quoteDurationMs
+      ) ||
+      quoteDurationMs < 0
+    ) {
+      throw new Error(
+        "Invalid V4 quote duration"
       );
-
-    const gasEstimate =
-      ethers.BigNumber.from(
-        result?.gasEstimate ??
-        result?.[1] ??
-        0
-      );
-
-    if (amountOut.lte(0)) {
-      return {
-        status: NO_ROUTE
-      };
     }
 
     return {
-      status: QUOTE_OK,
-      amountOut:
-        amountOut.toString(),
-      gasEstimate:
-        gasEstimate.toString(),
-      poolKey:
-        normalizedPoolKey,
-      zeroForOne
+      ...classifyV4Failure(
+        error
+      ),
+      quoteDurationMs
     };
-  } catch (error) {
-    return classifyV4Failure(
-      error
+  }
+
+  const quoteDurationMs =
+    nowFn() -
+    quoteStartedAtMs;
+
+  if (
+    !Number.isSafeInteger(
+      quoteDurationMs
+    ) ||
+    quoteDurationMs < 0
+  ) {
+    throw new Error(
+      "Invalid V4 quote duration"
     );
   }
+
+  const amountOut =
+    ethers.BigNumber.from(
+      result?.amountOut ??
+      result?.[0] ??
+      0
+    );
+
+  const gasEstimate =
+    ethers.BigNumber.from(
+      result?.gasEstimate ??
+      result?.[1] ??
+      0
+    );
+
+  if (amountOut.lte(0)) {
+    return {
+      status: NO_ROUTE,
+      quoteDurationMs
+    };
+  }
+
+  return {
+    status: QUOTE_OK,
+    amountOut:
+      amountOut.toString(),
+    gasEstimate:
+      gasEstimate.toString(),
+    poolKey:
+      normalizedPoolKey,
+    zeroForOne,
+    quoteDurationMs
+  };
 }
 
 function grossMetrics({
@@ -340,6 +387,7 @@ async function observeThreeLegEconomics({
   zeroForOne,
   exitToken,
   exitVenue,
+  v3PoolCache = null,
   observeOuterQuoteFn =
     observeQuote,
   observeV4QuoteFn =
@@ -373,7 +421,9 @@ async function observeThreeLegEconomics({
       amountIn:
         amount0,
       provider,
-      blockTag
+      blockTag,
+      poolCache:
+        v3PoolCache
     });
 
   if (
@@ -437,7 +487,9 @@ async function observeThreeLegEconomics({
       amountIn:
         amount2,
       provider,
-      blockTag
+      blockTag,
+      poolCache:
+        v3PoolCache
     });
 
   if (
