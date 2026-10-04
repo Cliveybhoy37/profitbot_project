@@ -381,6 +381,72 @@ test(
 );
 
 test(
+  "rejects missing or invalid authoritative policy snapshot before composition or qualification",
+  async () => {
+    const h = harness();
+
+    for (const policySnapshot of [
+      undefined,
+      null,
+      "snapshot",
+      137,
+      true
+    ]) {
+      let compositionCalls = 0;
+      let qualificationCalls = 0;
+
+      await assert.rejects(
+        qualifyAndPreserveExecutionContext({
+          ...h,
+          policySnapshot,
+
+          selectProtectedPeakHandoffFn:
+            () => {
+              compositionCalls += 1;
+              return h.handoff;
+            },
+
+          buildObservedCandidateFn:
+            () => {
+              compositionCalls += 1;
+              return h.candidate;
+            },
+
+          buildV4ExecutionLegsFn:
+            () => {
+              compositionCalls += 1;
+              return h.executionLegs;
+            },
+
+          encodeV4ExecutionPlanFn:
+            () => {
+              compositionCalls += 1;
+              return h.executionPlan;
+            },
+
+          qualifyGasEvidenceProtectedPeakHandoffFn:
+            async () => {
+              qualificationCalls += 1;
+              return h.qualificationResult;
+            }
+        }),
+        /policySnapshot/i
+      );
+
+      assert.equal(
+        compositionCalls,
+        0
+      );
+
+      assert.equal(
+        qualificationCalls,
+        0
+      );
+    }
+  }
+);
+
+test(
   "rejects invalid injected dependencies before qualification",
   async () => {
     const h = harness();

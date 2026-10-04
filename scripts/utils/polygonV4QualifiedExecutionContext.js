@@ -65,6 +65,15 @@ async function qualifyAndPreserveExecutionContext({
   qualifyGasEvidenceProtectedPeakHandoffFn =
     qualifyGasEvidenceProtectedPeakHandoff
 }) {
+  if (
+    !policySnapshot ||
+    typeof policySnapshot !== "object"
+  ) {
+    throw new Error(
+      "Authoritative policySnapshot object required"
+    );
+  }
+
   const selectHandoff =
     requireFunction(
       selectProtectedPeakHandoffFn,
