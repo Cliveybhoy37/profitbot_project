@@ -5995,3 +5995,105 @@ Remaining work:
 - orchestration of independently established current-state evidence remains future work
 - `preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state
 - controlled live execution remains a separate explicit future action
+
+## 1S.53 — Current Economics Evidence Composition
+
+Status:
+- code complete and locally committed
+- code commit: `a07b9b8` (`Add current economics evidence composition`)
+- checkpoint commit and push pending
+
+Production:
+- `scripts/utils/polygonV4CurrentEconomicsEvidenceComposition.js`
+
+Test:
+- `test/polygonV4CurrentEconomicsEvidenceComposition.test.js`
+
+Purpose:
+- compose current economics evidence exclusively from already-established execution-readiness economics identities
+- preserve the exact `gasEvidence` and `qualificationPolicySnapshot` identities exposed by execution readiness
+- avoid reacquiring, recalculating, refreshing, or reinterpreting established qualification economics
+
+API:
+- `buildCurrentEconomicsEvidenceComposition({ readinessEvidence })`
+
+Required input:
+- `readinessEvidence` must be an object
+- `readinessEvidence.executionEvidenceReady` must be exactly `true`
+- `readinessEvidence.gasEvidence` must be an object
+- `readinessEvidence.qualificationPolicySnapshot` must be an object
+
+Successful evidence:
+- new frozen `economicsEvidence` containing exactly:
+  - `gasEvidence`
+  - `qualificationPolicySnapshot`
+- both fields preserve exact object identity from `readinessEvidence`
+- frozen result:
+  - `economicsEvidence`
+  - `currentEconomicsEvidenceCompositionReady: true`
+
+Authority / lineage:
+- `polygonV4ExecutionReadinessEvidence.js` already requires lifecycle `gasEvidence` and `qualificationPolicySnapshot`
+- execution readiness already enforces:
+  - `qualifiedContext.gasEvidence === gasEvidence`
+  - `qualifiedContext.policySnapshot === qualificationPolicySnapshot`
+- execution readiness then exposes those same identities on its frozen readiness result
+- `polygonV4CurrentStateExecutionPreflightEvidence.js` requires:
+  - `current.economicsEvidence.gasEvidence === readiness.gasEvidence`
+  - `current.economicsEvidence.qualificationPolicySnapshot === readiness.qualificationPolicySnapshot`
+- therefore 1S.53 treats execution readiness as the immediate economics identity authority and does not recursively duplicate deeper economic validation
+
+Explicit exclusions:
+- no RPC or chain acquisition
+- no gas estimation or gas measurement
+- no gas-price acquisition or refresh
+- no profitability or net-economics recalculation
+- no qualification-policy reconstruction or reinterpretation
+- no route, amount, quote, price, or optimization work
+- no lifecycle or qualified-context reconstruction
+- no signing, authorization, submission, broadcast, or live execution
+- no gas margin, multiplier, or fixed-buffer promotion
+- no protected gas-experiment execution or modification
+- no claim that fork/simulation gas is live empirical gas
+
+Verification:
+- RED established solely by missing production module
+- initial GREEN: 1/1
+- hardened focused suite: 6/6 pass
+- Codespace/terminal restart occurred after the focused implementation was safely committed
+- project environment was re-established from `.nvmrc`
+- post-restart Node: `v18.20.8`
+- post-restart npm: `10.8.2`
+- post-restart focused suite: 6/6 pass
+- production and test syntax checks clean
+- commit `a07b9b8` contains exactly the production utility and its test
+- canonical Node exit: 0
+- canonical Node: 959/959 pass, 0 fail
+- canonical discovery explicitly included:
+  - `# Subtest: Polygon V4 current economics evidence composition`
+  - `ok 247 - Polygon V4 current economics evidence composition`
+- `git diff --check` clean after canonical validation
+- Hardhat not rerun because this is an isolated Node composition boundary with no contract or Hardhat integration change
+
+Protected gas experiments remained untracked and unchanged:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+  SHA-256 `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  SHA-256 `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+  SHA-256 `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+Current-state provenance/composition now independently establishes:
+- chain identity via 1S.48
+- verified deployment address via 1S.49
+- current deployment code identity via 1S.50
+- current chain timestamp via 1S.51
+- current route/amount evidence composition via 1S.52
+- current economics evidence composition via 1S.53
+
+Remaining work:
+- 1S.53 does not establish full current executable readiness
+- balance/allowance semantics remain unresolved and must not be manufactured from fixture semantics
+- orchestration of independently established current-state evidence remains future work
+- `preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state
+- controlled live execution remains a separate explicit future action
