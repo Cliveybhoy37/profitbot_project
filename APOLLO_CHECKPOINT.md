@@ -5747,3 +5747,87 @@ Next exact step — 1S.50 Current Deployment Code Identity Acquisition Evidence:
 - do not discover or hard-code an address.
 - do not acquire owner/account/gas evidence.
 - do not authorize signing, submission, broadcast, or live execution.
+
+## 1S.50 — Current Deployment Code Identity Acquisition Evidence
+
+Status: code complete and locally committed; checkpoint/push verification pending at time of this entry.
+
+Code commit:
+- `72ed902` — `Add current deployment code identity acquisition evidence`
+
+Production:
+- `scripts/utils/polygonV4CurrentDeploymentCodeIdentityAcquisitionEvidence.js`
+
+Test:
+- `test/polygonV4CurrentDeploymentCodeIdentityAcquisitionEvidence.test.js`
+
+Purpose:
+- Establish current runtime-code identity at the independently verified deployment address produced by 1S.49.
+- This stage verifies code at an already-established address; it does not discover or independently establish the deployment address.
+
+Input boundary:
+- exact `deploymentAddressEvidence` from the 1S.49 lineage.
+- injected provider with callable `getCode`.
+
+Acquisition and validation:
+- require deployment-address evidence object.
+- require valid nonzero `executorAddress`.
+- validate provider and `provider.getCode` before acquisition.
+- call `provider.getCode(executorAddress)` exactly once with the exact established executor address.
+- require returned runtime bytecode to be a hex string and not `"0x"`.
+- derive `executorCodeHash` using `ethers.utils.keccak256(runtimeBytecode)`, matching the repository's existing runtime-code hashing convention.
+
+Successful output:
+- constructs a new frozen `deploymentEvidence` containing exactly:
+  - `executorAddress`
+  - `executorCodeHash`
+- returns a frozen result with:
+  - `deploymentEvidence`
+  - `currentDeploymentCodeIdentityAcquisitionReady: true`
+- historical deployment transaction/block/receipt fields are not copied into current deployment identity evidence.
+
+Provenance composition:
+- the test suite directly composes the actual 1S.49 `buildVerifiedDeploymentAddressEvidence()` output into 1S.50.
+- the exact 1S.49 executor address is used for the single `getCode` acquisition and preserved in current `deploymentEvidence`.
+- 1S.49 remains authority for verified historical deployment-address provenance.
+- 1S.50 establishes current runtime-code identity at that established address.
+
+Explicit exclusions:
+- no hard-coded ProfitBot address.
+- no `.env` dependency.
+- no address discovery.
+- no chain/network acquisition.
+- no historical receipt reacquisition.
+- no owner/configuration inspection.
+- no gas-evidence or account-evidence authority.
+- no signing, authorization, submission, broadcast, or live execution.
+- no protected gas-policy promotion.
+
+Verification:
+- focused 1S.50 suite: 8/8 passing.
+- includes direct 1S.49 -> 1S.50 production composition proof.
+- canonical Node regression: 938/938 passing, 0 failures.
+- canonical Node runner explicitly discovered the 1S.50 suite.
+- `git diff --check` clean.
+- production and test syntax checks clean.
+- Hardhat was not rerun for this Node-only acquisition boundary, avoiding unrelated generated artifact/cache churn.
+
+Protected gas experiments:
+- were not executed, modified, staged, or committed.
+- hashes reverified unchanged:
+  - `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7` — `test/polygonV4GasStateSensitivityProbe.test.js`
+  - `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139` — `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  - `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77` — `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Resulting deployment provenance chain:
+- independently established historical deployment provenance
+- -> 1S.49 verified `deploymentAddressEvidence`
+- -> 1S.50 exact current `getCode(executorAddress)`
+- -> current runtime bytecode keccak256
+- -> current `deploymentEvidence { executorAddress, executorCodeHash }`
+- -> existing current-state execution preflight boundary.
+
+Remaining work:
+- 1S.50 does not by itself establish full current executable readiness.
+- Continue provenance-first current-state acquisition/composition for remaining unresolved current-state constituents before any controlled live measurement.
+- A controlled live transaction remains a separate explicit future action.
