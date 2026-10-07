@@ -6195,3 +6195,96 @@ Controlled live execution remains a separate explicit future action.
 The intended gas-evidence sequence remains:
 
 controlled live measurement -> successful transaction receipt -> empirical `gasUsed` evidence -> controlled gas-evidence handoff -> evaluation of the three protected gas experiments -> evidence-based gas policy.
+
+## 1S.55 — Current Freshness Evidence Composition
+
+Status: CODE COMPLETE / TESTED / CHECKPOINT PENDING COMMIT/PUSH
+
+### Production boundary
+
+Added:
+- `scripts/utils/polygonV4CurrentFreshnessEvidenceComposition.js`
+- `test/polygonV4CurrentFreshnessEvidenceComposition.test.js`
+
+`buildCurrentFreshnessEvidenceComposition({
+  preparedExecutionContext,
+  currentChainTimestampEvidence
+})` composes the freshness shape required by current-state execution preflight.
+
+It:
+- requires both inputs to be non-array objects;
+- takes the authoritative `deadline` from `preparedExecutionContext`;
+- takes the independently acquired `currentTimestamp` from `currentChainTimestampEvidence`;
+- requires both values to be positive safe integers;
+- returns frozen `freshnessEvidence` containing exactly:
+  - `deadline`
+  - `currentTimestamp`
+- returns `currentFreshnessEvidenceCompositionReady: true`.
+
+### Authority separation
+
+1S.55 does NOT:
+- call RPC;
+- reacquire a block or timestamp;
+- use `Date.now()`;
+- calculate or refresh a deadline;
+- inspect deadline duration;
+- determine whether freshness is expired;
+- perform qualification or authorization;
+- perform signing, submission, broadcast, or live execution;
+- establish or modify gas policy.
+
+Expiry remains owned by
+`polygonV4CurrentStateExecutionPreflightEvidence.js`, which rejects
+`currentTimestamp >= deadline`.
+
+A regression test deliberately proves that 1S.55 will compose evidence
+where `currentTimestamp === deadline`; composition establishes provenance
+and shape, while current-state preflight decides executability.
+
+### Validation
+
+Focused:
+- 5 tests
+- 5 pass
+- 0 fail
+
+Canonical Node:
+- exit 0
+- 964 tests
+- 964 pass
+- 0 fail
+- 7 suites
+
+Baseline before 1S.55 was 959 tests, so the +5 tests are fully accounted for.
+
+Hardhat was not rerun because this is isolated Node composition logic with
+no Solidity change.
+
+### Protected gas experiments
+
+The three protected untracked gas experiments remain outside 1S.55 and
+were not executed, staged, modified, promoted, or committed.
+
+### Remaining architecture
+
+Current-state constituents now have explicit production boundaries for:
+- chain identity;
+- deployment code identity;
+- route/amount;
+- economics;
+- freshness.
+
+There is still no production orchestrator calling
+`buildCurrentStateExecutionPreflightEvidence`.
+
+Future orchestration must preserve independently established constituent
+evidence and existing qualification-lineage identities rather than
+reacquiring, reconstructing, or manufacturing them.
+
+Signer native POL transaction funding remains a distinct concern and must
+not be conflated with the removed unsupported ProfitBot ERC20
+balance/allowance gate.
+
+Controlled live execution and empirical receipt gas remain separate future
+actions. No gas margin, multiplier, or fixed buffer has been promoted.
