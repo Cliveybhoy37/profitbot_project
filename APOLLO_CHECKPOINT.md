@@ -4637,3 +4637,344 @@ Do not fabricate live gas evidence from fork or simulation results.
 Do not weaken profitability, slippage, freshness, gas, reserve, protected
 output, minimum-profit, or worst-case policy to manufacture execution
 readiness.
+
+---
+
+## Post-1S.43 session handoff — Immediate Pre-Submission Validation Evidence
+
+### Milestone status
+
+1S.43 — Immediate Pre-Submission Validation Evidence is complete, validated,
+committed, and pushed.
+
+Code commit:
+
+- full: `cef9d2d357d57e808d29b4ab67c19ddff2ecd4aa`
+- short: `cef9d2d`
+- subject: `Add immediate pre-submission validation evidence`
+
+Committed files:
+
+- `scripts/utils/polygonV4ImmediatePreSubmissionValidationEvidence.js`
+- `test/polygonV4ImmediatePreSubmissionValidationEvidence.test.js`
+
+Commit scope:
+
+- exactly `2` files;
+- exactly `973` insertions;
+- no protected gas experiment was staged or committed.
+
+Verified SHA-256 hashes:
+
+- production:
+  `cf638eed083f5cc97c0ce0c6e59622a65e74a2df1cf2a387bc8fcb5fd209f73e`
+- test:
+  `58b40ba56f664e8e95e9dd92e8964583059bbedc0b21a7fdf927db5939d58e9d`
+
+### 1S.43 purpose
+
+1S.43 consumes the completed 1S.42 controlled live-execution authorization
+evidence and immediately revalidates the exact already-authorized signed
+transaction against current provider state before any future transaction
+submission boundary.
+
+1S.43 is validation evidence only.
+
+It does not sign, re-sign, rebuild, repair, submit, send, or broadcast a
+transaction.
+
+Successful 1S.43 validation cannot by itself move funds.
+
+### Required authorization state
+
+The immediate 1S.42 evidence must have:
+
+- `controlledLiveExecutionAuthorizationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `broadcastAuthorized=true`;
+- `liveExecutionAuthorized=true`.
+
+These flags establish the authorization state entering 1S.43.
+
+They do not prove that a transaction has been submitted or broadcast.
+
+### Immutable transaction lineage
+
+1S.43 preserves and validates the exact transaction artifacts across the
+immediate authorization lineage:
+
+- 1S.42 controlled live-execution authorization evidence;
+- 1S.41 controlled broadcast authorization evidence;
+- 1S.40 final signed transaction current-state validation evidence.
+
+The following artifacts must remain identical through that lineage:
+
+- `transactionEnvelope` by exact object identity;
+- `signedRawTransaction` by exact equality;
+- `signedTransactionHash` by exact equality.
+
+1S.43 does not rebuild, reinterpret, re-sign, or repair these artifacts.
+
+It deliberately validates the immediate 1S.42 authorization state rather than
+reinterpreting the historical false authorization flags preserved by 1S.40.
+Those historical flags were legitimately advanced by 1S.41 and 1S.42.
+
+1S.43 does not duplicate the 1S.39 cryptographic signing verification.
+
+### Immediate current-state validation
+
+1S.43 requires a provider exposing:
+
+- `getNetwork`;
+- `getTransactionCount`;
+- `call`.
+
+It reacquires the current network and requires Polygon chain ID `137`.
+
+It reacquires:
+
+- `getTransactionCount(transactionEnvelope.from, "pending")`.
+
+The returned pending nonce must:
+
+- be a safe integer;
+- be non-negative;
+- exactly equal the nonce already present in the signed transaction envelope.
+
+Nonce drift fails closed.
+
+1S.43 does not repair the nonce.
+
+If the current pending nonce no longer equals the signed transaction nonce,
+the transaction must not be submitted and the transaction-parameter lineage
+must be rebuilt from the appropriate earlier boundary.
+
+### Final pre-submission simulation
+
+After chain and nonce validation, 1S.43 performs a final `provider.call` using
+the exact seven-field ethers-v5 projection established by the earlier
+simulation boundary:
+
+- `from`;
+- `to`;
+- `data`;
+- `value`;
+- `gasLimit`;
+- `maxFeePerGas`;
+- `maxPriorityFeePerGas`.
+
+`chainId` and `nonce` are validated separately rather than being represented
+as part of the public `provider.call` transaction request.
+
+A successful `"0x"` simulation result remains valid evidence.
+
+Provider/network/nonce/simulation failure fails closed.
+
+### Fee and gas policy
+
+1S.43 does not call `getFeeData`.
+
+It does not alter the already-signed fee fields.
+
+It does not invent or promote:
+
+- a fee-refresh rule;
+- a gas multiplier;
+- a percentage gas margin;
+- a fixed gas buffer;
+- a protected experimental gas constant.
+
+Any future fee-freshness policy requires separate objective evidence and must
+not silently mutate this signed transaction.
+
+### Capability boundary
+
+The 1S.43 production module contains current-state validation capability but
+no transaction-signing or transaction-submission primitive.
+
+It does not call:
+
+- `signTransaction`;
+- `sendTransaction`;
+- `sendRawTransaction`;
+- `broadcastTransaction`;
+- `eth_sendRawTransaction`.
+
+It does not obtain a private key, seed phrase, mnemonic, or environment
+credential.
+
+No transaction was submitted or broadcast as part of 1S.43.
+
+### Successful 1S.43 result
+
+A successful result preserves:
+
+- `controlledLiveExecutionAuthorizationEvidence`;
+- `controlledBroadcastAuthorizationEvidence`;
+- `finalSignedTransactionCurrentStateEvidence`;
+- `transactionEnvelope`;
+- `signedRawTransaction`;
+- `signedTransactionHash`;
+- `callRequest`;
+- `simulationResult`.
+
+It returns:
+
+- `immediatePreSubmissionValidationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `broadcastAuthorized=true`;
+- `liveExecutionAuthorized=true`.
+
+The result object is frozen.
+
+These flags and readiness evidence still do not constitute transaction
+submission.
+
+### Validation
+
+Focused 1S.43:
+
+- `14 / 14` passing.
+
+Immediate 1S.40 through 1S.43 lineage regression:
+
+- `52 / 52` passing.
+
+Explicit 1S.30 through 1S.43 safety lineage:
+
+- `221 / 221` passing.
+
+Canonical repository validation:
+
+- Node: `882 / 882` passing;
+- configured Hardhat: `29 / 29` passing;
+- maintained canonical total: `911 / 911` passing;
+- canonical exit code: `0`.
+
+Canonical test scripts were verified as:
+
+- `test = npm run test:node && npm run test:hardhat`
+- `test:node = node --test $(grep -l 'node:test' test/*.test.js | sort | tr '\n' ' ')`
+- `test:hardhat = hardhat test test/ProfitBot.js test/execution.js test/threeLegExecution.js`
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+The canonical Hardhat run compiled `35` Solidity files successfully and
+reported `29` passing tests.
+
+Generated tracked `artifacts/` and `cache/` changes produced by Hardhat were
+inspected and restored before the 1S.43 code commit.
+
+### Unrestricted Hardhat discovery observation
+
+A separate unrestricted:
+
+`npx hardhat test`
+
+was also attempted as an additional discovery check.
+
+That noncanonical command discovers the tracked legacy/scaffold
+`test/Lock.js`, which imports:
+
+`@nomicfoundation/hardhat-toolbox/network-helpers`
+
+and also references the Hardhat chai matchers package.
+
+The root ProfitBot package does not declare the toolbox/network-helper
+dependency used by that legacy test.
+
+The current root Hardhat configuration uses:
+
+`@nomiclabs/hardhat-ethers`
+
+and the repository setup guidance explicitly warns against introducing
+`@nomicfoundation/hardhat-toolbox` unless upgrading to ethers v6.
+
+The unrestricted discovery run therefore failed while loading the legacy
+`test/Lock.js`.
+
+This does not change the successful result of the maintained canonical test
+command described above.
+
+No toolbox dependency was installed.
+
+No dependency version was changed.
+
+`test/Lock.js` was not modified or deleted.
+
+Any legacy test/dependency cleanup remains separate from the 1S.43
+execution-safety milestone.
+
+### Protected gas experiments
+
+The following experimental tests remain untracked and protected:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Their verified SHA-256 hashes remain:
+
+- `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+They were not executed, modified, staged, committed, or promoted as part of
+1S.43.
+
+### Boundary numbering clarification
+
+The historical post-1S.42 checkpoint described actual controlled transaction
+submission as a future 1S.43 boundary.
+
+The implementation sequence was deliberately refined before submission:
+
+- 1S.41 — Controlled Broadcast Authorization Evidence;
+- 1S.42 — Controlled Live Execution Authorization Evidence;
+- 1S.43 — Immediate Pre-Submission Validation Evidence;
+- future 1S.44 — separately reviewed controlled transaction-submission
+  boundary.
+
+The historical checkpoint text is retained unchanged as a record of the plan
+at that time.
+
+No actual transaction submission occurred in 1S.43.
+
+### Next boundary
+
+Actual transaction submission remains a separate future 1S.44 boundary.
+
+1S.44 must not be implemented or exercised merely because 1S.43 is ready.
+Its capability and tests require separate review.
+
+Any future submission boundary must consume the exact validated signed raw
+transaction rather than rebuild or re-sign it.
+
+Submission must remain narrow and fail closed.
+
+The intended first live transaction remains a deliberately controlled
+measurement flashloan, not unrestricted production execution readiness.
+
+Receipt evidence should be treated as a separately explicit boundary and
+should capture, at minimum:
+
+- transaction hash;
+- block number;
+- receipt status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+Only after separately reviewed successful live receipt evidence exists should
+the protected gas experiments be evaluated for possible production relevance.
+
+Do not fabricate empirical live gas evidence from simulation or fork results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
