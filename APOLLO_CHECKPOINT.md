@@ -5201,3 +5201,148 @@ Do not fabricate live gas evidence from simulation or fork results.
 Do not weaken profitability, slippage, freshness, gas, reserve, protected
 output, minimum-profit, or worst-case policy to manufacture execution
 readiness.
+
+## Post-1S.45 handoff — Controlled Transaction Receipt Evidence
+
+### Milestone status
+1S.45 — Controlled Transaction Receipt Evidence is implemented, validated, committed, and pushed.
+
+Code commit:
+- f26b648585ccc450524148dea4dd677bb5851ebc
+- Add controlled transaction receipt evidence
+
+### Production boundary
+Production file:
+- scripts/utils/polygonV4ControlledTransactionReceiptEvidence.js
+- 193 lines
+- SHA256: 4f8752f6f61038759135b495d74abeedef364c6182df9c92083cb7e7d2e6a652
+
+The boundary consumes completed 1S.44 controlled exact signed transaction submission evidence plus an injected acquireTransactionReceipt capability.
+
+Before receipt acquisition it requires:
+- controlledExactSignedTransactionSubmissionReady === true
+- signerAuthorized === true
+- signingAuthorized === true
+- broadcastAuthorized === true
+- liveExecutionAuthorized === true
+- a non-empty preserved signedTransactionHash
+- a submissionResponse object
+- submissionResponse.hash exactly equals signedTransactionHash
+
+Receipt acquisition is exactly:
+- await acquireTransactionReceipt(signedTransactionHash)
+
+The acquisition capability receives only the exact signed transaction hash.
+
+It does not receive:
+- signed raw transaction bytes
+- transaction envelope
+- signer capability
+- submission capability
+- nonce controls
+- fee controls
+- gas-limit controls
+
+The acquired receipt must:
+- be an object
+- have receipt.transactionHash exactly equal to signedTransactionHash
+- have receipt.status === 1
+- have a positive safe-integer blockNumber
+- have ethers BigNumber gasUsed greater than zero
+
+Successful output preserves:
+- exact 1S.44 evidence identity
+- exact transactionEnvelope identity
+- exact signedRawTransaction
+- exact signedTransactionHash
+- exact submissionResponse identity
+- exact receipt identity
+- gasUsed directly from receipt.gasUsed
+
+Successful output sets:
+- controlledTransactionReceiptReady === true
+- signerAuthorized === true
+- signingAuthorized === true
+- broadcastAuthorized === true
+- liveExecutionAuthorized === true
+
+The output is frozen.
+
+### Safety boundary
+1S.45 does not:
+- submit or resubmit a transaction
+- retry submission
+- sign or re-sign
+- reconstruct the transaction
+- repair nonce
+- refresh fees
+- modify gas limit
+- infer profitability
+- create or promote a gas margin, multiplier, or fixed buffer
+- directly promote receipt gas into the protected gas experiments
+
+The production module contains no direct provider, signer, signing, send, broadcast, fee-refresh, gas-estimation, or receipt-waiting primitive beyond the injected narrow receipt-acquisition callback.
+
+1S.45 trusts the completed immediate 1S.44 boundary and binds the acquired receipt to the exact already-established signed transaction hash. It does not duplicate deep 1S.39 cryptographic signing validation or 1S.44 submission logic.
+
+### Validation
+Focused 1S.45:
+- 11/11 passed
+
+Immediate 1S.44 -> 1S.45 regression:
+- 25/25 passed
+- exit code 0
+
+Explicit 1S.30 -> 1S.45 regression:
+- 246/246 passed
+- exit code 0
+
+Maintained canonical suite:
+- Node: 907/907 passed
+- configured Hardhat: 29/29 passed
+- total: 936/936 passed
+- exit code 0
+
+The unrestricted legacy Hardhat test surface was not used. The previously known unrelated test/Lock.js toolbox/dependency issue remains outside this milestone.
+
+### Test artifact
+Test file:
+- test/polygonV4ControlledTransactionReceiptEvidence.test.js
+- 407 lines
+- SHA256: c2e66e55027efc18d31072fd6fc1e8dda7e2b287e185f52e14113cb0d5075d7d
+
+The synthetic BigNumber gasUsed fixture used by the tests is test data only. It is not empirical ProfitBot gas evidence and must not be promoted into execution policy.
+
+### Protected gas experiments
+The three protected untracked gas experiments remain outside the 1S.45 commit and were not modified, staged, committed, promoted, or executed.
+
+Verified SHA256:
+- test/polygonV4GasStateSensitivityProbe.test.js
+  5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7
+- test/polygonV4PairedGasMeasurementIntegration.test.js
+  5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139
+- test/polygonV4PairedGasStateSensitivityIntegration.test.js
+  3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77
+
+### Live-state distinction
+No live transaction was broadcast as part of developing or testing 1S.45.
+
+No real live transaction receipt has yet been acquired through this milestone.
+
+No empirical live ProfitBot gasUsed value has yet been established.
+
+A successful 1S.45 test proves the receipt-evidence software boundary behaves as designed. It does not prove arbitrage profitability and does not itself create live gas evidence.
+
+### Next controlled objective
+The intended evidence flow remains:
+
+1S.44 exact signed transaction submission
+-> 1S.45 exact successful receipt validation
+-> empirical live receipt gasUsed
+-> separate controlled gas-evidence handoff
+-> deliberate evaluation of the three protected gas experiments
+-> only then an evidence-based gas-policy decision.
+
+Any actual live measurement requires separate explicit review and intent. Before a live transaction, current chain state, nonce, transaction parameters, authorization state, and immediate pre-submission validation must remain fail-closed according to the established lineage.
+
+Do not fabricate or promote a gas value from fork evidence, simulation evidence, historical constants, or the synthetic 1S.45 test fixture.
