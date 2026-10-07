@@ -4413,3 +4413,227 @@ Do not fabricate live gas evidence from fork or simulation results.
 Do not weaken profitability, slippage, freshness, gas, reserve, protected
 output, minimum-profit, or worst-case policy to manufacture execution
 readiness.
+
+---
+
+## 1S.42 — Controlled Live Execution Authorization Evidence
+
+### Code commit
+
+- Commit: `342a9dc51362f04993eae02e18dfb5edadcaf6cf`
+- Subject: `Add controlled live execution authorization evidence`
+- Parent: `0d382b7f15c383940cb127de4e6b853a612dd100`
+- Branch: `repair/simulation-safety`
+- Scope: exactly `2` files changed, `704` insertions.
+
+Committed files:
+
+- `scripts/utils/polygonV4ControlledLiveExecutionAuthorizationEvidence.js`
+- `test/polygonV4ControlledLiveExecutionAuthorizationEvidence.test.js`
+
+### Purpose
+
+1S.42 adds controlled live-execution authorization evidence only.
+
+It does not submit, send, broadcast, rebuild, repair, modify, or re-sign a
+transaction.
+
+Actual transaction submission remains a separate future boundary.
+
+### Required immediate authorization state
+
+1S.42 consumes the exact preserved 1S.41 controlled-broadcast authorization
+evidence.
+
+The immediate 1S.41 state must have:
+
+- `controlledBroadcastAuthorizationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `broadcastAuthorized=true`;
+- `liveExecutionAuthorized=false`.
+
+1S.42 does not reinterpret the historical authorization state of earlier
+boundaries as the current authorization state.
+
+### Immutable transaction lineage
+
+1S.42 preserves the exact:
+
+- 1S.41 controlled-broadcast authorization evidence object;
+- 1S.40 final signed-transaction current-state evidence object;
+- transaction-envelope object identity;
+- signed raw transaction;
+- signed transaction hash.
+
+The transaction envelope must remain the exact object preserved through the
+immediate lineage.
+
+The signed raw transaction and signed transaction hash must exactly equal the
+values preserved by the 1S.40 evidence.
+
+Any envelope, raw-transaction, or transaction-hash drift is rejected before
+live-execution authorization is requested.
+
+1S.42 does not duplicate the 1S.39 cryptographic signed-transaction
+verification boundary.
+
+It does not rebuild or repair the transaction.
+
+### Controlled live-execution authorization
+
+Live-execution authorization is obtained only through the injected
+`authorizeControlledLiveExecution` capability.
+
+That authorization callback receives only:
+
+- `transactionEnvelope`;
+- `signedTransactionHash`.
+
+The signed raw transaction is deliberately not supplied to the authorization
+callback.
+
+The callback must return exactly `true`.
+
+False, undefined, null, numeric, string, rejected, or thrown authorization
+results do not produce controlled live-execution authorization evidence.
+
+Lineage validation occurs before the authorization callback is invoked.
+
+### Capability boundary
+
+The 1S.42 production module contains no provider, RPC, wallet, signing, or
+transaction-submission capability.
+
+It does not call:
+
+- `signTransaction`;
+- `sendTransaction`;
+- `sendRawTransaction`;
+- `broadcastTransaction`;
+- `eth_sendRawTransaction`.
+
+It does not obtain a private key, seed phrase, mnemonic, or environment
+credential.
+
+Successful 1S.42 authorization therefore cannot by itself move funds or submit
+the signed transaction.
+
+### Authorization state after 1S.42
+
+A successful 1S.42 result returns:
+
+- `controlledLiveExecutionAuthorizationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `broadcastAuthorized=true`;
+- `liveExecutionAuthorized=true`.
+
+Both controlled broadcast authorization and controlled live-execution
+authorization are therefore established as evidence.
+
+Critically, these authorization flags are not evidence that a transaction was
+submitted or broadcast.
+
+No transaction was submitted or broadcast as part of 1S.42.
+
+### Validation
+
+Focused 1S.42:
+
+- `14 / 14` passing.
+
+Immediate 1S.36 through 1S.42 regression:
+
+- `91 / 91` passing.
+
+Explicit 1S.30 through 1S.42 safety lineage:
+
+- `207 / 207` passing.
+
+Canonical full repository validation:
+
+- Node: `868 / 868` passing;
+- Hardhat: `29 / 29` passing;
+- maintained total: `897 / 897` passing;
+- canonical exit code: `0`.
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+Solidity compilation:
+
+- Hardhat `2.24.3`;
+- Node `18.20.8`;
+- npm `10.8.2`;
+- `35` Solidity files compiled successfully;
+- EVM target: `paris`;
+- only existing dependency SPDX warnings were observed.
+
+Generated `artifacts/` and `cache/` changes from canonical testing were
+inspected and restored before the 1S.42 code commit.
+
+Final 1S.42 code commit scope remained exactly the two intended files.
+
+### Protected gas experiments
+
+The following experimental tests remain untracked and protected:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Their verified SHA-256 hashes remain:
+
+- `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+They were not executed, modified, staged, committed, or promoted as part of
+1S.42.
+
+No arbitrary gas margin, multiplier, percentage margin, fixed buffer, or
+protected experimental gas constant has been promoted into the execution
+lineage.
+
+### Next boundary
+
+Actual controlled transaction submission remains a separate future 1S.43
+boundary.
+
+1S.42 authorization must not be interpreted as transaction submission,
+broadcast evidence, or unrestricted production execution readiness.
+
+Before any actual submission, the submission boundary must preserve the exact
+authorized signed transaction and fail closed on any invalid required
+current-state condition rather than repairing the transaction.
+
+In particular, nonce drift must not be repaired. If the required current
+pending nonce no longer matches the signed transaction, the transaction must
+not be submitted and the transaction-parameter lineage must be rebuilt from
+the appropriate earlier boundary.
+
+No arbitrary fee-refresh or gas-buffer policy is authorized by 1S.42.
+
+The intended first live transaction remains a deliberately controlled
+measurement flashloan.
+
+Its purpose is to obtain empirical live receipt evidence including:
+
+- transaction hash;
+- block number;
+- receipt status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+Only after a separately reviewed successful live receipt exists should the
+protected gas experiments be evaluated for possible production relevance.
+
+Do not fabricate live gas evidence from fork or simulation results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
