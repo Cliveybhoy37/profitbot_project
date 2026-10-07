@@ -6288,3 +6288,100 @@ balance/allowance gate.
 
 Controlled live execution and empirical receipt gas remain separate future
 actions. No gas margin, multiplier, or fixed buffer has been promoted.
+
+## 1S.56 — Current-State Evidence Composition
+
+Status: COMPLETE / VALIDATED; pending commit and push.
+
+Objective:
+- Add a narrow current-state evidence composition boundary before any broader orchestration.
+- Assemble only independently established current-state evidence identities.
+- Preserve qualification-lineage preflight identity from readiness evidence.
+- Do not call current-state execution preflight from this composition boundary.
+
+Production:
+- `scripts/utils/polygonV4CurrentStateEvidenceComposition.js`
+
+Test:
+- `test/polygonV4CurrentStateEvidenceComposition.test.js`
+
+Production API:
+- `buildCurrentStateEvidenceComposition({...})`
+
+Inputs:
+- `readinessEvidence`
+- `currentChainIdentityAcquisitionEvidence`
+- `currentDeploymentCodeIdentityAcquisitionEvidence`
+- `currentRouteAmountEvidenceComposition`
+- `currentEconomicsEvidenceComposition`
+- `currentFreshnessEvidenceComposition`
+
+Provenance requirements:
+- `readinessEvidence.executionEvidenceReady === true`
+- Each constituent boundary wrapper must be an object.
+- Each constituent boundary ready flag must be exactly `true`.
+- Each constituent inner evidence value must be an object.
+- `readinessEvidence.qualifiedContext.qualificationResult.preflight`
+  must be an object and is the authoritative preflight identity.
+
+Output:
+- Frozen result:
+  - `currentStateEvidence`
+  - `currentStateEvidenceCompositionReady: true`
+- Frozen `currentStateEvidence` has exactly:
+  - `chainEvidence`
+  - `deploymentEvidence`
+  - `routeAmountEvidence`
+  - `economicsEvidence`
+  - `freshnessEvidence`
+  - `preflightEvidence`
+
+Identity/ownership:
+- All six evidence objects are preserved by exact identity.
+- `preflightEvidence` comes from
+  `readinessEvidence.qualifiedContext.qualificationResult.preflight`.
+- No unrelated input fields are copied.
+- No `balanceAllowanceEvidence` is introduced or copied.
+- Inner chain/deployment/route/economics/freshness semantics are not
+  revalidated here; their established boundaries own those semantics.
+- Qualification/execution admissibility and current freshness expiration
+  remain owned by current-state execution preflight.
+- This boundary does not duplicate live/signer/broadcast authorization
+  checks.
+
+Explicit non-goals:
+- No RPC acquisition.
+- No route discovery or reconstruction.
+- No quote/economics/gas recalculation.
+- No deadline calculation or freshness decision.
+- No balance/allowance placeholder.
+- No signing, authorization, submission, broadcast, or live execution.
+- No gas-policy promotion.
+- No protected gas-experiment execution.
+- No full current-state orchestration.
+
+Validation:
+- Initial RED: `MODULE_NOT_FOUND` before production existed.
+- Initial GREEN: 1/1.
+- Readiness provenance gate added after confirming precedent in
+  current-state preflight and current economics composition.
+- Hardened focused suite: 7/7 pass.
+- Syntax checks: clean.
+- `git diff --check`: clean.
+- Canonical `npm run test:node`: 971/971 pass, 0 fail.
+- Canonical suite explicitly discovered
+  `Polygon V4 current-state evidence composition` as suite 251.
+- Hardhat not rerun because 1S.56 is an isolated Node composition boundary.
+- Protected gas experiment files remained untracked and were not executed,
+  modified, staged, or promoted.
+
+Protected gas experiments remain outside 1S.56:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Commit and push 1S.56 after exact staging review.
+- After 1S.56 is durably closed, reassess whether the next boundary should
+  be broader current-state orchestration; do not automatically build one
+  without first reviewing ownership and remaining evidence gaps.
