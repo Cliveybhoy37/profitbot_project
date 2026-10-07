@@ -5555,3 +5555,110 @@ Continue read-only provenance/acquisition analysis before any controlled live me
 Do not manufacture balance/allowance requirements that conflict with the deployed executor's flashloan semantics.
 
 A controlled live transaction remains a separate explicit future action.
+
+## Post-1S.48 — Current Chain Identity Acquisition Evidence
+
+Code commit:
+- `1c8325d` — `Add current chain identity acquisition evidence`
+
+Production:
+- `scripts/utils/polygonV4CurrentChainIdentityAcquisitionEvidence.js`
+
+Tests:
+- `test/polygonV4CurrentChainIdentityAcquisitionEvidence.test.js`
+- composition coverage added to `test/polygonV4CurrentStateExecutionPreflightEvidence.test.js`
+
+### Purpose
+
+1S.48 introduces a narrow current-chain identity acquisition boundary.
+
+It validates an injected provider and its `getNetwork` capability before acquisition, calls `provider.getNetwork()` exactly once, and requires the acquired network to identify Polygon exactly:
+
+`chainId === 137`
+
+Successful acquisition produces frozen:
+
+`chainEvidence = { chainId: 137 }`
+
+with:
+
+`currentChainIdentityAcquisitionReady: true`
+
+### Responsibility separation
+
+1S.48 owns only current chain identity acquisition.
+
+It does NOT acquire or manufacture:
+
+- deployment identity
+- route/amount evidence
+- economics evidence
+- freshness evidence
+- balance/allowance evidence
+- authoritative preflight evidence
+- account or signer identity
+- transaction parameters
+- gas policy
+- authorization
+- signing
+- submission
+- broadcast
+
+It does not accept an existing current-state preflight as input, avoiding circular current-state provenance.
+
+### Fail-closed behavior
+
+Verified that:
+
+- invalid provider fails before acquisition
+- missing `getNetwork` capability fails before acquisition
+- malformed network evidence fails after exactly one acquisition
+- non-Polygon chain identity fails after exactly one acquisition
+- successful Polygon acquisition calls `getNetwork()` exactly once
+
+### Composition
+
+The existing current-state preflight fixture was extended with an optional chain-evidence override while preserving its historical default behavior.
+
+Verified that the exact `chainEvidence` object produced by 1S.48 can be composed into `currentStateEvidence` and survives the existing current-state execution preflight by object identity.
+
+This composition does not imply that 1S.48 constructs the other current-state constituents.
+
+### Validation
+
+- focused 1S.48 acquisition tests: 5/5 passing
+- focused acquisition + current-state preflight compatibility: 29/29 passing
+- canonical Node regression: 923/923 passing
+- configured Hardhat regression: 29/29 passing
+- canonical maintained total: 952/952 passing
+- `git diff --check`: clean before code commit
+- protected gas experiment files were not directly executed, modified, staged, or committed
+
+### Protected untracked gas experiments
+
+Remain outside this milestone:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+### Remaining architecture
+
+1S.48 establishes the first narrow production acquisition primitive for the previously test-assembled `currentStateEvidence`, but it does not make the full current-state object independently trustworthy.
+
+Remaining current-state work includes deliberate provenance/acquisition or composition decisions for:
+
+- deployment identity
+- freshness/current timestamp
+- route/amount evidence
+- economics evidence
+- balance/allowance semantics
+- orchestration of independently established evidence
+
+`preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state.
+
+Do not manufacture pre-existing flashloan principal or external DEX/Aave allowance requirements from the current `{ checked, sufficient }` fixture semantics.
+
+Continue with narrow provenance-first current-state work before any controlled live measurement.
+
+A controlled live transaction remains a separate explicit future action.
