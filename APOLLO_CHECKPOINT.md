@@ -5662,3 +5662,88 @@ Do not manufacture pre-existing flashloan principal or external DEX/Aave allowan
 Continue with narrow provenance-first current-state work before any controlled live measurement.
 
 A controlled live transaction remains a separate explicit future action.
+
+## 1S.49 — Verified Deployment Address Evidence
+
+Status: code complete and locally committed; checkpoint/push verification pending at time of this entry.
+
+Code commit:
+- `f77eb10` — `Add verified deployment address evidence`
+
+Production:
+- `scripts/utils/polygonV4VerifiedDeploymentAddressEvidence.js`
+
+Test:
+- `test/polygonV4VerifiedDeploymentAddressEvidence.test.js`
+
+Purpose:
+- Establish a narrow verified deployment-address evidence boundary from independently established historical deployment provenance.
+- This stage normalizes and validates deployment provenance; it does not claim current RPC/runtime-code identity.
+
+Required deployment provenance:
+- `executorAddress`
+- `deploymentTransactionHash`
+- `deploymentBlock`
+- `receiptStatus`
+
+Validation:
+- deployment provenance must be an object.
+- executor address must be a valid nonzero address.
+- deployment transaction hash must be a bytes32 hash.
+- deployment block must be a positive safe integer.
+- receipt status must be exactly `1`.
+
+Successful output:
+- constructs a new frozen `deploymentAddressEvidence` containing exactly:
+  - `executorAddress`
+  - `deploymentTransactionHash`
+  - `deploymentBlock`
+  - `receiptStatus`
+- returns a frozen result with:
+  - `deploymentAddressEvidence`
+  - `verifiedDeploymentAddressReady: true`
+- unrelated mutable provenance fields are not copied into the evidence object.
+
+Explicit exclusions:
+- no hard-coded live ProfitBot address.
+- no `.env` dependency.
+- no RPC/provider acquisition.
+- no transaction-receipt acquisition.
+- no `getCode`.
+- no runtime bytecode or code-hash claim.
+- no owner/configuration inspection.
+- no gas-evidence or account-evidence authority.
+- no signing, authorization, submission, broadcast, or live execution.
+- no protected gas-policy promotion.
+
+Verification:
+- focused `node:test`: 7/7 passing.
+- maintained Node regression: 930/930 passing after canonical discovery correction.
+- configured Hardhat regression was green in the immediately preceding canonical run.
+- canonical Node discovery now includes the 1S.49 test via `node:test`.
+- generated Hardhat `artifacts/` and `cache/` churn was inspected and restored to `HEAD`; it was not included in the 1S.49 commit.
+- protected gas experiments were not staged or committed.
+
+Protected untracked gas experiments remain outside this lineage:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Architectural boundary:
+- 1S.49 establishes verified historical deployment-address provenance.
+- It does not establish that current Polygon runtime bytecode still exists at that address.
+- gas evidence is corroboration, not deployment-address authority.
+- account identity evidence is downstream of deployment evidence and cannot establish deployment-address provenance without circularity.
+
+Next exact step — 1S.50 Current Deployment Code Identity Acquisition Evidence:
+- consume the exact verified deployment address evidence plus an injected provider.
+- validate provider and `getCode` capability before acquisition.
+- call `getCode(executorAddress)` exactly once for the exact verified address.
+- reject empty or invalid runtime bytecode.
+- compute `ethers.utils.keccak256(runtimeBytecode)`.
+- produce frozen current `deploymentEvidence` containing:
+  - `executorAddress`
+  - `executorCodeHash`
+- do not discover or hard-code an address.
+- do not acquire owner/account/gas evidence.
+- do not authorize signing, submission, broadcast, or live execution.
