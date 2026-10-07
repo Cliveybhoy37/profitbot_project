@@ -92,6 +92,8 @@ async function readExecutorContext({
   }
 
   return {
+    executorAddress:
+      executor.address,
     executorCodeHash:
       ethers.utils.keccak256(code),
     v3Router,

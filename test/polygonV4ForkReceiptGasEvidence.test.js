@@ -126,6 +126,7 @@ function evidence() {
     executionPlanHash:
       ethers.utils.keccak256(plan),
     executorContext: {
+      executorAddress: address(10),
       executorCodeHash:
         ethers.utils.keccak256("0x6000"),
       v3Router: address(1),
@@ -223,6 +224,21 @@ test(
           evidence: evidence()
         }),
       /Exact encoded execution plan is required/
+    );
+  }
+);
+
+test(
+  "rejects zero executor address",
+  () => {
+    const source = evidence();
+
+    source.executorContext.executorAddress =
+      ethers.constants.AddressZero;
+
+    assert.throws(
+      () => validate(source),
+      /executorAddress must be a valid nonzero address/
     );
   }
 );

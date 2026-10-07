@@ -244,6 +244,11 @@ test(
     );
 
     assert.equal(
+      result.executorContext.executorAddress,
+      h.values.executor
+    );
+
+    assert.equal(
       result.executorContext.executorCodeHash,
       ethers.utils.keccak256(
         "0x60006000"

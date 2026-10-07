@@ -42,6 +42,14 @@ function requireContext(context) {
   }
 
   return {
+    ...(context.executorAddress === undefined
+      ? {}
+      : {
+          executorAddress: requireAddress(
+            context.executorAddress,
+            "Gas evidence executorAddress"
+          )
+        }),
     executorCodeHash: requireHash(
       context.executorCodeHash,
       "Gas evidence executorCodeHash"
