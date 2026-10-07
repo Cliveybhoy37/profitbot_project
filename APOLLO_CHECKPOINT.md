@@ -5831,3 +5831,76 @@ Remaining work:
 - 1S.50 does not by itself establish full current executable readiness.
 - Continue provenance-first current-state acquisition/composition for remaining unresolved current-state constituents before any controlled live measurement.
 - A controlled live transaction remains a separate explicit future action.
+
+## 1S.51 — Current Chain Timestamp Acquisition Evidence
+
+Status:
+- code complete and locally committed
+- code commit: `8b71289`
+- checkpoint/push pending
+
+Production:
+- `scripts/utils/polygonV4CurrentChainTimestampAcquisitionEvidence.js`
+
+Test:
+- `test/polygonV4CurrentChainTimestampAcquisitionEvidence.test.js`
+
+Purpose:
+- independently acquire a current Polygon block timestamp for current-state freshness evidence
+- preserve block provenance by recording both `currentBlock` and `currentTimestamp`
+
+Acquisition semantics:
+- injected provider only
+- `getBlockNumber()` exactly once
+- current block must be a positive safe integer
+- `getBlock(currentBlock)` exactly once using the exact acquired block number
+- returned block must be available
+- if returned `block.number` is present, it must exactly equal `currentBlock`
+- block timestamp must be a positive safe integer
+
+Successful evidence:
+- frozen `currentChainTimestampEvidence { currentBlock, currentTimestamp }`
+- frozen result with `currentChainTimestampAcquisitionReady: true`
+
+Policy ownership:
+- 1S.51 does not construct or alter the execution deadline
+- existing current-state execution preflight remains responsible for `currentTimestamp < prepared.deadline`
+- qualification deadline remains anchored to the exact qualification policy-block timestamp
+
+Explicit exclusions:
+- no chain-ID reacquisition
+- no `Date.now()` wall-clock authority
+- no route/amount or economics acquisition
+- no balance/allowance interpretation
+- no signing, authorization, submission, broadcast, or live execution
+- no gas-policy promotion
+- no protected gas-experiment execution or modification
+
+Verification:
+- RED established solely by missing production module
+- focused final: 8/8 pass
+- canonical Node: 946/946 pass, 0 fail
+- canonical discovery explicitly included the 1S.51 suite
+- production and test syntax checks clean
+- `git diff --check` clean
+- Hardhat not rerun because this is an isolated Node utility/test boundary with no contract or Hardhat integration change
+
+Protected gas experiments remained untracked and unchanged:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+  SHA-256 `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  SHA-256 `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+  SHA-256 `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+Current-state provenance now independently establishes:
+- chain identity via 1S.48
+- verified deployment address via 1S.49
+- current deployment code identity via 1S.50
+- current chain timestamp via 1S.51
+
+Remaining work:
+- 1S.51 does not establish full current executable readiness
+- continue provenance-first decisions for route/amount evidence, economics evidence, balance/allowance semantics, and orchestration of independently established current-state evidence
+- `preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state
+- controlled live execution remains a separate explicit future action
