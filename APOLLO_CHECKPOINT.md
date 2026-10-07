@@ -3970,3 +3970,234 @@ Next exact step:
 3. verify `git diff --check`;
 4. only after that review decide whether 1R.4 is ready to commit;
 5. do not push until explicitly approved.
+
+## Milestone 1S.40 — Final Signed Transaction Current-State Validation Evidence
+
+Status: code complete, committed, and fully locally validated; not yet pushed.
+
+### Code identity
+
+- Commit: `907dbbd`
+- Subject: `Add final signed transaction current-state validation evidence`
+- Parent: `cdc3280`
+- Branch: `repair/simulation-safety`
+- Scope: exactly two new files, 878 insertions:
+  - `scripts/utils/polygonV4FinalSignedTransactionCurrentStateValidationEvidence.js`
+  - `test/polygonV4FinalSignedTransactionCurrentStateValidationEvidence.test.js`
+
+### Purpose
+
+1S.40 adds the final current-state validation boundary for the exact signed
+transaction produced by 1S.39.
+
+It validates the immutable signed transaction context immediately before any
+future broadcast-authorization decision.
+
+1S.40 does not authorize broadcast and does not perform broadcast.
+
+### Validation behavior
+
+`validateFinalSignedTransactionCurrentStateEvidence(...)` requires:
+
+- ready 1S.39 transaction-signing evidence;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `liveExecutionAuthorized=false`;
+- `broadcastAuthorized=false`;
+- ready signer-capability binding evidence;
+- exact transaction-envelope identity preserved from signer-capability binding;
+- signer, signer-capability, binding, and envelope-from identities to agree;
+- a provider exposing `getNetwork`, `getTransactionCount`, and `call`;
+- current network chain ID exactly `137`;
+- current pending nonce acquired using:
+  `provider.getTransactionCount(transactionEnvelope.from, "pending")`;
+- current pending nonce exactly equal to the immutable signed transaction nonce;
+- a final `provider.call(...)` using the exact seven-field call projection:
+  `from`, `to`, `data`, `value`, `gasLimit`, `maxFeePerGas`,
+  `maxPriorityFeePerGas`.
+
+A resolved final simulation result, including `0x`, remains successful under
+the established 1S.34 simulation semantics.
+
+Provider rejection/revert fails closed.
+
+### Immutable transaction boundary
+
+1S.40 validates; it never repairs.
+
+If the current pending nonce differs from the signed transaction nonce, the
+signed transaction is rejected as stale.
+
+1S.40 does not:
+
+- change or repair the nonce;
+- change gas limit;
+- change `maxFeePerGas`;
+- change `maxPriorityFeePerGas`;
+- change calldata;
+- change value;
+- substitute a route or amount;
+- rebuild the transaction envelope;
+- re-sign the transaction;
+- obtain a private key or seed phrase;
+- call `sendTransaction`;
+- call `broadcastTransaction`;
+- call `eth_sendRawTransaction`;
+- grant live execution authorization;
+- grant broadcast authorization.
+
+Nonce drift requires rebuilding from the current-transaction-parameter stage
+rather than mutating the already signed transaction.
+
+### Cryptographic responsibility boundary
+
+1S.39 remains responsible for independently parsing and verifying the exact
+raw signed type-2 transaction, including signer recovery, transaction fields,
+empty access list, and signed transaction hash.
+
+1S.40 does not duplicate that cryptographic verification.
+
+Instead, it requires the established 1S.39 evidence and hardens the preserved
+identity lineage before performing the new current-state checks.
+
+### Fee and gas boundary
+
+1S.40 does not invent a fee-refresh policy.
+
+It does not reacquire current fee data and require exact equality with the
+signed EIP-1559 fee fields.
+
+It does not apply a fee multiplier, gas multiplier, percentage margin, fixed
+buffer, historical receipt constant, or protected experimental gas constant.
+
+The signed fee and gas fields remain immutable.
+
+Any future fee-freshness or gas-policy change requires separate objective
+evidence and a separately reviewed milestone.
+
+### Current-state scope
+
+The current production architecture does not expose a single acquisition
+boundary capable of reconstructing a fresh complete 1S.27 current-state
+evidence graph at 1S.40.
+
+Therefore 1S.40 deliberately does not fabricate or duplicate current
+economics, deployment, balance, allowance, or deadline acquisition.
+
+Its current-state responsibility is intentionally narrow:
+
+- current Polygon chain identity;
+- current pending nonce equality;
+- final provider-call simulation of the immutable signed envelope projection.
+
+Broader current-state reacquisition remains separate future work if the
+production architecture gains an authoritative acquisition boundary for it.
+
+### Validation
+
+Focused 1S.40:
+
+- `11 / 11` passing.
+
+Immediate 1S.38 through 1S.40 regression:
+
+- `38 / 38` passing.
+
+Explicit 1S.30 through 1S.40 safety lineage:
+
+- `180 / 180` passing.
+
+Canonical full repository validation:
+
+- Node: `841 / 841` passing;
+- Hardhat: `29 / 29` passing;
+- maintained total: `870 / 870` passing.
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+Solidity compilation:
+
+- Hardhat `2.24.3`;
+- Node `18.20.8`;
+- `35` Solidity files compiled successfully;
+- EVM target: `paris`;
+- only existing dependency SPDX warnings were observed.
+
+Generated `artifacts/` and `cache/` changes from compilation/testing were
+restored before the 1S.40 commit.
+
+Final 1S.40 commit scope remained exactly the two intended files.
+
+### Protected gas experiments
+
+The following experimental tests remain untracked and protected:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+They were not staged or committed as part of 1S.40.
+
+They are not discovered by the current canonical `npm run test:node` command.
+
+Do not silently modify, stage, commit, promote, delete, or execute these
+experiments.
+
+No arbitrary gas margin, multiplier, or fixed buffer has been promoted into
+the execution lineage.
+
+### Authorization state after 1S.40
+
+A successful 1S.40 result means only that the exact signed transaction has
+passed the currently defined final current-state validation boundary.
+
+It still returns:
+
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `liveExecutionAuthorized=false`;
+- `broadcastAuthorized=false`.
+
+Therefore:
+
+- signing authorization is not broadcast authorization;
+- current-state validation is not broadcast authorization;
+- possession of a valid signed raw transaction is not broadcast authorization;
+- successful final simulation is not broadcast authorization.
+
+No transaction was broadcast as part of 1S.40.
+
+### Next boundary
+
+The next execution-safety milestone must remain separate from 1S.40.
+
+It may define an explicit, narrow controlled-broadcast authorization boundary,
+but that authorization must not be silently inferred from successful signing
+or successful 1S.40 validation.
+
+Actual submission of a first controlled live transaction must remain a
+separate deliberate action after that authorization boundary.
+
+The intended first live transaction remains a controlled measurement
+flashloan rather than unrestricted production execution.
+
+Its purpose is to obtain empirical live receipt evidence such as:
+
+- transaction hash;
+- block number;
+- status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+Only after a separately reviewed successful live receipt exists should the
+protected gas experiments be evaluated for possible production relevance.
+
+Do not fabricate live gas evidence from fork or simulation results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
