@@ -12,7 +12,10 @@ function loadSubject() {
   return require(MODULE_PATH);
 }
 
-function makeFixture({ executorAddress } = {}) {
+function makeFixture({
+  executorAddress,
+  chainEvidenceOverride
+} = {}) {
   const executionPlan = "0x1234";
 
   const candidate = Object.freeze({
@@ -142,9 +145,12 @@ function makeFixture({ executorAddress } = {}) {
     broadcastAuthorized: false
   });
 
-  const chainEvidence = Object.freeze({
-    chainId: 137
-  });
+  const chainEvidence =
+    chainEvidenceOverride === undefined
+      ? Object.freeze({
+          chainId: 137
+        })
+      : chainEvidenceOverride;
 
   const deploymentEvidence = Object.freeze({
     executorAddress:
@@ -197,6 +203,60 @@ function makeFixture({ executorAddress } = {}) {
     currentStateEvidence
   };
 }
+
+test(
+  "accepts exact acquired current-chain evidence by identity",
+  async () => {
+    const {
+      acquireCurrentChainIdentityEvidence
+    } = require(
+      "../scripts/utils/polygonV4CurrentChainIdentityAcquisitionEvidence"
+    );
+
+    const acquired =
+      await acquireCurrentChainIdentityEvidence({
+        provider: {
+          async getNetwork() {
+            return {
+              chainId: 137
+            };
+          }
+        }
+      });
+
+    const fixture = makeFixture({
+      chainEvidenceOverride:
+        acquired.chainEvidence
+    });
+
+    const {
+      buildCurrentStateExecutionPreflightEvidence
+    } = loadSubject();
+
+    const result =
+      buildCurrentStateExecutionPreflightEvidence({
+        readinessEvidence:
+          fixture.readinessEvidence,
+        currentStateEvidence:
+          fixture.currentStateEvidence
+      });
+
+    assert.equal(
+      fixture.currentStateEvidence.chainEvidence,
+      acquired.chainEvidence
+    );
+
+    assert.equal(
+      result.currentStateEvidence.chainEvidence,
+      acquired.chainEvidence
+    );
+
+    assert.equal(
+      acquired.currentChainIdentityAcquisitionReady,
+      true
+    );
+  }
+);
 
 test(
   "preserves exact 1S.26 readiness and injected current-state evidence identities",
