@@ -158,6 +158,31 @@ function buildCurrentStateExecutionPreflightEvidence({
     );
 
   if (
+    executorContext.executorAddress !== undefined
+  ) {
+    if (
+      !ethers.utils.isAddress(
+        executorContext.executorAddress
+      ) ||
+      executorContext.executorAddress ===
+        ethers.constants.AddressZero
+    ) {
+      throw new Error(
+        "Measured executor address evidence is invalid"
+      );
+    }
+
+    if (
+      deployment.executorAddress.toLowerCase() !==
+        executorContext.executorAddress.toLowerCase()
+    ) {
+      throw new Error(
+        "Executor deployment address identity mismatch"
+      );
+    }
+  }
+
+  if (
     typeof executorContext.executorCodeHash !==
       "string" ||
     !ethers.utils.isHexString(

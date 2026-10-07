@@ -12,7 +12,7 @@ function loadSubject() {
   return require(MODULE_PATH);
 }
 
-function makeFixture() {
+function makeFixture({ executorAddress } = {}) {
   const executionPlan = "0x1234";
 
   const candidate = Object.freeze({
@@ -29,6 +29,9 @@ function makeFixture() {
   ]);
 
   const executorContext = Object.freeze({
+    ...(executorAddress === undefined
+      ? {}
+      : { executorAddress }),
     executorCodeHash:
       "0x347dca910e2d4b7dd6b4ba19151fc2cd28e33c268cbb38511169a0b4a753facc",
     v3Router:
@@ -495,6 +498,41 @@ test(
             invalidCurrentState
         }),
       /executor|code.*hash|deployment/i
+    );
+  }
+);
+
+test(
+  "rejects deployed executor address that diverges from measured gas evidence",
+  () => {
+    const {
+      buildCurrentStateExecutionPreflightEvidence
+    } = loadSubject();
+
+    const fixture = makeFixture({
+      executorAddress:
+        "0x2222222222222222222222222222222222222222"
+    });
+
+    const mismatchedCurrentStateEvidence =
+      Object.freeze({
+        ...fixture.currentStateEvidence,
+        deploymentEvidence: Object.freeze({
+          ...fixture.currentStateEvidence.deploymentEvidence,
+          executorAddress:
+            "0x3333333333333333333333333333333333333333"
+        })
+      });
+
+    assert.throws(
+      () =>
+        buildCurrentStateExecutionPreflightEvidence({
+          readinessEvidence:
+            fixture.readinessEvidence,
+          currentStateEvidence:
+            mismatchedCurrentStateEvidence
+        }),
+      /executor.*address.*identity.*mismatch/i
     );
   }
 );
