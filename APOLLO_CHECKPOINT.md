@@ -4978,3 +4978,226 @@ Do not fabricate empirical live gas evidence from simulation or fork results.
 Do not weaken profitability, slippage, freshness, gas, reserve, protected
 output, minimum-profit, or worst-case policy to manufacture execution
 readiness.
+
+## Post-1S.44 session handoff — Controlled Exact Signed Transaction Submission Evidence
+
+### Milestone status
+
+1S.44 is complete, tested, committed, and pushed.
+
+Milestone:
+
+**1S.44 — Controlled Exact Signed Transaction Submission Evidence**
+
+Code commit:
+
+- full: `1fd705e8f963a115697cd892b60c3f8b15d70bc9`
+- short: `1fd705e`
+- subject: `Add controlled exact signed transaction submission evidence`
+
+The local branch and `origin/repair/simulation-safety` were verified synchronized
+at this commit with ahead/behind `0 0`.
+
+### 1S.44 implementation
+
+Production module:
+
+`scripts/utils/polygonV4ControlledExactSignedTransactionSubmissionEvidence.js`
+
+Verified SHA-256:
+
+`c7d7659df984812dd69bf00e2c7843c36b9eea122b2fa6699de1f3292a2a0a96`
+
+Test module:
+
+`test/polygonV4ControlledExactSignedTransactionSubmissionEvidence.test.js`
+
+Verified SHA-256:
+
+`1a7805230a23b0f6279f740b1b6c71fdaae7e101f27a0ea91b13133b3d639ee2`
+
+The code commit contains exactly these two files:
+
+- production module: 157 lines;
+- test module: 413 lines;
+- total commit: 570 insertions.
+
+### Boundary semantics
+
+1S.44 consumes completed 1S.43 immediate pre-submission validation evidence
+and an explicitly injected narrow submission capability.
+
+Before exposing the signed transaction to that capability, 1S.44 requires:
+
+- `immediatePreSubmissionValidationReady === true`;
+- `signerAuthorized === true`;
+- `signingAuthorized === true`;
+- `broadcastAuthorized === true`;
+- `liveExecutionAuthorized === true`;
+- a valid preserved transaction envelope object;
+- a non-empty preserved signed raw transaction;
+- a non-empty preserved signed transaction hash.
+
+The submission capability receives only the exact preserved signed raw
+transaction.
+
+The production boundary performs one submission attempt through:
+
+`await submitSignedTransaction(signedRawTransaction)`
+
+It does not:
+
+- rebuild the transaction;
+- re-sign the transaction;
+- repair or change the nonce;
+- refresh or alter fees;
+- alter the gas limit;
+- alter calldata;
+- acquire a signer or wallet;
+- retry submission;
+- wait for a receipt;
+- poll for a receipt;
+- claim successful on-chain execution.
+
+The returned submission response must be an object with a non-empty `hash`.
+
+That returned hash must exactly equal the already-established signed
+transaction hash. A mismatch fails closed.
+
+Successful 1S.44 output preserves:
+
+- the exact 1S.43 immediate pre-submission validation evidence;
+- the exact transaction envelope;
+- the exact signed raw transaction;
+- the exact signed transaction hash;
+- the submission response.
+
+It sets:
+
+- `controlledExactSignedTransactionSubmissionReady: true`;
+- `signerAuthorized: true`;
+- `signingAuthorized: true`;
+- `broadcastAuthorized: true`;
+- `liveExecutionAuthorized: true`.
+
+The returned evidence object is frozen.
+
+### Important submission/receipt distinction
+
+1S.44 introduces the narrowly controlled exact-signed-transaction submission
+boundary.
+
+No live Polygon transaction was submitted while developing or validating
+1S.44.
+
+All 1S.44 development and test execution used injected synthetic submission
+callbacks.
+
+A successful submission response and matching transaction hash do not prove
+that the transaction was mined or that execution succeeded on-chain.
+
+Receipt evidence remains a separate boundary.
+
+Do not infer receipt status, block inclusion, `gasUsed`, economic success, or
+successful flashloan execution from 1S.44 submission evidence alone.
+
+### Validation evidence
+
+Focused 1S.44 GREEN:
+
+- tests: 14;
+- pass: 14;
+- fail: 0.
+
+Immediate 1S.40 through 1S.44 regression:
+
+- tests: 66;
+- pass: 66;
+- fail: 0;
+- exit code: 0.
+
+Explicit 1S.30 through 1S.44 regression:
+
+- tests: 235;
+- pass: 235;
+- fail: 0;
+- exit code: 0.
+
+Maintained canonical suite:
+
+- Node tests: 896/896 PASS;
+- configured Hardhat tests: 29/29 PASS;
+- maintained canonical total: 925/925 PASS;
+- canonical command exit code: 0.
+
+The canonical Hardhat run generated normal tracked `artifacts/` and `cache/`
+changes. Those generated changes were restored before the 1S.44 code commit.
+
+The known unrestricted `npx hardhat test` legacy `test/Lock.js` dependency
+incompatibility remains separate from the maintained canonical test surface.
+Do not install Hardhat toolbox, modify dependencies, or alter the legacy
+scaffold as part of this milestone merely to remove that unrelated issue.
+
+### Protected gas experiments
+
+The following files remain untracked and protected:
+
+`test/polygonV4GasStateSensitivityProbe.test.js`
+
+SHA-256:
+
+`5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+
+`test/polygonV4PairedGasMeasurementIntegration.test.js`
+
+SHA-256:
+
+`5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+
+`test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+SHA-256:
+
+`3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+They were not staged, committed, promoted, modified, or executed as part of
+1S.44.
+
+No arbitrary gas margin, multiplier, or fixed buffer has been promoted into
+the execution lineage.
+
+### Next boundary
+
+The next logical milestone is:
+
+**1S.45 — Transaction Receipt Evidence**
+
+It must remain separately reviewed and fail closed.
+
+Receipt evidence should bind the exact 1S.44 submission lineage to actual
+on-chain receipt evidence and should capture, at minimum:
+
+- the exact transaction hash;
+- block number;
+- receipt status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+1S.45 must not reinterpret successful submission as successful execution.
+
+The intended first live transaction remains a deliberately controlled
+measurement flashloan, not unrestricted production execution readiness.
+
+No live empirical gas value exists merely because 1S.44 is complete.
+
+Only separately reviewed successful live receipt evidence may establish
+empirical live `gasUsed`.
+
+After that evidence exists, the protected gas experiments may be evaluated
+separately for possible production relevance.
+
+Do not fabricate live gas evidence from simulation or fork results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
