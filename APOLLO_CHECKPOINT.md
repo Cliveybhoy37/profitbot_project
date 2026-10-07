@@ -5346,3 +5346,128 @@ The intended evidence flow remains:
 Any actual live measurement requires separate explicit review and intent. Before a live transaction, current chain state, nonce, transaction parameters, authorization state, and immediate pre-submission validation must remain fail-closed according to the established lineage.
 
 Do not fabricate or promote a gas value from fork evidence, simulation evidence, historical constants, or the synthetic 1S.45 test fixture.
+
+## 1S.46 — Executor Deployment Identity Evidence
+
+Status: code complete and locally committed; checkpoint/push verification pending.
+
+### Objective
+
+Strengthen executor deployment provenance without fabricating provenance for closed historical evidence.
+
+Current/new fork-receipt gas evidence now preserves the exact executor address whose runtime bytecode is measured. Current-state execution preflight binds that measured executor address to the deployment executor address when address-bound gas evidence is present.
+
+This milestone does not change gas measurement semantics, qualification policy, routing, signing, authorization, transaction submission, receipt acquisition, or live execution.
+
+### Part 1 — Preserve measured executor address
+
+Commit:
+
+`034bd382d401111fc9e2aedf0c6a8a350ff4b907 Preserve executor address in current fork gas evidence`
+
+Changed:
+
+- `scripts/utils/polygonV4ForkReceiptGasEvidenceProducer.js`
+- `scripts/utils/polygonV4ForkReceiptGasEvidence.js`
+- `test/polygonV4ForkReceiptGasEvidenceProducer.test.js`
+- `test/polygonV4ForkReceiptGasEvidence.test.js`
+
+The producer now preserves the exact `executor.address` used for `provider.getCode(executor.address)` as `executorContext.executorAddress`.
+
+The generic gas-evidence validator conditionally validates and preserves `executorAddress` when supplied. It does not require the field universally because closed historical evidence predating this provenance field must not be retroactively assigned an unproven executor address.
+
+Part 1 relevant regression evidence:
+
+- direct plus historical gas-evidence tests: 26/26 passing
+- downstream relevant Node tests before Part 2: 56/56 passing
+- canonical before Part 2: 936/936 maintained tests passing
+
+The controlled Hardhat fork integration test was invoked without `USE_1S8_FORK_RECEIPT=true`; it remained skipped/pending and did not execute the controlled fork receipt measurement.
+
+### Part 2 — Bind deployment address to measured gas evidence
+
+Commit:
+
+`97be0c7997736a50bd0c9abe61bb0a1b80d42d08 Bind current-state executor address to gas evidence`
+
+Changed:
+
+- `scripts/utils/polygonV4CurrentStateExecutionPreflightEvidence.js`
+- `test/polygonV4CurrentStateExecutionPreflightEvidence.test.js`
+
+When `readiness.gasEvidence.executorContext.executorAddress` is present, current-state execution preflight now:
+
+1. validates the measured executor address as a valid nonzero address;
+2. compares it case-insensitively with `currentStateEvidence.deploymentEvidence.executorAddress`;
+3. fails closed with `Executor deployment address identity mismatch` if they differ.
+
+Legacy gas evidence without `executorContext.executorAddress` remains compatible. Absence of the field is not interpreted as proof of executor-address identity.
+
+### RED -> GREEN evidence
+
+A focused address-bound fixture was added while preserving the existing legacy/address-less fixture behavior.
+
+Before the production binding was added, the new test failed with:
+
+`AssertionError [ERR_ASSERTION]: Missing expected exception.`
+
+This demonstrated that current-state preflight accepted a measured executor address and a different deployment executor address when their runtime code hashes matched.
+
+After the production binding was added:
+
+- focused current-state preflight tests: 23/23 passing
+- downstream relevant regression: 57/57 passing
+
+### Canonical regression
+
+After Part 2:
+
+- Node tests: 908/908 passing
+- configured Hardhat tests: 29/29 passing
+- maintained canonical total: 937/937 passing
+
+Hardhat-generated tracked `artifacts/` and `cache/` churn was restored after canonical testing.
+
+### Safety and compatibility boundaries
+
+1S.46 does not:
+
+- sign or re-sign a transaction;
+- authorize signing, broadcast, or live execution;
+- submit or broadcast a transaction;
+- acquire a live transaction receipt;
+- contact Polygon for live execution;
+- modify nonce, fee, or gas-limit policy;
+- promote fork gas into live empirical gas;
+- add a gas margin, multiplier, or fixed buffer;
+- change route construction or qualification semantics;
+- fabricate an executor address for historical evidence.
+
+The three protected gas experiments were not executed, modified, staged, committed, or promoted:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+They remain untracked and protected.
+
+### Result
+
+For current/new producer-generated fork gas evidence, executor provenance now carries both:
+
+- the exact measured executor address; and
+- the measured executor runtime code hash.
+
+Current-state execution preflight can therefore reject deployment-address substitution even when two deployments have identical runtime bytecode.
+
+This strengthens the provenance path toward a future controlled live measurement flashloan. It does not itself establish live receipt gas evidence or production gas-limit policy.
+
+### Next architectural work
+
+Before controlled live measurement, continue closing upstream acquisition/composition provenance deliberately rather than constructing current-state evidence from test fixtures.
+
+Known areas requiring deliberate ownership include account-identity acquisition and current-state constituent acquisition/composition. Existing balance/allowance semantics must not be reinterpreted as requiring pre-existing flashloan principal or external allowances contrary to the executor's actual flashloan/callback behavior.
+
+After trustworthy live execution prerequisites are complete, the intended sequence remains:
+
+controlled live measurement -> successful transaction receipt -> empirical `gasUsed` evidence -> controlled gas-evidence handoff -> evaluation of the three protected gas experiments -> evidence-based gas policy.
