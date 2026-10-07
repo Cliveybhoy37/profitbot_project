@@ -6097,3 +6097,101 @@ Remaining work:
 - orchestration of independently established current-state evidence remains future work
 - `preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state
 - controlled live execution remains a separate explicit future action
+
+## 1S.54 — Unsupported Balance/Allowance Gate Correction
+
+Status: CODE COMPLETE / TESTED / CHECKPOINT PENDING COMMIT/PUSH
+
+### Architectural finding
+
+The prior current-state execution preflight required:
+
+- `balanceAllowanceEvidence.checked === true`
+- `balanceAllowanceEvidence.sufficient === true`
+
+Repository and contract inspection established that this was an unresolved fixture-level placeholder rather than a production acquisition invariant.
+
+The deployed `ProfitBot.sol` execution semantics do not require pre-existing flashloan principal or pre-existing external DEX/Aave allowances:
+
+- `initiateFlashloan()` obtains the principal from Aave.
+- callback accounting excludes the borrowed principal from the pre-existing asset balance.
+- QuickSwap V2 and SushiSwap V2 approvals are established during execution with `forceApprove`.
+- Uniswap V3 approval is established during execution with `forceApprove`.
+- Balancer V2 approval is established during execution with `forceApprove`.
+- Aave repayment approval is established during the callback with `forceApprove(address(POOL), totalDebt)`.
+
+Git history confirmed the generic `{ checked, sufficient }` gate, its fixture, and its negative test were introduced together in `0df15e0` without concrete token, account, spender, amount, block, RPC, or acquisition semantics.
+
+Earlier checkpoints explicitly required that these fixture semantics not be reinterpreted as requiring pre-existing flashloan principal or external allowances.
+
+### 1S.54 correction
+
+Modified:
+
+- `scripts/utils/polygonV4CurrentStateExecutionPreflightEvidence.js`
+- `test/polygonV4CurrentStateExecutionPreflightEvidence.test.js`
+
+Production removes only the unsupported generic balance/allowance boolean gate.
+
+No replacement boolean or fabricated acquisition primitive was introduced.
+
+The regression test now proves that current-state execution preflight can succeed without `balanceAllowanceEvidence` while preserving the exact injected `currentStateEvidence` identity and all other established preflight requirements.
+
+Unchanged safety ownership includes:
+
+- Polygon chain identity
+- deployment executor address/code identity
+- route/amount identity
+- economics identity
+- freshness/deadline checks
+- authoritative qualification/preflight identity
+- upstream authorization remaining false
+
+1S.54 does not establish signer native-POL transaction funding. Any future signer-funding requirement must be modeled separately and precisely rather than folded into ProfitBot ERC-20 allowance semantics.
+
+### Validation
+
+Focused current-state preflight test:
+
+- 24 tests
+- 24 pass
+- 0 fail
+
+Canonical Node validation:
+
+- exit 0
+- 959 tests
+- 5 suites
+- 959 pass
+- 0 fail
+- 0 cancelled
+- 0 skipped
+- 0 todo
+
+The new regression test was explicitly discovered by the canonical runner.
+
+`git diff --check` is clean.
+
+The three protected gas experiments remain untracked and unchanged:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+No protected gas experiment was modified, staged, committed, promoted, or executed.
+
+### Remaining architecture
+
+1S.54 corrects an unsupported current-state prerequisite; it does not itself assemble full current-state evidence.
+
+Remaining work includes deliberate orchestration of independently established current-state constituents.
+
+`preflightEvidence` remains authoritative qualification-lineage identity and must not be independently reacquired merely to populate current state.
+
+Signer transaction funding, if required as a separate current-state prerequisite, remains a distinct future design question.
+
+Controlled live execution remains a separate explicit future action.
+
+The intended gas-evidence sequence remains:
+
+controlled live measurement -> successful transaction receipt -> empirical `gasUsed` evidence -> controlled gas-evidence handoff -> evaluation of the three protected gas experiments -> evidence-based gas policy.

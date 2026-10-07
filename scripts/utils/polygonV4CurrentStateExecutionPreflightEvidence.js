@@ -304,21 +304,6 @@ function buildCurrentStateExecutionPreflightEvidence({
     );
   }
 
-  const balanceAllowance =
-    requireObject(
-      current.balanceAllowanceEvidence,
-      "balanceAllowanceEvidence"
-    );
-
-  if (
-    balanceAllowance.checked !== true ||
-    balanceAllowance.sufficient !== true
-  ) {
-    throw new Error(
-      "Balance and allowance evidence must be sufficient"
-    );
-  }
-
   const qualificationResult =
     requireObject(
       qualified.qualificationResult,

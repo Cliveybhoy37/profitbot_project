@@ -758,7 +758,7 @@ test(
 );
 
 test(
-  "requires sufficient balance and allowance evidence",
+  "does not require unsupported pre-existing balance and allowance evidence",
   () => {
     const {
       buildCurrentStateExecutionPreflightEvidence
@@ -766,23 +766,27 @@ test(
 
     const fixture = makeFixture();
 
-    const invalidCurrentState = {
-      ...fixture.currentStateEvidence,
-      balanceAllowanceEvidence: {
-        checked: true,
-        sufficient: false
-      }
+    const currentStateEvidence = {
+      ...fixture.currentStateEvidence
     };
 
-    assert.throws(
-      () =>
-        buildCurrentStateExecutionPreflightEvidence({
-          readinessEvidence:
-            fixture.readinessEvidence,
-          currentStateEvidence:
-            invalidCurrentState
-        }),
-      /balance|allowance|sufficient/i
+    delete currentStateEvidence.balanceAllowanceEvidence;
+
+    const result =
+      buildCurrentStateExecutionPreflightEvidence({
+        readinessEvidence:
+          fixture.readinessEvidence,
+        currentStateEvidence
+      });
+
+    assert.equal(
+      result.currentStateEvidence,
+      currentStateEvidence
+    );
+
+    assert.equal(
+      result.currentStatePreflightReady,
+      true
     );
   }
 );
