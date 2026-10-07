@@ -5471,3 +5471,87 @@ Known areas requiring deliberate ownership include account-identity acquisition 
 After trustworthy live execution prerequisites are complete, the intended sequence remains:
 
 controlled live measurement -> successful transaction receipt -> empirical `gasUsed` evidence -> controlled gas-evidence handoff -> evaluation of the three protected gas experiments -> evidence-based gas policy.
+
+## 1S.47 — Deployed Account Identity Acquisition Evidence
+
+Status: CODE COMPLETE / TESTED / CHECKPOINT PENDING PUSH
+
+Code commit:
+- `5ecb521` — `Add deployed account identity acquisition evidence`
+
+Production:
+- `scripts/utils/polygonV4DeployedAccountIdentityAcquisitionEvidence.js`
+
+Tests:
+- `test/polygonV4DeployedAccountIdentityAcquisitionEvidence.test.js`
+
+### Purpose
+
+1S.47 introduces a narrow deployed-account identity acquisition boundary before the existing account/caller identity validation boundary.
+
+It derives the executor address only from:
+
+`currentStatePreflightEvidence.currentStateEvidence.deploymentEvidence.executorAddress`
+
+It then independently acquires:
+
+- caller address through injected `getCallerAddress`
+- deployed executor owner through injected `getExecutorOwner(executorAddress)`
+
+The exact acquired facts are preserved as frozen:
+
+`accountIdentityEvidence = { callerAddress, ownerAddress, executorAddress }`
+
+### Responsibility separation
+
+1S.47 deliberately does NOT assert caller == owner.
+
+That equality remains owned by the existing
+`buildAccountCallerIdentityEvidence()` boundary.
+
+1S.47 also does not establish signer capability. Later signer identity and capability-binding boundaries remain independently responsible for proving the actual signer/capability corresponds to the transaction caller.
+
+No signing, signer authorization, live execution authorization, transaction submission, broadcast, gas-policy selection, or protected gas-test promotion was added.
+
+### Fail-closed behavior
+
+Verified that:
+
+- non-ready current-state preflight fails before acquisition
+- upstream authorization contamination fails before acquisition
+- invalid deployed executor fails before either callback
+- invalid acquired caller fails before owner acquisition
+- invalid acquired executor owner fails after exactly one caller acquisition and one exact executor-owner lookup
+- successful acquisition calls each injected acquisition capability exactly once
+- the exact preflight-derived executor is supplied to owner acquisition
+
+### Composition
+
+Verified that acquired `accountIdentityEvidence` feeds directly into the existing account/caller identity boundary without reconstruction.
+
+A deliberately acquired caller/owner mismatch is accepted as factual acquisition by 1S.47 and then rejected by the existing account/caller identity validator, preserving boundary ownership.
+
+### Validation
+
+- focused 1S.47: 8/8 passing
+- narrow downstream acquisition/account-caller/unsigned-intent: 49/49 passing
+- canonical regression: GREEN
+- protected gas experiment files were not directly executed, modified, staged, or committed
+
+### Protected untracked gas experiments
+
+Remain outside this milestone:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+### Remaining architecture
+
+1S.47 closes the missing deployed-account identity acquisition boundary, but it does not by itself create a monolithic production orchestrator or manufacture the remaining current-state constituents.
+
+Continue read-only provenance/acquisition analysis before any controlled live measurement.
+
+Do not manufacture balance/allowance requirements that conflict with the deployed executor's flashloan semantics.
+
+A controlled live transaction remains a separate explicit future action.
