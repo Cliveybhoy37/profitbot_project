@@ -4201,3 +4201,215 @@ Do not fabricate live gas evidence from fork or simulation results.
 Do not weaken profitability, slippage, freshness, gas, reserve, protected
 output, minimum-profit, or worst-case policy to manufacture execution
 readiness.
+
+## Milestone 1S.41 — Controlled Broadcast Authorization Evidence
+
+### Code commit
+
+1S.41 implementation was committed separately as:
+
+- commit: `c4823cb`
+- subject: `Add controlled broadcast authorization evidence`
+- parent: `7a11bc7`
+- branch: `repair/simulation-safety`
+- scope: exactly `2` files and `729` insertions.
+
+Committed files:
+
+- `scripts/utils/polygonV4ControlledBroadcastAuthorizationEvidence.js`
+- `test/polygonV4ControlledBroadcastAuthorizationEvidence.test.js`
+
+### Purpose
+
+1S.41 establishes an explicit controlled-broadcast authorization evidence
+boundary after successful 1S.40 final signed transaction current-state
+validation.
+
+It is authorization evidence only.
+
+1S.41 does not submit, broadcast, rebuild, repair, modify, or re-sign the
+transaction.
+
+### Required input state
+
+1S.41 requires established 1S.40 final signed transaction current-state
+evidence with:
+
+- `finalSignedTransactionCurrentStateReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `liveExecutionAuthorized=false`;
+- `broadcastAuthorized=false`.
+
+It also requires the preserved transaction-signing lineage to remain ready
+with the expected pre-broadcast authorization state.
+
+### Immutable transaction lineage
+
+1S.41 preserves:
+
+- the 1S.40 evidence object;
+- the exact transaction envelope by object identity;
+- the signed raw transaction;
+- the signed transaction hash.
+
+It rejects transaction-envelope identity drift.
+
+It rejects signed raw transaction drift.
+
+It rejects signed transaction hash drift.
+
+It rejects invalid transaction-signing readiness or authorization state before
+controlled-broadcast authorization is requested.
+
+1S.41 does not rebuild or reinterpret the transaction and does not duplicate
+the independent cryptographic verification owned by 1S.39.
+
+### Controlled authorization boundary
+
+Controlled-broadcast authorization is supplied through the injected
+`authorizeControlledBroadcast` capability.
+
+The authorization callback receives only:
+
+- `transactionEnvelope`;
+- `signedTransactionHash`.
+
+The signed raw transaction is deliberately not supplied to the authorization
+callback.
+
+The callback must return exactly `true`.
+
+False, undefined, null, numeric, string, rejected, or thrown authorization
+results do not produce controlled-broadcast authorization evidence.
+
+Lineage validation occurs before the authorization callback is invoked.
+
+### Capability boundary
+
+The 1S.41 production module contains no provider, RPC, wallet, signing, or
+transaction-submission capability.
+
+It does not call:
+
+- `signTransaction`;
+- `sendTransaction`;
+- `sendRawTransaction`;
+- `broadcastTransaction`;
+- `eth_sendRawTransaction`.
+
+It does not obtain a private key, seed phrase, mnemonic, or environment
+credential.
+
+Successful 1S.41 authorization therefore cannot by itself move funds or submit
+the signed transaction.
+
+### Authorization state after 1S.41
+
+A successful 1S.41 result returns:
+
+- `controlledBroadcastAuthorizationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `liveExecutionAuthorized=false`;
+- `broadcastAuthorized=true`.
+
+The existing `broadcastAuthorized` flag is the controlled-broadcast
+authorization gate.
+
+No redundant second broadcast-authorization flag was introduced.
+
+Critically, `broadcastAuthorized=true` is not evidence that a transaction was
+broadcast.
+
+No transaction was submitted or broadcast as part of 1S.41.
+
+`liveExecutionAuthorized` remains false.
+
+### Validation
+
+Focused 1S.41:
+
+- `13 / 13` passing.
+
+Immediate 1S.36 through 1S.41 regression:
+
+- `77 / 77` passing.
+
+Explicit 1S.30 through 1S.41 safety lineage:
+
+- `193 / 193` passing.
+
+Canonical full repository validation:
+
+- Node: `854 / 854` passing;
+- Hardhat: `29 / 29` passing;
+- maintained total: `883 / 883` passing.
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+Solidity compilation:
+
+- Hardhat `2.24.3`;
+- Node `18.20.8`;
+- `35` Solidity files compiled successfully;
+- EVM target: `paris`;
+- only existing dependency SPDX warnings were observed.
+
+Generated `artifacts/` and `cache/` changes from canonical testing were restored
+before the 1S.41 code commit.
+
+Final 1S.41 code commit scope remained exactly the two intended files.
+
+### Protected gas experiments
+
+The following experimental tests remain untracked and protected:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Their verified SHA-256 hashes remain:
+
+- `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+They were not executed, modified, staged, committed, or promoted as part of
+1S.41.
+
+No arbitrary gas margin, multiplier, percentage margin, fixed buffer, or
+protected experimental gas constant has been promoted into the execution
+lineage.
+
+### Next boundary
+
+Actual controlled transaction submission remains a separate future execution
+boundary.
+
+1S.41 authorization must not be interpreted as transaction submission or as
+unrestricted production execution readiness.
+
+The intended first live transaction remains a deliberately controlled
+measurement flashloan.
+
+Its purpose is to obtain empirical live receipt evidence including:
+
+- transaction hash;
+- block number;
+- receipt status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+Only after a separately reviewed successful live receipt exists should the
+protected gas experiments be evaluated for possible production relevance.
+
+Do not fabricate live gas evidence from fork or simulation results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
