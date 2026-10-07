@@ -5904,3 +5904,94 @@ Remaining work:
 - continue provenance-first decisions for route/amount evidence, economics evidence, balance/allowance semantics, and orchestration of independently established current-state evidence
 - `preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state
 - controlled live execution remains a separate explicit future action
+
+## 1S.52 — Current Route/Amount Evidence Composition
+
+Status:
+- code complete and locally committed
+- code commit: `4491de0`
+- checkpoint/push pending
+
+Production:
+- `scripts/utils/polygonV4CurrentRouteAmountEvidenceComposition.js`
+
+Test:
+- `test/polygonV4CurrentRouteAmountEvidenceComposition.test.js`
+
+Purpose:
+- compose current route/amount evidence from the already-established prepared execution context
+- preserve exact upstream route and amount identities without reacquisition or reinterpretation
+
+Input authority:
+- `preparedExecutionContext`
+- prepared candidate is the route/amount candidate authority
+- prepared execution legs are preserved by exact identity
+- prepared execution plan is preserved by exact identity
+- `amountIn` is derived only from the exact `preparedExecutionContext.candidate.amountIn`
+
+Successful evidence:
+- frozen `routeAmountEvidence`
+- exact fields:
+  - `candidate`
+  - `executionLegs`
+  - `executionPlan`
+  - `amountIn`
+- frozen result with `currentRouteAmountEvidenceCompositionReady: true`
+
+Identity semantics:
+- candidate is not cloned
+- execution legs are not cloned
+- execution plan is not reconstructed
+- amount is not independently supplied
+- opaque upstream `amountIn` semantics are preserved
+- unrelated prepared-context fields are not copied
+
+Policy ownership:
+- 1S.52 does not independently consult `qualifiedContext`
+- current-state execution preflight remains responsible for cross-lineage candidate and execution-leg identity checks
+- current-state execution preflight remains responsible for execution-plan identity against established readiness evidence
+- upstream preparation/qualification remains responsible for deeper route, leg, plan, deadline, and economic validation
+
+Explicit exclusions:
+- no RPC or chain acquisition
+- no route discovery or reconstruction
+- no quote or price refresh
+- no route optimization
+- no independent amount selection
+- no economics or gas-policy calculation
+- no qualification or preflight duplication
+- no signing, authorization, submission, broadcast, or live execution
+- no protected gas-experiment execution or modification
+
+Verification:
+- RED established solely by missing production module
+- initial GREEN: 1/1
+- hardened focused suite: 7/7 pass
+- canonical Node: 953/953 pass, 0 fail
+- canonical discovery explicitly included the 1S.52 suite
+- production and test syntax checks clean
+- `git diff --check` clean
+- Hardhat not rerun because this is an isolated Node utility/test boundary with no contract or Hardhat integration change
+
+Protected gas experiments remained untracked and unchanged:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+  SHA-256 `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  SHA-256 `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+  SHA-256 `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+Current-state provenance/composition now independently establishes:
+- chain identity via 1S.48
+- verified deployment address via 1S.49
+- current deployment code identity via 1S.50
+- current chain timestamp via 1S.51
+- current route/amount evidence composition via 1S.52
+
+Remaining work:
+- 1S.52 does not establish full current executable readiness
+- economics evidence remains to be handled without recalculating or reinterpreting established qualification economics
+- balance/allowance semantics remain unresolved and must not be manufactured from fixture semantics
+- orchestration of independently established current-state evidence remains future work
+- `preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state
+- controlled live execution remains a separate explicit future action
