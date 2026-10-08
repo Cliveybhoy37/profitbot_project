@@ -7123,3 +7123,63 @@ Next:
 - stage only the exact 1S.68 production file, test file, and checkpoint
 - verify protected gas experiments remain unstaged
 - commit and push only after staged-diff verification
+
+## 1S.69 — Signer Capability Binding Composition Evidence
+
+Status: implementation, focused tests, and canonical validation complete; commit/push pending.
+
+Added:
+- `scripts/utils/polygonV4SignerCapabilityBindingCompositionEvidence.js`
+- `test/polygonV4SignerCapabilityBindingCompositionEvidence.test.js`
+
+Boundary:
+- consumes completed 1S.68 signing authorization composition evidence
+- requires the outer composition and contained signing authorization evidence to be ready
+- preserves the exact established signing authorization evidence
+- passes injected `getSignerCapabilityAddress` through to established `acquireSignerCapabilityBindingEvidence`
+- established 1S.38 owns signer/envelope identity validation, capability-address acquisition, normalization, and exact identity matching
+- capability-address callback is invoked with no arguments
+- successful evidence advances `signerCapabilityBindingReady` to true
+- `signerAuthorized` and `signingAuthorized` remain true
+- `liveExecutionAuthorized` and `broadcastAuthorized` remain false
+- no signer object, key material, or wallet secret is acquired
+- no transaction signing, raw signed transaction creation, submission, broadcast, or live-execution authorization is performed
+
+Focused validation:
+- initial RED was solely `MODULE_NOT_FOUND`
+- minimal implementation GREEN 1/1
+- hardened focused suite GREEN 7/7
+- outer composition/object readiness fails closed
+- contained signing authorization/object readiness fails closed
+- signer-capability identity mismatch propagates after exactly one capability-address acquisition
+- upstream capability-binding contamination fails before capability acquisition
+- successful evidence preserves exact upstream signing-authorization and transaction-envelope identities
+- production boundary audit found no direct signing, secret, RPC, submission, or broadcast ownership
+- `git diff --check` clean
+
+Evidence limits:
+- capability-address callback in tests is synthetic
+- `signerCapabilityBindingReady: true` proves only that the acquired capability address matches the already-authorized signer identity
+- capability binding is not transaction signing and does not prove that a signature or raw signed transaction exists
+- no private key, seed phrase, mnemonic, wallet secret, or raw signed transaction is acquired
+- no transaction is signed, submitted, or broadcast
+
+Protected gas experiments remain untracked, unstaged, unmodified, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Canonical validation:
+- `npm run test:node` RC 0
+- 1058 tests / 1058 pass
+- 9 suites
+- 0 fail / 0 cancelled / 0 skipped / 0 todo
+- exact +7 tests from the 1051 baseline
+- all seven 1S.69 focused cases explicitly discovered
+- protected gas experiment names absent from canonical discovery
+- Hardhat was not rerun
+
+Next:
+- stage only the exact 1S.69 production file, test file, and checkpoint
+- verify protected gas experiments remain unstaged
+- commit and push only after staged-diff verification
