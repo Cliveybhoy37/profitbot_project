@@ -6904,3 +6904,54 @@ Next:
 - Stage only the checkpoint and two 1S.64 files.
 - Verify protected experiments remain unstaged.
 - Commit, push, and verify synchronization before declaring 1S.64 durably closed.
+
+## 1S.65 — Current Transaction Pre-Send Simulation Acquisition Composition Evidence
+
+Status: implementation, focused tests, and canonical validation complete; commit/push pending.
+
+Added:
+- `scripts/utils/polygonV4CurrentTransactionPreSendSimulationAcquisitionCompositionEvidence.js`
+- `test/polygonV4CurrentTransactionPreSendSimulationAcquisitionCompositionEvidence.test.js`
+
+Boundary:
+- consumes the completed 1S.64 current transaction envelope composition evidence
+- requires the outer composition and contained envelope evidence to be ready
+- preserves the exact established envelope evidence
+- delegates to the established `acquireCurrentTransactionPreSendSimulationEvidence`
+- does not duplicate the seven-field `provider.call` projection
+- established acquisition owns the single read-only simulation call and upstream correspondence validation
+- no signing, signer authorization, live-execution authorization, submission, or broadcast is introduced
+
+Focused validation:
+- initial RED was solely `MODULE_NOT_FOUND`
+- minimal implementation GREEN 1/1
+- hardened focused suite GREEN 7/7
+- exact seven-field simulation projection verified through delegation
+- provider simulation failure propagates without authorization advancement
+- `git diff --check` clean
+
+Evidence limits:
+- test simulation results are synthetic fixtures only
+- no live Polygon simulation result is claimed
+- current estimate/selected gas/envelope gas limit remains distinct from empirical receipt `gasUsed`
+- no gas multiplier, buffer, or gas policy is introduced
+
+Protected gas experiments remain untracked, unstaged, unmodified, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Canonical validation:
+- `npm run test:node` RC 0
+- 1030 tests / 1030 pass
+- 9 suites
+- 0 fail / 0 cancelled / 0 skipped / 0 todo
+- exact +7 tests from the 1023 baseline
+- all seven 1S.65 focused cases explicitly discovered
+- protected gas experiment names absent from canonical discovery
+- Hardhat was not rerun
+
+Next:
+- stage only the exact 1S.65 production file, test file, and checkpoint
+- verify protected gas experiments remain unstaged
+- commit and push only after staged-diff verification
