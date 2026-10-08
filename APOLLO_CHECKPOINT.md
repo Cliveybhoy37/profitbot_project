@@ -6955,3 +6955,57 @@ Next:
 - stage only the exact 1S.65 production file, test file, and checkpoint
 - verify protected gas experiments remain unstaged
 - commit and push only after staged-diff verification
+
+## 1S.66 — Prospective Signer Identity Acquisition Composition Evidence
+
+Status: implementation, focused tests, and canonical validation complete; commit/push pending.
+
+Added:
+- `scripts/utils/polygonV4ProspectiveSignerIdentityAcquisitionCompositionEvidence.js`
+- `test/polygonV4ProspectiveSignerIdentityAcquisitionCompositionEvidence.test.js`
+
+Boundary:
+- consumes completed 1S.65 pre-send simulation acquisition composition evidence
+- requires the outer composition and contained pre-send simulation evidence to be ready
+- preserves the exact established pre-send simulation evidence
+- passes injected `getSignerAddress` through to the established `acquireProspectiveSignerIdentityEvidence`
+- established 1S.35 acquisition owns signer-address normalization and exact comparison with transaction envelope `from`
+- signer address mismatch fails closed
+- no independent address comparison is duplicated in the composition wrapper
+- no signer authorization, signing, submission, broadcast, or live-execution authorization is introduced
+
+Focused validation:
+- initial RED was solely `MODULE_NOT_FOUND`
+- minimal implementation GREEN 1/1
+- hardened focused suite GREEN 7/7
+- signer-address mismatch propagates after exactly one acquisition
+- not-ready composition/simulation fails before signer acquisition
+- successful evidence retains live/signer/broadcast authorization false
+- composition wrapper exposes no authorization flags of its own
+- `git diff --check` clean
+
+Evidence limits:
+- injected signer callback in tests is synthetic
+- no wallet secrets, private keys, seed phrases, or signing capability are acquired
+- signer identity evidence is not signer authorization
+- no transaction is signed, submitted, or broadcast
+
+Protected gas experiments remain untracked, unstaged, unmodified, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Canonical validation:
+- `npm run test:node` RC 0
+- 1037 tests / 1037 pass
+- 9 suites
+- 0 fail / 0 cancelled / 0 skipped / 0 todo
+- exact +7 tests from the 1030 baseline
+- all seven 1S.66 focused cases explicitly discovered
+- protected gas experiment names absent from canonical discovery
+- Hardhat was not rerun
+
+Next:
+- stage only the exact 1S.66 production file, test file, and checkpoint
+- verify protected gas experiments remain unstaged
+- commit and push only after staged-diff verification
