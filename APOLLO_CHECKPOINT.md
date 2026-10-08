@@ -6533,3 +6533,79 @@ No hard-coded caller/owner/executor identity, direct RPC acquisition, deployment
 
 ### Next
 Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.58 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.58 durably closed.
+
+## 1S.59 — Account/Caller Identity Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.58 deployed-account identity acquisition composition into the established account/caller identity validation boundary without duplicating identity correspondence or authorization semantics.
+
+### Production
+- `scripts/utils/polygonV4AccountCallerIdentityCompositionEvidence.js`
+- API:
+  `buildAccountCallerIdentityCompositionEvidence({ deployedAccountIdentityAcquisitionCompositionEvidence })`
+
+### Test
+- `test/polygonV4AccountCallerIdentityCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `deployedAccountIdentityAcquisitionCompositionEvidence` to be an object.
+- Requires `deployedAccountIdentityAcquisitionCompositionReady === true`.
+- Requires the contained deployed-account acquisition evidence to be an object.
+- Requires `deployedAccountIdentityAcquisitionReady === true`.
+- Extracts the exact `currentStatePreflightEvidence` and exact `accountIdentityEvidence` from the established acquisition evidence.
+- Passes those exact objects into the established `buildAccountCallerIdentityEvidence(...)` validator.
+- Preserves the exact 1S.58 composition wrapper identity.
+- Preserves the returned account/caller identity evidence rather than reconstructing it.
+- Returns a frozen wrapper containing:
+  - `deployedAccountIdentityAcquisitionCompositionEvidence`
+  - `accountCallerIdentityEvidence`
+  - `accountCallerIdentityCompositionReady: true`
+
+### Validation ownership
+The established account/caller identity validator remains authoritative for:
+- validating caller, owner, and executor addresses;
+- requiring caller identity to match the deployed ProfitBot owner;
+- requiring acquired account executor identity to match the deployed executor identity;
+- preserving current-state preflight and account identity evidence;
+- keeping live, signer, and broadcast authorization false.
+
+1S.59 does not duplicate those correspondence decisions.
+
+### Authorization boundary
+The 1S.59 wrapper does not introduce:
+- `liveExecutionAuthorized`
+- `signerAuthorized`
+- `broadcastAuthorized`
+
+The delegated account/caller identity evidence remains explicitly:
+- `liveExecutionAuthorized: false`
+- `signerAuthorized: false`
+- `broadcastAuthorized: false`
+
+1S.59 therefore does not authorize signing, broadcast, submission, or live execution.
+
+### Non-goals
+No account acquisition, RPC access, hard-coded wallet or executor identity, duplicated caller/owner comparison, duplicated executor/deployment comparison, prospective-signer validation, unsigned transaction construction, gas calculation or policy, signing, submission, broadcast, live execution, or protected gas-experiment integration.
+
+### Validation
+- Behavioral RED: 0/1 passed; failed solely with expected `MODULE_NOT_FOUND` for the new production module.
+- Minimal production implementation GREEN: 1/1.
+- Hardened focused suite: 7/7 passed.
+- Hardened tests prove caller/owner mismatch rejection is propagated from the established validator.
+- Hardened tests prove executor/deployment mismatch rejection is propagated from the established validator.
+- Production and test syntax checks passed.
+- `git diff --check` clean before canonical.
+- Protected gas experiment tracked diff empty.
+- Canonical `npm run test:node`: RC 0.
+- Seven 1S.59 tests explicitly discovered as top-level tests `ok 139` through `ok 145`.
+- Canonical totals: 988 tests, 9 suites, 988 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 981 tests; the seven 1S.59 tests account exactly for the increase to 988.
+- A subsequent accidental second canonical invocation was interrupted with Ctrl+C; the already-completed successful canonical result above remains authoritative.
+- Post-interrupt `git diff --check` remained clean and repository status remained unchanged.
+- Hardhat was not rerun because 1S.59 is an isolated Node composition boundary.
+- Protected gas experiments were not promoted or executed as part of 1S.59.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.59 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.59 durably closed.
