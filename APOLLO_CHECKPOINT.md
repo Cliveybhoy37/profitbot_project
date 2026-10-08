@@ -6678,3 +6678,78 @@ No RPC acquisition, route discovery, quote refresh, amount selection, calldata r
 
 ### Next
 Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.60 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.60 durably closed.
+
+## 1S.61 — Current Transaction Parameter Acquisition Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.60 unsigned exact transaction intent composition into the established current transaction parameter acquisition boundary without duplicating RPC acquisition, nonce validation, fee validation, or transaction-intent correspondence checks.
+
+### Production
+- `scripts/utils/polygonV4CurrentTransactionParameterAcquisitionCompositionEvidence.js`
+- API:
+  `buildCurrentTransactionParameterAcquisitionCompositionEvidence({ unsignedExactTransactionIntentCompositionEvidence, provider })`
+
+### Test
+- `test/polygonV4CurrentTransactionParameterAcquisitionCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `unsignedExactTransactionIntentCompositionEvidence` to be an object.
+- Requires `unsignedExactTransactionIntentCompositionReady === true`.
+- Requires the contained `unsignedTransactionIntentEvidence` to be an object.
+- Requires `unsignedTransactionIntentReady === true`.
+- Passes the exact established unsigned transaction intent evidence and injected provider into `acquireCurrentTransactionParameterEvidence(...)`.
+- Preserves the exact 1S.60 composition wrapper identity.
+- Preserves the exact acquired current transaction parameter evidence.
+- Returns a frozen wrapper containing:
+  - `unsignedExactTransactionIntentCompositionEvidence`
+  - `currentTransactionParameterEvidence`
+  - `currentTransactionParameterAcquisitionCompositionReady: true`
+
+### Acquisition and validation ownership
+The established current transaction parameter acquisition remains authoritative for:
+- preserved account/caller and current-state preflight readiness;
+- upstream authorization remaining false;
+- candidate, execution-leg, and execution-plan identity correspondence;
+- transaction `from` correspondence with the preserved caller;
+- transaction `to` correspondence with the preserved executor;
+- transaction intent data and zero-value validation;
+- provider capability validation;
+- fresh `getNetwork()` acquisition and exact Polygon chain ID 137 validation;
+- exact pending nonce acquisition via `getTransactionCount(transactionIntent.from, "pending")`;
+- current `getFeeData()` acquisition;
+- positive EIP-1559 `maxFeePerGas` and `maxPriorityFeePerGas`;
+- `maxFeePerGas >= maxPriorityFeePerGas`.
+
+The 1S.61 wrapper makes no RPC calls itself and introduces no nonce or fee policy.
+
+### Authorization boundary
+The 1S.61 wrapper introduces no live, signer, or broadcast authorization fields.
+The delegated current transaction parameter evidence remains explicitly unauthorized for live execution, signing, and broadcast.
+
+### Non-goals
+No historical nonce or fee reuse, fee multiplier, fee buffer, gas estimation, gas-limit selection, signer acquisition, signing, submission, broadcast, live execution, gas policy, or protected gas-experiment integration.
+
+Synthetic nonce `7` and fee values `100` / `10` used by focused tests are test fixtures only and are not current Polygon transaction parameters or production fee policy.
+
+### Validation
+- Behavioral RED: 0/1, failing solely with expected `MODULE_NOT_FOUND` for the new production module.
+- Minimal production implementation GREEN: 1/1.
+- Hardened focused suite: 7/7 passed.
+- Wrong-chain rejection is propagated from the established parameter acquisition and stops before nonce/fee acquisition.
+- Invalid pending nonce rejection is propagated and stops before fee acquisition.
+- Successful focused acquisition calls `getNetwork`, `getTransactionCount`, and `getFeeData` exactly once each through the established acquisition boundary.
+- Production and test syntax checks passed.
+- `git diff --check` clean.
+- Production audit confirms no direct RPC methods, fee arithmetic, nonce manipulation, signing, submission, or authorization advancement in the 1S.61 wrapper.
+- Canonical `npm run test:node`: RC 0.
+- Seven 1S.61 tests explicitly discovered as top-level tests `ok 345` through `ok 351`.
+- Canonical totals: 1002 tests, 9 suites, 1002 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 995 tests; seven 1S.61 tests account exactly for the increase to 1002.
+- Protected gas experiment names did not appear in canonical output.
+- Hardhat was not rerun.
+- Protected gas experiments were not staged, promoted, or executed.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.61 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.61 durably closed.
