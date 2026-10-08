@@ -6385,3 +6385,74 @@ Next:
 - After 1S.56 is durably closed, reassess whether the next boundary should
   be broader current-state orchestration; do not automatically build one
   without first reviewing ownership and remaining evidence gaps.
+
+## 1S.57 — Current-State Preflight Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.56 current-state evidence composition into the already-established current-state execution preflight boundary without reacquiring, reconstructing, or duplicating current-state semantics.
+
+### Production
+- `scripts/utils/polygonV4CurrentStatePreflightCompositionEvidence.js`
+- API:
+  `buildCurrentStatePreflightCompositionEvidence({ readinessEvidence, currentStateEvidenceComposition })`
+
+### Test
+- `test/polygonV4CurrentStatePreflightCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `readinessEvidence` to be an object.
+- Requires `currentStateEvidenceComposition` to be an object.
+- Requires `currentStateEvidenceComposition.currentStateEvidenceCompositionReady === true`.
+- Requires the composed `currentStateEvidence` to be an object.
+- Passes the exact readiness evidence and exact composed current-state evidence into the established `buildCurrentStateExecutionPreflightEvidence(...)` boundary.
+- Preserves the exact 1S.56 composition wrapper identity.
+- Preserves the established returned current-state preflight evidence rather than reconstructing it.
+- Returns a frozen wrapper with exactly:
+  - `currentStateEvidenceComposition`
+  - `currentStatePreflightEvidence`
+  - `currentStatePreflightCompositionReady: true`
+
+### Ownership
+The existing current-state execution preflight remains authoritative for:
+- execution-readiness provenance;
+- authorization remaining false;
+- Polygon chain identity;
+- deployment executor/code identity correspondence;
+- route/amount identity;
+- economics identity;
+- freshness and expiry;
+- qualification state;
+- authoritative qualification-preflight identity.
+
+1S.57 does not duplicate those validations.
+
+### Authorization boundary
+1S.57 does not introduce `liveExecutionAuthorized`, `signerAuthorized`, or `broadcastAuthorized` fields on its wrapper.
+The underlying established current-state preflight remains explicitly:
+- `liveExecutionAuthorized: false`
+- `signerAuthorized: false`
+- `broadcastAuthorized: false`
+
+1S.57 therefore does not authorize signing, broadcast, submission, or live execution.
+
+### Non-goals
+No RPC acquisition, chain/code/timestamp reacquisition, route discovery, amount selection, economics recalculation, gas calculation or policy, balance/allowance placeholder, signing, submission, broadcast, live execution, or protected gas-experiment integration.
+
+### Validation
+- Initial RED: 1/1 failed solely with expected `MODULE_NOT_FOUND`.
+- Initial minimal implementation GREEN: 1/1.
+- Hardened focused suite: 5/5 passed.
+- Production and test syntax checks passed.
+- `git diff --check` clean before canonical.
+- Protected gas experiment tracked diff empty.
+- Canonical `npm run test:node`: RC 0.
+- 1S.57 explicitly discovered as top-level suite `ok 276`.
+- Canonical totals: 976 tests, 9 suites, 976 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 971 tests; the five 1S.57 tests account exactly for the increase to 976.
+- Hardhat was not rerun because 1S.57 is an isolated Node composition boundary.
+- Protected gas experiments were not promoted or executed as part of 1S.57.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.57 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.57 durably closed.
