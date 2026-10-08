@@ -7345,3 +7345,84 @@ Next:
 - Inspect and stage only this checkpoint plus the two 1S.71 files.
 - Do not stage or execute the protected gas experiments.
 - After commit/push/sync, perform read-only discovery before defining the next composition boundary.
+
+## 1S.72 — Controlled Broadcast Authorization Composition Evidence
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Objective:
+- Compose established 1S.71 final signed transaction current-state validation evidence into established 1S.41 controlled broadcast authorization.
+- Grant only explicit controlled broadcast authorization.
+- Do not submit or broadcast the signed transaction.
+- Do not grant live execution authorization.
+
+Production:
+- `scripts/utils/polygonV4ControlledBroadcastAuthorizationCompositionEvidence.js`
+- API:
+  `buildControlledBroadcastAuthorizationCompositionEvidence({ finalSignedTransactionCurrentStateValidationCompositionEvidence, authorizeControlledBroadcast })`
+- Requires the 1S.71 composition object and `finalSignedTransactionCurrentStateValidationCompositionReady === true`.
+- Requires contained `finalSignedTransactionCurrentStateEvidence` and `finalSignedTransactionCurrentStateReady === true`.
+- Delegates the exact final current-state evidence and authorization callback to:
+  `acquireControlledBroadcastAuthorizationEvidence`.
+- Returns a frozen composition wrapper containing the exact upstream composition, established controlled broadcast authorization evidence, and:
+  `controlledBroadcastAuthorizationCompositionReady: true`.
+- The wrapper owns no provider/RPC, signing, submission, receipt, or live-execution capability.
+
+Established 1S.41 behavior preserved:
+- Requires final signed transaction current-state evidence ready.
+- Requires signer and signing authorization to remain true.
+- Requires upstream live execution and broadcast authorization to remain false.
+- Revalidates exact transaction signing lineage.
+- Invokes `authorizeControlledBroadcast` exactly through the established primitive.
+- Authorization callback receives only:
+  `transactionEnvelope` and `signedTransactionHash`.
+- The callback does not receive `signedRawTransaction`.
+- Authorization must return exactly `true`.
+- Successful evidence sets:
+  `controlledBroadcastAuthorizationReady: true`,
+  `broadcastAuthorized: true`,
+  `liveExecutionAuthorized: false`.
+- Broadcast authorization is permission only; no transaction is submitted.
+
+Tests:
+- `test/polygonV4ControlledBroadcastAuthorizationCompositionEvidence.test.js`
+- RED: 1 test / 0 pass / 1 fail / RC 1 solely because the production composition module was absent (`MODULE_NOT_FOUND`).
+- Minimal GREEN: 1/1, RC 0.
+- Hardened focused: 7/7, RC 0.
+- Composition tests cover:
+  - successful exact bridge without submission or live execution,
+  - outer composition object requirement,
+  - outer composition readiness,
+  - contained final-state evidence object requirement,
+  - contained final-state readiness,
+  - rejection when authorization does not return exactly true,
+  - propagation of authorization callback failure after exactly one invocation.
+- Successful-path test proves the authorization callback receives exactly the transaction envelope and signed transaction hash, not the raw signed transaction.
+
+Canonical:
+- `npm run test:node`
+- Baseline before 1S.72: 1072 tests.
+- Result: 1079 tests / 1079 pass / 0 fail / 9 suites / RC 0.
+- Exact increase: +7.
+- All seven 1S.72 tests explicitly discovered.
+- Protected gas experiment names absent from canonical discovery.
+- `git diff --check` clean.
+- Hardhat not rerun because this boundary changes only JavaScript composition/authorization and makes no Solidity change.
+
+Security boundary:
+- `broadcastAuthorized: true` does not mean broadcast occurred.
+- No raw signed transaction is exposed to the authorization callback.
+- No provider/RPC call is owned by the 1S.72 composition wrapper.
+- No `sendTransaction`, raw transaction submission, receipt acquisition, or waiting occurs.
+- `liveExecutionAuthorized` remains false.
+- No gas policy or empirical gas evidence is introduced.
+
+Protected untracked gas experiments remain untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Inspect and stage only this checkpoint plus the two 1S.72 files.
+- Do not stage or execute the protected gas experiments.
+- After commit/push/sync, perform read-only discovery before defining the next composition boundary.
