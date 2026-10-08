@@ -7508,3 +7508,79 @@ Next:
 - Inspect and stage only this checkpoint plus the two 1S.73 files.
 - Do not stage or execute the protected gas experiments.
 - After commit/push/sync, perform read-only discovery before defining the next composition boundary.
+
+## 1S.74 — Immediate Pre-Submission Validation Composition Evidence
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Objective:
+- Compose established 1S.73 controlled live execution authorization composition evidence into established 1S.43 immediate pre-submission validation.
+- Preserve exact authorized transaction lineage while performing immediate current-state validation.
+- Do not submit or broadcast the signed transaction.
+
+Production:
+- `scripts/utils/polygonV4ImmediatePreSubmissionValidationCompositionEvidence.js`
+- API:
+  `buildImmediatePreSubmissionValidationCompositionEvidence({ controlledLiveExecutionAuthorizationCompositionEvidence, provider })`
+- Requires the 1S.73 composition object and `controlledLiveExecutionAuthorizationCompositionReady === true`.
+- Requires contained `controlledLiveExecutionAuthorizationEvidence` and `controlledLiveExecutionAuthorizationReady === true`.
+- Delegates the exact contained live-execution authorization evidence and provider to:
+  `validateImmediatePreSubmissionEvidence`.
+- Returns a frozen composition wrapper containing:
+  - exact upstream 1S.73 composition,
+  - established immediate pre-submission validation evidence,
+  - `immediatePreSubmissionValidationCompositionReady: true`.
+- The wrapper itself implements no provider/RPC or transaction-submission primitive.
+
+Established 1S.43 behavior preserved:
+- Requires controlled live execution authorization readiness.
+- Requires signer, signing, broadcast, and live-execution authorization true.
+- Preserves exact transaction envelope, signed raw transaction, and signed transaction hash lineage.
+- Reacquires current network and requires Polygon chain ID 137.
+- Reacquires exact pending nonce and requires it to match the signed transaction nonce.
+- Repeats the established seven-field `provider.call` projection.
+- Returns `immediatePreSubmissionValidationReady: true` only after successful current-state validation.
+- Performs validation only; it does not submit or broadcast the transaction and does not acquire a receipt.
+
+Tests:
+- `test/polygonV4ImmediatePreSubmissionValidationCompositionEvidence.test.js`
+- RED: 1 test / 0 pass / 1 fail / RC 1 solely because the production composition module was absent (`MODULE_NOT_FOUND`).
+- Minimal GREEN: 1/1, RC 0.
+- Hardened focused: 7/7, RC 0.
+- Composition tests cover:
+  - successful exact bridge without transaction submission,
+  - outer composition object requirement,
+  - outer composition readiness,
+  - contained live-execution authorization evidence object requirement,
+  - contained live-execution authorization readiness,
+  - delegation of provider validation failure to established 1S.43,
+  - propagation of established provider failure without submission.
+- Deeper chain, nonce, transaction-artifact, and simulation invariants remain owned by established 1S.43 and are not duplicated in the composition wrapper.
+
+Canonical:
+- `npm run test:node`
+- Baseline before 1S.74: 1086 tests.
+- Result: 1093 tests / 1093 pass / 0 fail / 9 suites / RC 0.
+- Exact increase: +7.
+- All seven 1S.74 tests explicitly discovered.
+- Protected gas experiment names absent from canonical discovery.
+- Wrapper submission audit empty.
+- `git diff --check` clean.
+- Hardhat not rerun because this change is JavaScript composition only and makes no Solidity change.
+
+Security boundary:
+- Immediate pre-submission validation performs current-state RPC validation through established 1S.43.
+- The 1S.74 wrapper passes the provider through but does not implement RPC operations itself.
+- Successful validation does not mean the transaction was submitted, broadcast, mined, or executed.
+- No transaction submission, receipt acquisition, or waiting capability is introduced.
+- No gas policy or empirical gas evidence is introduced.
+
+Protected untracked gas experiments remain untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Inspect and stage only this checkpoint plus the two 1S.74 files.
+- Do not stage or execute the protected gas experiments.
+- After commit/push/sync, perform read-only discovery before defining the next composition boundary.
