@@ -7066,3 +7066,60 @@ Next:
 - stage only the exact 1S.67 production file, test file, and checkpoint
 - verify protected gas experiments remain unstaged
 - commit and push only after staged-diff verification
+
+## 1S.68 — Signing Authorization Composition Evidence
+
+Status: implementation, focused tests, and canonical validation complete; commit/push pending.
+
+Added:
+- `scripts/utils/polygonV4SigningAuthorizationCompositionEvidence.js`
+- `test/polygonV4SigningAuthorizationCompositionEvidence.test.js`
+
+Boundary:
+- consumes completed 1S.67 signer authorization composition evidence
+- requires the outer composition and contained signer authorization evidence to be ready
+- preserves the exact established signer authorization evidence
+- passes injected `authorizeTransactionSigning` through to established `acquireSigningAuthorizationEvidence`
+- established 1S.37 owns signer/envelope identity comparison and exact-true signing-authorization semantics
+- successful authorization advances `signingAuthorized` to true
+- `signerAuthorized` remains true
+- `liveExecutionAuthorized` and `broadcastAuthorized` remain false
+- no signer capability is acquired or bound
+- no transaction signing, raw signed transaction creation, submission, broadcast, or live-execution authorization is performed
+
+Focused validation:
+- initial RED was solely `MODULE_NOT_FOUND`
+- minimal implementation GREEN 1/1
+- hardened focused suite GREEN 7/7
+- outer composition/object readiness fails closed
+- contained signer authorization/object readiness fails closed
+- explicit signing-authorization denial propagates after exactly one callback
+- upstream signing-authorization contamination fails before callback
+- successful evidence preserves the distinction between signing authorization and actual signing
+- `git diff --check` clean
+
+Evidence limits:
+- authorization callback in tests is synthetic
+- `signingAuthorized: true` is authorization to perform a later signing operation, not proof that signing occurred
+- no signer capability, wallet secret, private key, seed phrase, or raw signed transaction is acquired
+- no transaction is signed, submitted, or broadcast
+
+Protected gas experiments remain untracked, unstaged, unmodified, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Canonical validation:
+- `npm run test:node` RC 0
+- 1051 tests / 1051 pass
+- 9 suites
+- 0 fail / 0 cancelled / 0 skipped / 0 todo
+- exact +7 tests from the 1044 baseline
+- all seven 1S.68 focused cases explicitly discovered
+- protected gas experiment names absent from canonical discovery
+- Hardhat was not rerun
+
+Next:
+- stage only the exact 1S.68 production file, test file, and checkpoint
+- verify protected gas experiments remain unstaged
+- commit and push only after staged-diff verification
