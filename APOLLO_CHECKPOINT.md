@@ -7275,3 +7275,73 @@ Inspect checkpoint diff and 1S.70 diff, then stage exactly:
 - `test/polygonV4ExactTransactionSigningCompositionEvidence.test.js`
 
 Do not stage the protected gas experiments.
+
+## 1S.71 — Final Signed Transaction Current-State Validation Composition Evidence
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Objective:
+- Compose the established 1S.70 exact transaction signing evidence into the established 1S.40 final signed transaction current-state validator.
+- Preserve the exact already-signed transaction evidence while reacquiring current chain/nonce/final-call state through the established validator.
+- Do not re-sign, submit, broadcast, or grant live execution authorization.
+
+Production:
+- `scripts/utils/polygonV4FinalSignedTransactionCurrentStateValidationCompositionEvidence.js`
+- API:
+  `buildFinalSignedTransactionCurrentStateValidationCompositionEvidence({ exactTransactionSigningCompositionEvidence, provider })`
+- Requires the 1S.70 composition object and `exactTransactionSigningCompositionReady === true`.
+- Requires contained `exactTransactionSigningEvidence` and `transactionSigningReady === true`.
+- Delegates the exact signing evidence and provider to:
+  `validateFinalSignedTransactionCurrentStateEvidence`.
+- Returns a frozen composition wrapper containing the exact upstream composition, established final current-state evidence, and:
+  `finalSignedTransactionCurrentStateValidationCompositionReady: true`.
+- The wrapper performs no direct provider calls and owns no signing, submission, broadcast, or live-execution capability.
+
+Established 1S.40 behavior preserved:
+- Reacquires current network and requires Polygon chain ID 137.
+- Reacquires exact pending nonce and rejects nonce drift.
+- Performs the final seven-field `provider.call` projection.
+- Preserves exact transaction envelope, signed raw transaction, and signed transaction hash.
+- Returns `finalSignedTransactionCurrentStateReady: true`.
+- Preserves `signerAuthorized: true` and `signingAuthorized: true`.
+- Keeps `liveExecutionAuthorized: false` and `broadcastAuthorized: false`.
+
+Tests:
+- `test/polygonV4FinalSignedTransactionCurrentStateValidationCompositionEvidence.test.js`
+- RED: 1 test / 0 pass / 1 fail / RC 1 solely because the production composition module was absent (`MODULE_NOT_FOUND`).
+- Minimal GREEN: 1/1, RC 0.
+- Hardened focused: 7/7, RC 0.
+- Composition tests cover:
+  - successful exact bridge without authorization escalation,
+  - outer composition object requirement,
+  - outer composition readiness,
+  - contained signing evidence object requirement,
+  - contained signing evidence readiness,
+  - delegated wrong-chain fail-closed ordering,
+  - delegated pending-nonce-drift fail-closed ordering.
+- Synthetic/local wallet signing is used only to construct legitimate upstream test evidence; no real credentials or network submission are used.
+
+Canonical:
+- `npm run test:node`
+- Baseline before 1S.71: 1065 tests.
+- Result: 1072 tests / 1072 pass / 0 fail / 9 suites / RC 0.
+- Exact delta: +7.
+- Protected gas experiment names absent from canonical discovery.
+- Hardhat not rerun because this boundary changes only JavaScript composition around the already-tested 1S.40 validator and makes no Solidity change.
+
+Security boundary:
+- 1S.71 does not sign or re-sign.
+- 1S.71 does not submit or broadcast.
+- 1S.71 does not authorize live execution.
+- Successful final current-state validation is not transaction submission or on-chain success.
+- No gas policy or empirical gas evidence is introduced.
+
+Protected untracked gas experiments remain untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Inspect and stage only this checkpoint plus the two 1S.71 files.
+- Do not stage or execute the protected gas experiments.
+- After commit/push/sync, perform read-only discovery before defining the next composition boundary.
