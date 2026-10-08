@@ -6609,3 +6609,72 @@ No account acquisition, RPC access, hard-coded wallet or executor identity, dupl
 
 ### Next
 Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.59 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.59 durably closed.
+
+## 1S.60 — Unsigned Exact Transaction Intent Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.59 account/caller identity composition into the established unsigned exact transaction intent boundary without duplicating transaction-intent construction or validation semantics.
+
+### Production
+- `scripts/utils/polygonV4UnsignedExactTransactionIntentCompositionEvidence.js`
+- API:
+  `buildUnsignedExactTransactionIntentCompositionEvidence({ accountCallerIdentityCompositionEvidence })`
+
+### Test
+- `test/polygonV4UnsignedExactTransactionIntentCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `accountCallerIdentityCompositionEvidence` to be an object.
+- Requires `accountCallerIdentityCompositionReady === true`.
+- Requires the contained `accountCallerIdentityEvidence` to be an object.
+- Requires `accountCallerIdentityReady === true`.
+- Passes the exact established `accountCallerIdentityEvidence` into `buildUnsignedExactTransactionIntentEvidence(...)`.
+- Preserves the exact 1S.59 composition wrapper identity.
+- Preserves the established unsigned transaction intent evidence rather than reconstructing it.
+- Returns a frozen wrapper containing:
+  - `accountCallerIdentityCompositionEvidence`
+  - `unsignedTransactionIntentEvidence`
+  - `unsignedExactTransactionIntentCompositionReady: true`
+
+### Validation ownership
+The established unsigned exact transaction intent builder remains authoritative for:
+- current-state preflight readiness and authorization state;
+- candidate, execution-leg, and execution-plan identity correspondence;
+- exactly-three-leg route validation;
+- route token validity, continuity, and closure;
+- positive flashloan amount;
+- flashloan-token derivation from the preserved route;
+- caller/owner identity correspondence;
+- account executor/deployed executor correspondence;
+- `initiateFlashloan(...)` calldata encoding;
+- construction of the unsigned transaction intent `{ from, to, data, value }`.
+
+1S.60 does not duplicate or reinterpret those decisions.
+
+### Authorization boundary
+The 1S.60 wrapper introduces no live, signer, or broadcast authorization fields.
+The delegated unsigned transaction intent evidence remains explicitly unauthorized for live execution, signing, and broadcast.
+
+### Non-goals
+No RPC acquisition, route discovery, quote refresh, amount selection, calldata reconstruction, signer identity acquisition, nonce or fee acquisition, gas estimation, gas-limit selection, signing, submission, broadcast, live execution, gas policy, or protected gas-experiment integration.
+
+### Validation
+- Behavioral RED: 0/1, failing solely with expected `MODULE_NOT_FOUND` for the new production module.
+- Minimal production implementation GREEN: 1/1.
+- Hardened focused suite: 7/7 passed.
+- Hardened tests prove invalid preserved route rejection is propagated from the established unsigned-intent builder.
+- Hardened tests prove caller/owner rejection is propagated from the established unsigned-intent builder.
+- Production and test syntax checks passed.
+- `git diff --check` clean.
+- Protected gas experiment tracked diff empty.
+- Canonical `npm run test:node`: RC 0.
+- Six uniquely named 1S.60 tests explicitly discovered as top-level tests `ok 914` through `ok 919`; the authorization test is included in the canonical total.
+- Canonical totals: 995 tests, 9 suites, 995 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 988 tests; seven 1S.60 tests account exactly for the increase to 995.
+- Hardhat was not rerun.
+- Protected gas experiments were not staged, promoted, or executed.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.60 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.60 durably closed.
