@@ -6753,3 +6753,53 @@ Synthetic nonce `7` and fee values `100` / `10` used by focused tests are test f
 
 ### Next
 Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.61 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.61 durably closed.
+
+## 1S.62 — Current Transaction Gas Estimation Acquisition Composition Evidence
+
+Status: COMPLETE / canonical green; pending commit and push.
+
+Added:
+- `scripts/utils/polygonV4CurrentTransactionGasEstimationAcquisitionCompositionEvidence.js`
+- `test/polygonV4CurrentTransactionGasEstimationAcquisitionCompositionEvidence.test.js`
+
+Purpose:
+- Bridge the exact completed 1S.61 current transaction parameter acquisition composition into the established current transaction gas estimation acquisition boundary.
+- Preserve immediate composition provenance without duplicating gas-estimation semantics.
+
+Production behavior:
+- Requires the 1S.61 composition evidence object.
+- Requires `currentTransactionParameterAcquisitionCompositionReady === true`.
+- Requires the contained `currentTransactionParameterEvidence` object.
+- Requires `currentTransactionParametersReady === true`.
+- Delegates the exact parameter evidence and injected provider to `acquireCurrentTransactionGasEstimationEvidence`.
+- Returns a frozen composition wrapper with `currentTransactionGasEstimationAcquisitionCompositionReady === true`.
+- Does not directly call `estimateGas`.
+- Does not introduce a gas multiplier, buffer, gas-limit policy, signing, submission, broadcast, or authorization advancement.
+
+Evidence semantics:
+- `estimatedGasUnits` remains current transaction gas-estimation evidence only.
+- It is not empirical transaction `gasUsed`.
+- Synthetic `653000` used by tests is not a live Polygon gas measurement and is not production gas policy.
+- No protected gas experiment was promoted or executed.
+
+Validation:
+- Behavioral RED: 0/1 solely because the new production module did not yet exist.
+- Minimal GREEN: 1/1.
+- Hardened focused suite: 7/7.
+- Canonical Node baseline: 1002.
+- Canonical Node after 1S.62: 1009/1009, 9 suites, 0 failures/cancelled/skipped/todo, RC 0.
+- Six uniquely named 1S.62 tests explicitly discovered as top-level tests 302-307; seventh authorization test accounts for the exact +7 total.
+- Protected gas experiment names absent from canonical output.
+- `git diff --check` clean.
+- Hardhat not rerun because this change is Node utility composition/test evidence only.
+
+Protected gas experiments remain untracked and untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Verify checkpoint tail/diff.
+- Stage only the checkpoint and the two 1S.62 files.
+- Verify protected files remain unstaged.
+- Commit and push 1S.62.
