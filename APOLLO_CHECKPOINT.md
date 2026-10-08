@@ -7183,3 +7183,95 @@ Next:
 - stage only the exact 1S.69 production file, test file, and checkpoint
 - verify protected gas experiments remain unstaged
 - commit and push only after staged-diff verification
+
+## 1S.70 — Exact Transaction Signing Composition Evidence
+
+Status: COMPLETE / TESTED — pending commit/push.
+
+### Objective
+Bridge the established 1S.69 signer capability binding composition into the established 1S.39 exact transaction signing evidence boundary without acquiring wallet/key material and without granting or performing submission, broadcast, or live execution.
+
+### Production
+Added:
+- `scripts/utils/polygonV4ExactTransactionSigningCompositionEvidence.js`
+
+API:
+- `buildExactTransactionSigningCompositionEvidence({ signerCapabilityBindingCompositionEvidence, signTransaction })`
+
+Behavior:
+- Requires the 1S.69 composition object.
+- Requires `signerCapabilityBindingCompositionReady === true`.
+- Requires contained `signerCapabilityBindingEvidence`.
+- Requires `signerCapabilityBindingReady === true`.
+- Delegates the exact contained capability-binding evidence and injected `signTransaction` callback to established `acquireExactTransactionSigningEvidence`.
+- Preserves the exact 1S.69 composition identity.
+- Returns frozen composition evidence with `exactTransactionSigningCompositionReady === true`.
+- Does not acquire a wallet, private key, mnemonic, seed, provider, or network state.
+- Does not submit or broadcast a transaction.
+- Does not grant live-execution or broadcast authorization.
+
+### Security boundary
+1S.70 is the first composition boundary in this lineage that performs actual cryptographic transaction signing through an injected signing capability.
+
+The established 1S.39 primitive owns:
+- exact EIP-1559 type-2 signing projection;
+- exactly one signing invocation on the successful path;
+- raw signed transaction validation;
+- transaction type, chain ID, nonce, recovered signer, recipient, calldata, value, gas limit, fee fields, and empty access-list validation;
+- signed transaction hash derivation and raw-byte binding.
+
+Successful signing does NOT mean submission, broadcast, receipt success, or live execution.
+
+No real wallet credentials or secrets are embedded in production or tests. Tests use isolated synthetic/local wallet capability only.
+
+### Tests
+Added:
+- `test/polygonV4ExactTransactionSigningCompositionEvidence.test.js`
+
+Focused hardened result:
+- tests: 7
+- pass: 7
+- fail: 0
+- RC: 0
+
+Coverage includes:
+- exact 1S.69 -> 1S.39 bridge;
+- outer composition object validation;
+- outer readiness validation;
+- contained evidence object validation;
+- contained readiness validation;
+- signing rejection propagation after exactly one callback;
+- upstream signing-evidence contamination rejected before signing callback.
+
+### Canonical validation
+`npm run test:node`:
+- tests: 1065
+- suites: 9
+- pass: 1065
+- fail: 0
+- cancelled: 0
+- skipped: 0
+- todo: 0
+- RC: 0
+
+Baseline before 1S.70: 1058.
+Exact increase: +7.
+
+All seven 1S.70 tests were explicitly discovered.
+Protected gas experiment names were absent from canonical discovery.
+`git diff --check` was clean.
+Hardhat was not rerun for 1S.70.
+
+### Protected gas experiments
+The following remain untracked and must not be staged, committed, modified, promoted, deleted, or executed:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+### Next
+Inspect checkpoint diff and 1S.70 diff, then stage exactly:
+- `APOLLO_CHECKPOINT.md`
+- `scripts/utils/polygonV4ExactTransactionSigningCompositionEvidence.js`
+- `test/polygonV4ExactTransactionSigningCompositionEvidence.test.js`
+
+Do not stage the protected gas experiments.
