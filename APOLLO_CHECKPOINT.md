@@ -6456,3 +6456,80 @@ No RPC acquisition, chain/code/timestamp reacquisition, route discovery, amount 
 
 ### Next
 Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.57 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.57 durably closed.
+
+## 1S.58 — Deployed-Account Identity Acquisition Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.57 current-state preflight composition into the established 1S.47 deployed-account identity acquisition boundary without duplicating account acquisition, identity validation, or authorization semantics.
+
+### Production
+- `scripts/utils/polygonV4DeployedAccountIdentityAcquisitionCompositionEvidence.js`
+- API:
+  `buildDeployedAccountIdentityAcquisitionCompositionEvidence({ currentStatePreflightCompositionEvidence, getCallerAddress, getExecutorOwner })`
+
+### Test
+- `test/polygonV4DeployedAccountIdentityAcquisitionCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `currentStatePreflightCompositionEvidence` to be an object.
+- Requires `currentStatePreflightCompositionEvidence.currentStatePreflightCompositionReady === true`.
+- Requires its composed `currentStatePreflightEvidence` to be an object.
+- Passes the exact composed current-state preflight evidence into the established `acquireDeployedAccountIdentityEvidence(...)` boundary.
+- Passes `getCallerAddress` and `getExecutorOwner` through to that established acquisition boundary.
+- Preserves the exact 1S.57 composition wrapper identity.
+- Preserves the returned deployed-account acquisition evidence rather than reconstructing it.
+- Returns a frozen wrapper containing:
+  - `currentStatePreflightCompositionEvidence`
+  - `deployedAccountIdentityAcquisitionEvidence`
+  - `deployedAccountIdentityAcquisitionCompositionReady: true`
+
+### Ownership
+The established 1S.47 deployed-account acquisition remains authoritative for:
+- deriving the executor address from current-state deployment evidence;
+- invoking `getCallerAddress()` exactly once;
+- invoking `getExecutorOwner(executorAddress)` exactly once with the derived executor;
+- validating acquired addresses as nonzero addresses;
+- constructing frozen account identity evidence;
+- keeping live, signer, and broadcast authorization false.
+
+The subsequent account/caller identity boundary remains authoritative for:
+- caller identity matching deployed ProfitBot owner;
+- account executor identity matching deployed executor identity.
+
+1S.58 deliberately does not perform either correspondence decision.
+
+### Authorization boundary
+The 1S.58 wrapper does not introduce:
+- `liveExecutionAuthorized`
+- `signerAuthorized`
+- `broadcastAuthorized`
+
+The delegated deployed-account acquisition evidence remains explicitly:
+- `liveExecutionAuthorized: false`
+- `signerAuthorized: false`
+- `broadcastAuthorized: false`
+
+1S.58 therefore does not authorize signing, broadcast, submission, or live execution.
+
+### Non-goals
+No hard-coded caller/owner/executor identity, direct RPC acquisition, deployment discovery, caller/owner correspondence decision, prospective-signer validation, unsigned transaction construction, gas calculation or policy, signing, submission, broadcast, live execution, or protected gas-experiment integration.
+
+### Validation
+- Initial existence probe passed only by asserting expected `MODULE_NOT_FOUND`.
+- Behavioral RED: 0/1 passed; failed solely with expected `MODULE_NOT_FOUND` for the new production module.
+- Minimal production implementation GREEN: 1/1.
+- Hardened focused suite: 5/5 passed.
+- Production and test syntax checks passed.
+- `git diff --check` clean before and after canonical.
+- Protected gas experiment tracked diff empty.
+- Canonical `npm run test:node`: RC 0.
+- Five 1S.58 tests explicitly discovered as top-level tests `ok 383` through `ok 387`.
+- Canonical totals: 981 tests, 9 suites, 981 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 976 tests; the five 1S.58 tests account exactly for the increase to 981.
+- Hardhat was not rerun because 1S.58 is an isolated Node composition boundary.
+- Protected gas experiments were not promoted or executed as part of 1S.58.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.58 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.58 durably closed.
