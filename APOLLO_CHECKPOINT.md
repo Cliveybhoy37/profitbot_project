@@ -6854,3 +6854,53 @@ Next:
 - Stage only the checkpoint and two 1S.63 files.
 - Verify protected experiments remain unstaged.
 - Commit, push, and verify synchronization before declaring 1S.63 durably closed.
+
+## 1S.64 — Current Transaction Envelope Composition Evidence
+
+Status: COMPLETE / canonical green; pending commit and push.
+
+Added:
+- `scripts/utils/polygonV4CurrentTransactionEnvelopeCompositionEvidence.js`
+- `test/polygonV4CurrentTransactionEnvelopeCompositionEvidence.test.js`
+
+Purpose:
+- Bridge the exact completed 1S.63 gas-limit selection composition into the established 1S.33 current transaction envelope boundary.
+- Preserve immediate composition provenance without rebuilding or reacquiring transaction fields.
+
+Production behavior:
+- Requires the 1S.63 composition evidence object.
+- Requires `currentTransactionGasLimitSelectionCompositionReady === true`.
+- Requires the contained `currentTransactionGasLimitSelectionEvidence` object.
+- Requires `currentTransactionGasLimitSelectionReady === true`.
+- Delegates the exact selection evidence to `buildCurrentTransactionEnvelopeEvidence`.
+- Returns a frozen composition wrapper with `currentTransactionEnvelopeCompositionReady === true`.
+- Does not perform RPC, nonce/fee/gas reacquisition, gas arithmetic, signing, submission, broadcast, or authorization advancement.
+
+Envelope semantics:
+- Established 1S.33 builder owns deterministic envelope construction from upstream evidence.
+- Exact selected gas-limit BigNumber identity is preserved as `transactionEnvelope.gasLimit`.
+- No gas margin, fixed buffer, historical receipt gas, protected experimental gas, or empirical `gasUsed` is substituted.
+- Synthetic `827233` is test data only and is not a production Polygon gas limit.
+- Gas selection/envelope composition remains distinct from empirical live transaction `gasUsed`.
+
+Validation:
+- Behavioral RED: 0/1 solely because the new production module did not yet exist.
+- Minimal GREEN: 1/1.
+- Hardened focused suite: 7/7.
+- Canonical baseline: 1016 tests.
+- Canonical after 1S.64: 1023/1023, 9 suites, 0 failures/cancelled/skipped/todo, RC 0.
+- Six uniquely named 1S.64 tests explicitly discovered as top-level tests 284-289; seventh authorization test accounts for the exact +7 total.
+- Protected gas experiment names absent from canonical output.
+- Production execution/reacquisition audit clean.
+- Hardhat not rerun.
+
+Protected gas experiments remain untracked, unstaged, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Verify checkpoint tail and `git diff --check`.
+- Stage only the checkpoint and two 1S.64 files.
+- Verify protected experiments remain unstaged.
+- Commit, push, and verify synchronization before declaring 1S.64 durably closed.
