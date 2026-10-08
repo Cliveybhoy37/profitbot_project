@@ -7584,3 +7584,66 @@ Next:
 - Inspect and stage only this checkpoint plus the two 1S.74 files.
 - Do not stage or execute the protected gas experiments.
 - After commit/push/sync, perform read-only discovery before defining the next composition boundary.
+
+## 1S.75 — Controlled Exact Signed Transaction Submission Composition Evidence
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Objective:
+- Compose established 1S.74 immediate pre-submission validation evidence into established 1S.44 controlled exact signed transaction submission.
+- Preserve the exact validated signed transaction lineage.
+- Delegate the actual submission capability exclusively to established 1S.44.
+- Do not introduce signing, transaction reconstruction, nonce repair, fee refresh, retry, provider/RPC, or receipt-waiting behavior.
+
+Production:
+- `scripts/utils/polygonV4ControlledExactSignedTransactionSubmissionCompositionEvidence.js`
+- API:
+  `buildControlledExactSignedTransactionSubmissionCompositionEvidence({ immediatePreSubmissionValidationCompositionEvidence, submitSignedTransaction })`
+- Requires the 1S.74 composition object and `immediatePreSubmissionValidationCompositionReady === true`.
+- Requires contained `immediatePreSubmissionValidationEvidence` and `immediatePreSubmissionValidationReady === true`.
+- Delegates the contained evidence and injected submission callback to:
+  `submitControlledExactSignedTransaction`.
+- Returns a frozen composition wrapper containing:
+  - exact upstream 1S.74 composition,
+  - established 1S.44 submission evidence,
+  - `controlledExactSignedTransactionSubmissionCompositionReady: true`.
+- The wrapper owns no provider/RPC, signing, transaction reconstruction, receipt, or independent submission primitive.
+
+Established 1S.44 behavior preserved:
+- Requires immediate pre-submission validation readiness.
+- Submits only the exact already-validated `signedRawTransaction`.
+- Requires a submission response object.
+- Requires a non-empty response hash.
+- Requires response hash to exactly equal `signedTransactionHash`.
+- Preserves transaction envelope, signed raw transaction, signed transaction hash, and submission response.
+- Sets `controlledExactSignedTransactionSubmissionReady: true`.
+- No receipt acquisition or waiting occurs.
+
+Tests:
+- `test/polygonV4ControlledExactSignedTransactionSubmissionCompositionEvidence.test.js`
+- RED: 1 test / 0 pass / 1 fail / RC 1 solely because the production composition module was absent (`MODULE_NOT_FOUND`).
+- Minimal GREEN: 1/1, RC 0.
+- Hardened focused: 7/7, RC 0.
+- Canonical: 1100/1100 pass / 0 fail / 9 suites / RC 0.
+- Exact increase: +7.
+- All seven 1S.75 tests explicitly discovered.
+- Tests use only a synthetic in-memory submission callback; no live Polygon submission occurred.
+- Hardened tests cover outer/contained readiness, submission hash mismatch, and submission callback failure after exactly one invocation.
+
+Security boundary:
+- 1S.75 is the first composition boundary that can invoke the established real submission primitive when a real callback is supplied.
+- The composition wrapper itself does not implement network submission.
+- No live provider/RPC submission was used during testing.
+- No signer or private credential is introduced.
+- No transaction mutation, retry, or receipt waiting is introduced.
+- Protected gas experiments remain untouched.
+
+Protected untracked gas experiments:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Commit and push only the checkpoint plus the two 1S.75 files.
+- Verify local and remote HEAD equality.
+- Do not stage or execute the protected gas experiments.
