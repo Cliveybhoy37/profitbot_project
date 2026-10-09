@@ -29,6 +29,10 @@
   "overrides": {
     "@ethersproject/providers": {
       "ws": "^8.21.0"
+    },
+    "hardhat": {
+      ".": "$hardhat",
+      "ws": "7.5.11"
     }
   }
 }
