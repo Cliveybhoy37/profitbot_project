@@ -7801,3 +7801,96 @@ Next:
 - Continue evidence-first review before any real Polygon receipt observation.
 - Require separate explicit authorization for any live signing or submission.
 - Do not infer a new milestone number or modify the existing pipeline.
+
+## 2026-10-09 — Polygon V4 live-receipt gas measurement evidence recovery anchor
+
+Status: COMMITTED / PUSHED / REMOTE-VERIFIED
+
+Repository:
+- Branch: `repair/simulation-safety`.
+- Verified local and GitHub remote HEAD:
+  `50f5c9496400e898760eb4db8a264463caf02daa`.
+- Parent commit:
+  `9338f355847e40c23dfc6a592be72f1bf8aa29ad`.
+- Commit: `Add read-only Polygon V4 live receipt gas measurement evidence`.
+- Exactly two new files committed; no existing tracked files changed.
+- No new numbered milestone assigned.
+
+New standalone read-only measurement component:
+- `scripts/utils/polygonV4LiveReceiptGasMeasurementEvidence.js`.
+- Export:
+  `buildLiveReceiptGasMeasurementEvidence({
+    transactionSigningEvidence,
+    unsignedTransactionIntentEvidence,
+    receiptObservationEvidence
+  })`.
+- Uses existing signed-transaction, unsigned-intent, deployment,
+  execution-context, and read-only receipt-observation evidence.
+- Does not acquire a receipt itself or make provider/RPC calls.
+- Requires Polygon chain ID 137 and successful receipt evidence.
+- Validates signed raw transaction hash, decoded type-2 transaction,
+  envelope fields, transaction intent, signer identity, and preserved
+  authorization and preflight evidence-reference lineage.
+- Validates the exact initiateFlashloan calldata, flashloan token,
+  amount, and ABI-encoded execution plan against upstream evidence.
+- Checks candidate, execution-leg, and execution-plan reference identity.
+- Checks executor address and upstream deployment code-hash evidence.
+- Requires matching receipt transaction/block identities, positive gasUsed,
+  and explicit safe confirmation-depth evidence.
+- Returns shallow-frozen evidence with executionPlanHash, gasUsed,
+  executorAddress, executorCodeHash, receipt block/head details, and
+  provenance method `LIVE_POLYGON_RECEIPT`.
+- Executor code hash is labeled `UPSTREAM_DEPLOYMENT_EVIDENCE`;
+  `historicalExecutorCodeVerified` remains false.
+- Output explicitly sets live execution, signer, and broadcast
+  authorization flags to false.
+
+New synthetic tests:
+- `test/polygonV4LiveReceiptGasMeasurementEvidence.test.js`.
+- 20 focused tests passed, including rejection of mismatched signing,
+  transaction, receipt, confirmation, authorization, and deployment evidence.
+- Positive fixture uses the existing V4 execution-plan encoder with
+  three cyclic legs, rather than placeholder execution-plan bytes.
+- Synthetic tests do not use live Polygon RPC or broadcast transactions.
+
+Verified regression:
+- Full selected Node regression after the final fixture improvement:
+  130 existing Node test files plus the new test file.
+- 1148 passed / 0 failed / 0 skipped.
+- Historical Hardhat fork regression: 7 passed / 0 failed;
+  3 optional integration tests intentionally pending.
+- Combined passing count across the separate Node and Hardhat runs:
+  1155; not a single unified test invocation.
+- New-file SHA-256 hashes were verified before staging and committing.
+- Exact two-file commit scope and GitHub remote hash independently verified.
+
+Security and integration boundaries:
+- No real Polygon mainnet transaction was signed, submitted, or broadcast.
+- No real Polygon mainnet receipt gasUsed has been acquired.
+- `LIVE_POLYGON_RECEIPT` is the output provenance schema for validated
+  future evidence, not a claim that live evidence currently exists.
+- Historical fork gasUsed is not a live Polygon gas measurement.
+- Receipt observation is point-in-time evidence, not irreversible finality
+  or proof of realized net profitability.
+- Existing 1A-1S pipeline, fork-only gas qualification validator,
+  historical fork gas evidence, conservative 700000 gas-unit qualification
+  policy, and current transaction gas-limit selection remain unchanged.
+- No new signing, authorization, submission, retry, polling, nonce repair,
+  fee refresh, owner change, or credential handling.
+- The new component has not been integrated into a live execution path.
+- Separate explicit authorization remains required for live signing
+  or transaction submission.
+
+Protected untracked experiments — DO NOT stage, run, edit, or delete:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Review this checkpoint-only diff before staging.
+- Stage, inspect, commit, push, and verify the checkpoint in separate steps.
+- Continue evidence-first analysis of the controlled live-measurement
+  prerequisites and safety boundaries.
+- Do not promote live gas provenance into fork-only qualification policy
+  without a separately approved design and validated evidence.
+- Do not assume a new numbered milestone or modify existing pipeline paths.
