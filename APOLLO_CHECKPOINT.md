@@ -7724,3 +7724,80 @@ Next:
 - Commit and push only after the staged review.
 - Keep the protected gas experiments untracked, unexecuted, and unstaged.
 - Do not assume a numbered next boundary without further discovery.
+
+## 2026-10-09 — Read-only Polygon V4 receipt observation recovery anchor
+
+Status: COMMITTED / PUSHED / REMOTE-VERIFIED
+
+Repository:
+- Branch: `repair/simulation-safety`.
+- Verified local and GitHub remote HEAD:
+  `2003a0c599641fdb5a2f4ed0ce3ecd6c97a28a3f`.
+- Commit: `Add read-only Polygon V4 receipt observation and isolate fork tests`.
+- The commit contains exactly four reviewed files.
+- No tracked production execution-pipeline files were changed.
+- No new numbered milestone is assigned.
+
+Read-only receipt observer:
+- Production:
+  `scripts/utils/polygonV4ReadOnlyTransactionReceiptObservationEvidence.js`.
+- Tests:
+  `test/polygonV4ReadOnlyTransactionReceiptObservationEvidence.test.js`.
+- API:
+  `observeReadOnlyTransactionReceiptEvidence({ provider, signedTransactionHash, minimumConfirmations })`.
+- Requires explicit positive safe-integer confirmation policy.
+- Requires Polygon chain ID 137.
+- Acquires one transaction receipt using the supplied signed transaction hash.
+- Requires matching transaction-hash bytes, successful receipt status,
+  positive receipt block number, and positive BigNumber gasUsed.
+- Verifies receipt block number and hash against the provider-returned block.
+- Reads the observed chain head and checks confirmation depth.
+- Returns a shallow-frozen evidence wrapper preserving the receipt and gasUsed.
+- No signing, transaction submission, broadcast, retry, polling, or
+  transaction reconstruction.
+- Uses an injected provider; synthetic tests use no live RPC.
+
+Historical Hardhat fork-test isolation:
+- `test/polygonV4ExecutionProbeFork.test.js`:
+  checks explicit fork configuration and resets the local Hardhat fork
+  to historical block 94709817 before execution.
+- `test/polygonV4ObservedCandidateFork.test.js`:
+  resets the local Hardhat fork to historical block 94709817 before each test.
+- These changes address verified test-order dependence.
+- The corrections are test-only and do not alter the 1A-1S pipeline.
+- Historical fork transactions are local simulations, not live Polygon broadcasts.
+
+Verified regression:
+- Focused observer tests: 18 passed / 0 failed.
+- Full Node selection: 130 test files, 1128 passed / 0 failed / RC 0.
+- Historical Hardhat fork selection: 7 passed / 0 failed / RC 0.
+- Three optional Hardhat integration tests intentionally pending.
+- Hardhat regression preceded the final observer-only hash-casing fix.
+- Combined passing test count across these runs: 1135.
+- Staged diff integrity and exact four-file commit scope verified.
+- GitHub remote commit hash independently verified after push.
+
+Security and evidence limitations:
+- No genuine Polygon mainnet receipt gasUsed was acquired in this work.
+- Historical fork gasUsed is not live Polygon gasUsed.
+- A receipt matching the observed block and confirmation count does not
+  establish irreversible finality or realized net profitability.
+- The evidence wrapper is shallow-frozen; nested receipt data is not frozen.
+- The observer does not authorize live signing or submission.
+- Existing LIVE_READY, authorization, slippage, economics, reserve,
+  freshness, and gas safety gates remain unchanged.
+- No MetaMask ownership or credential changes.
+- No live flashloan, deployment, signing, or transaction broadcast.
+
+Protected untracked experiments — DO NOT stage, execute, edit, or delete:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Review this checkpoint-only diff.
+- Stage only `APOLLO_CHECKPOINT.md` after explicit approval.
+- Commit, inspect, push, and verify the remote hash in separate steps.
+- Continue evidence-first review before any real Polygon receipt observation.
+- Require separate explicit authorization for any live signing or submission.
+- Do not infer a new milestone number or modify the existing pipeline.
