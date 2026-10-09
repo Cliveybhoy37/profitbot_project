@@ -38,6 +38,28 @@ describe("Polygon V4 isolated execution probe", function () {
   ];
 
   before(async function () {
+    if (process.env.USE_FORK_BLOCK !== "true") {
+      this.skip();
+    }
+
+    assert.equal(
+      Number(process.env.POLYGON_FORK_BLOCK || 0),
+      BLOCK,
+      "wrong fork block"
+    );
+
+    assert(
+      process.env.ALCHEMY_POLYGON,
+      "ALCHEMY_POLYGON is required"
+    );
+
+    await ethers.provider.send("hardhat_reset", [{
+      forking: {
+        jsonRpcUrl: process.env.ALCHEMY_POLYGON,
+        blockNumber: BLOCK
+      }
+    }]);
+
     const network = await ethers.provider.getNetwork();
 
     assert.equal(

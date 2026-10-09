@@ -79,6 +79,29 @@ describe(
       );
     });
 
+    beforeEach(async function () {
+      assert(
+        process.env.ALCHEMY_POLYGON,
+        "ALCHEMY_POLYGON is required"
+      );
+
+      await ethers.provider.send(
+        "hardhat_reset",
+        [{
+          forking: {
+            jsonRpcUrl: process.env.ALCHEMY_POLYGON,
+            blockNumber: FORK_BLOCK
+          }
+        }]
+      );
+
+      assert.strictEqual(
+        await ethers.provider.getBlockNumber(),
+        FORK_BLOCK,
+        "historical fork reset failed"
+      );
+    });
+
     it(
       "executes a candidate derived from frozen observed evidence through Aave",
       async function () {
