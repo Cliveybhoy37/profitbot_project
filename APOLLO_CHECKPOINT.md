@@ -7647,3 +7647,80 @@ Next:
 - Commit and push only the checkpoint plus the two 1S.75 files.
 - Verify local and remote HEAD equality.
 - Do not stage or execute the protected gas experiments.
+
+## Post-submission receipt composition boundary — verified regression
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Discovery:
+- Followed the 1S.72–1S.75 handoff instruction to discover the existing post-submission primitive before naming a new milestone.
+- Established 1S.44 owns controlled exact signed transaction submission.
+- Established 1S.45 owns controlled transaction receipt acquisition and validation.
+- The new composition boundary bridges existing 1S.75 submission composition evidence into established 1S.45 receipt evidence.
+- No new numbered milestone is assigned by this checkpoint.
+
+Production:
+- `scripts/utils/polygonV4ControlledTransactionReceiptCompositionEvidence.js`
+- API:
+  `buildControlledTransactionReceiptCompositionEvidence({ controlledExactSignedTransactionSubmissionCompositionEvidence, acquireTransactionReceipt })`
+- Requires the exact upstream submission composition object.
+- Requires `controlledExactSignedTransactionSubmissionCompositionReady === true`.
+- Requires contained `controlledExactSignedTransactionSubmissionEvidence`.
+- Requires `controlledExactSignedTransactionSubmissionReady === true`.
+- Delegates the contained submission evidence and injected receipt-acquisition callback to established `produceControlledTransactionReceiptEvidence`.
+- Returns a frozen wrapper preserving the exact upstream composition, validated receipt evidence, and `controlledTransactionReceiptCompositionReady: true`.
+- Does not call the submission composition builder or resubmit a transaction.
+
+Established 1S.45 validation retained:
+- Requires submission readiness and established authorization evidence.
+- Requires receipt acquisition capability.
+- Acquires the receipt once using the exact signed transaction hash.
+- Requires a receipt with matching transaction hash, successful status, valid block number, and positive BigNumber gasUsed.
+- Preserves exact receipt and gasUsed identities.
+- Does not establish realized profit, confirmation depth, or finality.
+
+Tests:
+- `test/polygonV4ControlledTransactionReceiptCompositionEvidence.test.js`
+- RED: expected MODULE_NOT_FOUND / RC 1 before production module existed.
+- Minimal GREEN: 1/1 pass / RC 0.
+- Hardened focused: 10/10 pass / RC 0.
+- Tests cover successful exact composition, missing or non-ready outer and inner evidence, missing receipt callback, callback rejection after exactly one invocation, mismatched receipt hash, reverted receipt, and exact receipt/gasUsed identity.
+- Tests use synthetic in-memory receipt evidence only; no live Polygon submission or on-chain receipt acquisition occurred.
+
+Full regression:
+- Node: 1110 tests / 1110 pass / 0 fail / 9 suites / RC 0.
+- Previous Node baseline: 1100 tests; exact increase: +10.
+- Hardhat: 29 tests / 29 pass / 0 fail / RC 0.
+- Combined: 1139 tests / 1139 pass / 0 fail.
+- FULL_REGRESSION_RC=0.
+- Three protected gas experiments explicitly excluded from Node discovery.
+- Generated Hardhat artifacts churn restored after regression.
+- Tracked working-tree diff clean before checkpoint append.
+- Production and test JavaScript syntax checks passed.
+
+Security boundary:
+- No new signing, authorization, submission, broadcast, transaction reconstruction, nonce repair, fee refresh, retry, provider ownership, or receipt polling.
+- Existing 1S.45 owns receipt validation.
+- A successful synthetic test is not a live Polygon measurement.
+- No genuine Polygon live transaction receipt or empirical on-chain gasUsed has yet been acquired.
+- Receipt success alone does not establish realized profit or transaction finality.
+- Live signing and submission still require separate explicit authorization and current-state safety validation.
+- LIVE_READY, economics, gas, slippage, reserve, and freshness gates remain unchanged.
+
+Protected untracked gas experiments remain untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Repository note:
+- Previous 1S.75 checkpoint text says NOT YET COMMITTED, but Git HEAD
+  `75ed3e0` confirms the 1S.72–1S.75 checkpoint and handoff were committed.
+- Do not interpret that historical status line as the current Git state.
+
+Next:
+- Review checkpoint diff.
+- Stage only this checkpoint and the two new receipt-composition files.
+- Verify staged paths and staged content before commit.
+- Commit and push only after the staged review.
+- Keep the protected gas experiments untracked, unexecuted, and unstaged.
+- Do not assume a numbered next boundary without further discovery.
