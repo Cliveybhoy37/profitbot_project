@@ -122,9 +122,6 @@ function makeFixture({
       currentTimestamp
     }),
     preflightEvidence: authoritativePreflight,
-    liveExecutionAuthorized: false,
-    signerAuthorized: false,
-    broadcastAuthorized: false,
     ...currentStateAuthorization
   });
 
@@ -233,6 +230,39 @@ test("rejects current-state authorization before account acquisition", async () 
   const f = makeFixture({
     currentStateAuthorization: {
       signerAuthorized: true
+    }
+  });
+
+  await assert.rejects(
+    runHandoff(f),
+    /Current-state evidence must remain unauthorized/
+  );
+
+  assert.equal(f.callbackCalls.caller, 0);
+  assert.equal(f.callbackCalls.owner, 0);
+});
+
+test("accepts explicitly false current-state authorization fields", async () => {
+  const f = makeFixture({
+    currentStateAuthorization: {
+      liveExecutionAuthorized: false,
+      signerAuthorized: false,
+      broadcastAuthorized: false
+    }
+  });
+
+  const result = await runHandoff(f);
+
+  assert.equal(result.readOnlyExecutionHandoffReady, true);
+  assertNoAuthorization(result);
+  assert.equal(f.callbackCalls.caller, 1);
+  assert.equal(f.callbackCalls.owner, 1);
+});
+
+test("rejects non-boolean current-state authorization before account acquisition", async () => {
+  const f = makeFixture({
+    currentStateAuthorization: {
+      broadcastAuthorized: undefined
     }
   });
 

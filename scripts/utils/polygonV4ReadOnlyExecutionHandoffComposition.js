@@ -67,7 +67,20 @@ async function buildReadOnlyExecutionHandoffComposition({
     "Current-state evidence"
   );
 
-  requireUnauthorized(currentState, "Current-state evidence");
+  for (const field of [
+    "liveExecutionAuthorized",
+    "signerAuthorized",
+    "broadcastAuthorized"
+  ]) {
+    if (
+      Object.prototype.hasOwnProperty.call(currentState, field) &&
+      currentState[field] !== false
+    ) {
+      throw new Error(
+        "Current-state evidence must remain unauthorized"
+      );
+    }
+  }
 
   const currentStatePreflightCompositionEvidence =
     buildCurrentStatePreflightCompositionEvidence({
