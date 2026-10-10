@@ -7903,3 +7903,103 @@ This is distinct from the historical Dependabot PR triage in
 critical alerts, Balancer Yarn workspace findings, Polygon V4 static
 reachability limits, and unresolved supply-chain questions. No dependency
 remediation, live execution, commit, or push is authorized by this entry.
+
+## Step 177X-O15 — Verified security remediation milestone
+
+### Repository and verified GitHub state
+
+- Repository: `Cliveybhoy37/profitbot_project`
+- Branch: `repair/simulation-safety`
+- Verified local and remote commit: `fe38067b153ee70465e84fcf1e5cbdaa26362c01`
+- Commit message: `fix(security): patch three transitive npm dependencies`
+- Commit changes only `package.json` and `package-lock.json`.
+- GitHub Actions workflow: `ProfitBot CI`
+- GitHub Actions run ID: `38061285338`
+- Run URL: https://github.com/Cliveybhoy37/profitbot_project/actions/runs/38061285338
+- Workflow event: `push`; status: `completed`; conclusion: `success`.
+- Step 177X-O13 confirmed the remote branch points to the intended commit.
+- Step 177X-O14 confirmed the CI result and unchanged local repository snapshot.
+
+### Security remediation
+
+The following transitive npm dependencies were patched using root npm
+overrides and corresponding lockfile changes:
+
+| Package | Previous version | Patched version |
+| --- | --- | --- |
+| `brace-expansion` | `2.0.2` | `2.1.7` |
+| `immutable` | `4.3.7` | `4.3.9` |
+| `js-yaml` | `4.1.0` | `4.3.2` |
+
+Existing `ws` overrides were preserved. The lockfile review confirmed
+exactly three dependency entries changed, with no unrelated package-path
+or lockfile metadata changes.
+
+The root npm audit changed as follows:
+
+| Severity | Before | After |
+| --- | ---: | ---: |
+| Critical | 0 | 0 |
+| High | 15 | 12 |
+| Moderate | 2 | 2 |
+| Low | 18 | 18 |
+| Total | 35 | 32 |
+
+The remaining 32 root npm audit findings are **not resolved**.
+The 12 high findings include `@fastify/busboy`, `adm-zip`, `braces`,
+`chokidar`, `hardhat`, `lodash`, `minimatch`, `mocha`, `picomatch`,
+`serialize-javascript`, `tmp`, and `undici`.
+
+These npm audit figures are distinct from repository-wide GitHub
+Dependabot alerts, which may include vendored dependency trees.
+
+### Verified tests and compatibility
+
+- `npm ci --ignore-scripts --legacy-peer-deps --no-audit --no-fund --no-update-notifier`
+  completed successfully during Step 177X-O8.
+- Node regression suite: **1,268 / 1,268 passed** in Step 177X-O9A.
+- Hardhat regression suite: **29 / 29 passed** in Step 177X-O9B.
+- Hardhat testing successfully compiled **35 Solidity files**.
+- GitHub Actions `ProfitBot CI` passed for the pushed commit.
+- Root tooling remained on Hardhat `2.24.3` and Ethers `5.8.0`.
+- No Hardhat 3 or Ethers 6 migration was authorized.
+- Generated tracked Hardhat build outputs were restored in the
+  separately authorized Step 177X-O9B-R4.
+
+### Protected project state
+
+The following three gas experiments are untracked and must not be
+edited, executed, staged, or committed without separate approval:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+The following legacy files remain protected from unapproved edits:
+
+- `contracts/ProfitBot.sol`
+- `scripts/utils/polygonExecutionRoute.js`
+- `scripts/utils/polygonExecutionCandidate.js`
+- `scripts/scanAndExecute.js`
+
+The V4 executor `contracts/PolygonV4CandidateExecutor.sol` was
+hash-verified unchanged throughout the security patch workflow.
+
+No live deployment, signing, flashloan execution, transaction
+broadcasting, or verified live profit occurred in these steps.
+
+### Next steps and authorization boundaries
+
+1. Review this checkpoint update before separately authorizing any commit.
+2. Commit and push the checkpoint only with separate explicit approvals.
+3. Investigate the remaining npm audit findings with read-only
+   dependency-path and compatibility analysis before considering edits.
+4. Plan any major Hardhat/Ethers upgrade separately, with regression
+   testing and protected-file safeguards.
+5. Continue Polygon V4 simulation/gas research only through separately
+   approved steps; preserve the three untracked experiments.
+
+For recovery after a session reset, inspect `git status`,
+`git log --oneline -5`, the current checkpoint, and relevant project
+files. Never include private keys, seed phrases, passwords, RPC secrets,
+or other credentials in checkpoints or chat.
