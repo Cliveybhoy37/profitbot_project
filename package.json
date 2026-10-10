@@ -33,6 +33,9 @@
     "hardhat": {
       ".": "$hardhat",
       "ws": "7.5.11"
-    }
+    },
+    "brace-expansion": "2.1.7",
+    "immutable": "4.3.9",
+    "js-yaml": "4.3.2"
   }
 }
