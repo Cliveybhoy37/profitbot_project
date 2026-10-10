@@ -8087,3 +8087,135 @@ Preserve existing contract and execution code, including:
 ### Operational continuity
 
 Git-tracked files and committed history persist independently of chat context. Uncommitted changes require care. GitHub Codespaces can stop independently of this conversation. Before stepping away, save files, commit and push approved work when appropriate, and record any transient terminal state. Never place private keys, seed phrases, passwords, or API secrets in this checkpoint.
+
+## Apollo recovery checkpoint — Step 177X-O64
+
+### Current objective
+
+Maintain a safe, reproducible ProfitBot development and regression-testing
+environment while preserving the existing simulation-safety repair branch,
+protected experimental tests, and original generated artifacts.
+
+All future changes require explicit approval, one guarded step at a time.
+
+### Repository state before this checkpoint update
+
+- Repository: `/workspaces/profitbot_project`
+- Branch: `repair/simulation-safety`
+- HEAD: `eae000d223b1efa73241fec5a9922f6e14109daa`
+- Existing modified file: `package-lock.json`
+- Existing untracked protected experimental tests:
+  - `test/polygonV4GasStateSensitivityProbe.test.js`
+  - `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  - `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+- This O64 operation intentionally modifies only `APOLLO_CHECKPOINT.md`.
+- No staging, commit, or push is authorized by O64.
+
+### Verified dependency and regression position
+
+- Node.js: 18.20.8
+- npm: 10.8.2
+- Hardhat: 2.24.3
+- Ethers: 5.8.0
+- Lodash: 4.18.1
+- Lockfile-only Lodash security update retained.
+- Official Node regression: 1,268/1,268 passed across 139 tracked
+  Node test files, as established in Step O49.
+- Official Hardhat regression: 29/29 passed in Step 177X-O62.
+- Solidity compilation: 35 files compiled successfully, EVM target Paris.
+- The three protected experimental tests were excluded and remain unexecuted.
+- These results do not establish live profitability or production readiness.
+
+### Dependency security findings
+
+Earlier dependency audit results:
+
+- Full dependency tree: 27 affected findings:
+  0 critical, 9 high, 1 moderate, 17 low.
+- Production dependency tree: 14 affected findings:
+  0 critical, 0 high, 0 moderate, 14 low.
+- Lodash security patch completed.
+- No automatic audit fix or major-version migration authorized.
+- Avoid unapproved Hardhat 3 or Ethers 6 upgrades.
+
+### Isolated Hardhat workspace: O53–O63
+
+- Workspace: `/tmp/apollo-o53-hardhat-8t8nfl5t`
+- Private dependency installation:
+  `/tmp/apollo-o57-private-hardhat/node_modules`
+- Private Hardhat compiler cache:
+  `/tmp/apollo-o57-private-hardhat/home/.cache/hardhat-nodejs/compilers-v2`
+- Workspace contains 24 verified source/config/test files:
+  8 tracked Solidity contracts, 3 official Hardhat tests,
+  3 configuration/package files, and 10 Balancer Solidity interfaces.
+- The workspace's `node_modules` symlink points to the private dependency
+  copy, not the original repository's dependencies.
+- The 10 Balancer interfaces are tracked original files copied with
+  SHA-256 verification. The full 755-file Balancer library was not copied.
+- O59 initially failed because `IVault.sol` was missing from the workspace.
+- O60 identified the complete 10-file local Solidity import closure.
+- O61 copied and verified exactly those 10 interfaces.
+- O62 compiled 35 Solidity files and passed all 29 official Hardhat tests.
+- O63 independently audited the generated outputs and original repository.
+- Isolated generated outputs: 125 artifact files and 1 cache file.
+- Original tracked generated outputs: 53 artifact files and 124 cache files.
+- O63 verified 0 hash mismatches across those 177 original tracked files.
+- Original Git status and protected experimental file hashes remained
+  unchanged through O63.
+
+### Official Hardhat test selection
+
+Only these three official tests were executed:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+Execution used the local Hardhat network with forking disabled and a
+sanitized environment that passed no RPC credentials.
+
+Do not run the three protected experimental tests without separate approval.
+
+### Safety boundaries
+
+- Do not edit, stage, delete, or execute protected experimental tests
+  without explicit separate approval.
+- Do not modify protected Solidity contracts, routing scripts, or scanner
+  implementation without explicit approval.
+- Do not execute live blockchain transactions or deployments without
+  explicit approval.
+- Do not run Hardhat in the original repository without a specific plan
+  to protect tracked generated artifacts and cache.
+- Do not automatically run `npm audit fix`, upgrade Hardhat/Ethers, or
+  modify dependencies.
+- Never place private keys, seed phrases, passwords, or API credentials
+  in the checkpoint or chat.
+
+### Recovery after Codespaces restart or chat reset
+
+1. Inspect `git status --short`, `git branch --show-current`,
+   `git rev-parse HEAD`, and recent `git log --oneline`.
+2. Read this checkpoint and inspect current source files before acting.
+3. Verify the protected experimental tests and existing modified files.
+4. Check whether the `/tmp/apollo-o53-hardhat-8t8nfl5t` workspace and
+   `/tmp/apollo-o57-private-hardhat` dependency/compiler copies still exist.
+5. If temporary directories disappeared, reconstruct the isolated
+   workspace from tracked repository sources and dependencies under
+   separately approved guarded steps.
+6. Never assume an open Codespace, terminal process, or `/tmp` directory
+   will survive a timeout, rebuild, or restart.
+
+### Exact next steps
+
+1. Verify this O64 checkpoint-only edit and inspect its Git diff.
+2. Decide whether to preserve the checkpoint in Git under a separately
+   approved staging/commit operation.
+3. Resume the simulation-safety development plan only after reviewing
+   the latest repository state and obtaining explicit approval for
+   the next specific action.
+
+### Last verified milestone
+
+Step 177X-O63 passed: isolated Hardhat regression 29/29 green,
+35 Solidity files compiled, original tracked artifact/cache hash
+mismatches 0/177, protected experimental tests unchanged.
