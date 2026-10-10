@@ -19,7 +19,7 @@ jobs:
             echo 'Tracked environment file found' >&2
             exit 1
           fi
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm test
       - run: node --check scripts/autoScanner.js
       - run: node --check scripts/scanAndExecute.js
