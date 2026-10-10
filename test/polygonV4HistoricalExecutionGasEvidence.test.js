@@ -35,7 +35,7 @@ test("contains complete historical executor and loan identity", () => {
   assert.equal(e.executorContext.v4Router, "0xDc264714F68d84CF29BC605589405E78bDBE7C9f");
   assert.equal(e.executorContext.permit2, "0x000000000022D473030F116dDEE9F6B43aC78BA3");
   assert.equal(e.executorContext.aaveProvider, "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb");
-  assert.equal(e.executorContext.aavePool, "0x5342C2c22B65A4cC0C06A34B085c72C4029F66c5");
+  assert.equal(e.executorContext.aavePool, "0x794a61358D6845594F94dc1DB02A252b5b4814aD");
   assert.ok(Array.isArray(e.executionLegs));
   assert.equal(e.executionLegs.length, 3);
 });
@@ -266,6 +266,52 @@ test("historical binding rejects every altered canonical executor identity field
       field
     );
   }
+});
+
+
+test("historical pool identity accepts provider-resolved pool and rejects stale pool", () => {
+  const e = HISTORICAL_EXECUTION_GAS_EVIDENCE;
+
+  const executionPlan = encodeV4ExecutionPlan({
+    legs: e.executionLegs,
+    deadline: e.executionDeadline,
+    minimumProfit: e.minimumProfit
+  });
+
+  const candidate = {
+    blockTag: e.observationBlock,
+    amountIn: e.loanAmount
+  };
+
+  const accepted = validateHistoricalExecutionGasEvidence({
+    candidate,
+    executionLegs: e.executionLegs,
+    executionPlan,
+    evidence: e
+  });
+
+  assert.equal(
+    accepted.executorContext.aavePool.toLowerCase(),
+    "0x794a61358d6845594f94dc1db02a252b5b4814ad"
+  );
+
+  const staleEvidence = {
+    ...e,
+    executorContext: {
+      ...e.executorContext,
+      aavePool: "0x5342C2c22B65A4cC0C06A34B085c72C4029F66c5"
+    }
+  };
+
+  assert.throws(
+    () => validateHistoricalExecutionGasEvidence({
+      candidate,
+      executionLegs: e.executionLegs,
+      executionPlan,
+      evidence: staleEvidence
+    }),
+    /historical executor identity mismatch/i
+  );
 });
 
 
