@@ -7894,3 +7894,12 @@ Next:
 - Do not promote live gas provenance into fork-only qualification policy
   without a separately approved design and validated evidence.
 - Do not assume a new numbered milestone or modify existing pipeline paths.
+
+## 2026-10-10 — Vendored Balancer dependency security assessment (Steps 175X–176F)
+
+Approved security assessment: `docs/security/POLYGON_V4_BALANCER_DEPENDENCY_ASSESSMENT.md`.
+This is distinct from the historical Dependabot PR triage in
+`docs/dependency-pr-review.md`. See the assessment for the five reviewed
+critical alerts, Balancer Yarn workspace findings, Polygon V4 static
+reachability limits, and unresolved supply-chain questions. No dependency
+remediation, live execution, commit, or push is authorized by this entry.
