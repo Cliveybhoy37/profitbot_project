@@ -166,6 +166,18 @@ async function verifyPolygonV4DeploymentReceiptEvidence({
     throw new Error("Transaction and receipt block hashes mismatch");
   }
 
+  const transactionIndex = requireInteger(
+    transaction.transactionIndex,
+    "Transaction index"
+  );
+  const receiptTransactionIndex = requireInteger(
+    receipt.transactionIndex,
+    "Receipt transaction index"
+  );
+  if (transactionIndex !== receiptTransactionIndex) {
+    throw new Error("Deployment transaction index mismatch");
+  }
+
   const deploymentBlockData = await currentProvider.getBlock(
     deploymentBlock
   );
@@ -182,6 +194,25 @@ async function verifyPolygonV4DeploymentReceiptEvidence({
     ) !== receiptBlockHash
   ) {
     throw new Error("Canonical deployment block mismatch");
+  }
+
+  if (
+    !Array.isArray(deploymentBlockData.transactions) ||
+    transactionIndex >= deploymentBlockData.transactions.length
+  ) {
+    throw new Error("Canonical deployment transaction list required");
+  }
+
+  const includedTransactionHash =
+    deploymentBlockData.transactions[transactionIndex];
+
+  if (
+    requireHash(
+      includedTransactionHash,
+      "Canonical included transaction"
+    ) !== deploymentTransactionHash
+  ) {
+    throw new Error("Deployment transaction not at canonical block index");
   }
 
   const observationBlock = requireInteger(

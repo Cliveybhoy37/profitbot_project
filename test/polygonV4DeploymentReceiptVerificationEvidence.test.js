@@ -21,17 +21,23 @@ function fixture() {
     hash: TX_HASH,
     to: null,
     blockNumber: 1000,
-    blockHash: BLOCK_HASH
+    blockHash: BLOCK_HASH,
+    transactionIndex: 0
   };
   const receipt = {
     transactionHash: TX_HASH,
     status: 1,
     blockNumber: 1000,
     blockHash: BLOCK_HASH,
-    contractAddress: EXECUTOR
+    contractAddress: EXECUTOR,
+    transactionIndex: 0
   };
   const blocks = {
-    1000: { number: 1000, hash: BLOCK_HASH },
+    1000: {
+      number: 1000,
+      hash: BLOCK_HASH,
+      transactions: [TX_HASH]
+    },
     1063: { number: 1063, hash: OBSERVATION_HASH }
   };
 
@@ -257,4 +263,41 @@ test("rejects missing independently trusted code hash", async () => {
     run(f, { expectedRuntimeCodeHash: undefined }),
     /expected runtime code.*hash required/
   );
+});
+
+test("rejects transaction and receipt index mismatch", async () => {
+  const f = fixture();
+  f.receipt.transactionIndex = 1;
+  await assert.rejects(run(f), /transaction index mismatch/);
+});
+
+test("rejects missing canonical transaction list", async () => {
+  const f = fixture();
+  delete f.blocks[1000].transactions;
+  await assert.rejects(run(f), /transaction list required/);
+});
+
+test("rejects out-of-range canonical transaction index", async () => {
+  const f = fixture();
+  f.transaction.transactionIndex = 1;
+  f.receipt.transactionIndex = 1;
+  await assert.rejects(run(f), /transaction list required/);
+});
+
+test("rejects wrong transaction at canonical block index", async () => {
+  const f = fixture();
+  f.blocks[1000].transactions[0] = "0x" + "12".repeat(32);
+  await assert.rejects(run(f), /not at canonical block index/);
+});
+
+test("rejects malformed transaction index", async () => {
+  const f = fixture();
+  f.transaction.transactionIndex = -1;
+  await assert.rejects(run(f), /Transaction index safe integer/);
+});
+
+test("rejects malformed canonical included transaction hash", async () => {
+  const f = fixture();
+  f.blocks[1000].transactions[0] = "not-a-hash";
+  await assert.rejects(run(f), /Canonical included transaction bytes32/);
 });
