@@ -8003,3 +8003,87 @@ For recovery after a session reset, inspect `git status`,
 `git log --oneline -5`, the current checkpoint, and relevant project
 files. Never include private keys, seed phrases, passwords, RPC secrets,
 or other credentials in checkpoints or chat.
+
+## Security patch verification — Step 177X-O30
+
+### Repository identity and scope
+
+- Repository: `/workspaces/profitbot_project`
+- Branch: `repair/simulation-safety`
+- Baseline HEAD: `83b1536f277df6dba41a2e590c5be25d5a8faf66`
+- Security-patch working-tree files: `package.json` and `package-lock.json`.
+- This checkpoint update is documentation only. No deployment, signing, broadcasting, live flashloan, or public-network transaction is authorized.
+
+### Dependency security changes
+
+Six npm overrides were added to `package.json`:
+
+- `minimatch`: `5.1.9`
+- `diff`: `5.2.2`
+- `picomatch@^2`: `2.3.2`
+- `picomatch@^4`: `4.0.4`
+- `bn.js@^4`: `4.12.5`
+- `bn.js@^5`: `5.2.5`
+
+`package-lock.json` was regenerated with `npm install --package-lock-only --ignore-scripts --legacy-peer-deps --no-audit --no-fund --no-update-notifier`.
+
+Dependencies were installed with `npm ci --ignore-scripts --legacy-peer-deps --no-audit --no-fund --no-update-notifier`.
+
+The installed dependency tree was inspected and the targeted versions verified.
+
+### Security audit evidence
+
+- Full npm audit before patch: 32 findings (0 critical, 12 high, 2 moderate, 18 low).
+- Full npm audit after patch: 28 findings (0 critical, 10 high, 1 moderate, 17 low).
+- Reduction: 4 findings, comprising 2 high, 1 moderate, and 1 low.
+- Targeted advisory package names `minimatch`, `picomatch`, `diff`, and `bn.js` were no longer reported by the post-patch audit.
+- Production-only audit (`npm audit --omit=dev`): 14 low, 0 moderate, 0 high, 0 critical.
+- Remaining full-tree findings require separate assessment, particularly legacy Hardhat 2 / Ethers 5 dependency chains.
+- Do not run `npm audit fix --force` or undertake major dependency migrations without separate approval.
+
+### Regression verification
+
+- Step 177X-O28R: official Node.js regression suite passed, 1,268 tests, 0 failures, 139 selected test files.
+- Step 177X-O29: official Hardhat suite passed, 29 tests, 0 failures, using the local `hardhat` network.
+- Solidity compilation: 35 files compiled successfully, EVM target `paris`.
+- Total confirmed regression tests: 1,297 passed, 0 failed.
+- Hardhat compilation emitted SPDX warnings for third-party Uniswap interface files; tests still passed.
+- Seven Hardhat-oriented `.test.js` files were excluded from the official Node.js suite. An earlier overbroad Node test-discovery run produced seven failures; the corrected official suite passed.
+- The three protected experimental Polygon V4 test files were not executed.
+
+### Hardhat-generated artifact recovery
+
+- Step 177X-O29 regenerated Git-tracked compilation artifacts and cache data during otherwise successful Hardhat testing.
+- Step 177X-O29R confirmed exactly 31 tracked changes under `artifacts/` and one tracked change to `cache/solidity-files-cache.json`; no unexpected changes or staged files.
+- Step 177X-O29S restored precisely those 32 generated files from HEAD with strict guards.
+- Post-restoration Git status contained only the two intentional dependency changes and the three protected untracked experimental tests.
+- Restoration did not remove ignored/untracked compiler outputs.
+
+### Protected experimental work
+
+These three files remain untracked and must not be modified, staged, executed, committed, or deleted without separate explicit approval:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Preserve existing contract and execution code, including:
+
+- `contracts/PolygonV4CandidateExecutor.sol`
+- `contracts/ProfitBot.sol`
+- `scripts/utils/polygonExecutionRoute.js`
+- `scripts/utils/polygonExecutionCandidate.js`
+- `scripts/scanAndExecute.js`
+
+### Next approved-work boundary
+
+1. Verify this checkpoint append and its new SHA-256 digest.
+2. Seek separate approval before staging or committing anything.
+3. If approved, stage only `package.json`, `package-lock.json`, and `APOLLO_CHECKPOINT.md`; explicitly exclude the three protected untracked tests and generated artifacts.
+4. Verify staged diffs before any commit.
+5. Seek separate approval before committing or pushing.
+6. Keep unresolved audit findings visible; do not describe the dependency tree as vulnerability-free.
+
+### Operational continuity
+
+Git-tracked files and committed history persist independently of chat context. Uncommitted changes require care. GitHub Codespaces can stop independently of this conversation. Before stepping away, save files, commit and push approved work when appropriate, and record any transient terminal state. Never place private keys, seed phrases, passwords, or API secrets in this checkpoint.
