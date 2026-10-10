@@ -16,6 +16,12 @@ const {
 );
 
 const {
+  buildExecutionReadinessEvidence
+} = require(
+  "../scripts/utils/polygonV4ExecutionReadinessEvidence"
+);
+
+const {
   PROTECTED_QUALIFICATION_RUNTIME_POLICY
 } = require(
   "../scripts/utils/polygonV4ProtectedQualificationRuntimePolicy"
@@ -839,6 +845,130 @@ describe(
             .gasUsed
             .gt(0),
           "final simulation receipt gas missing"
+        );
+
+        /*
+         * Historical fork lifecycle -> production readiness integration.
+         *
+         * This proves evidence lineage only. The controlled Hardhat fork
+         * is not current Polygon chain state, and no live execution is
+         * authorized by this test.
+         */
+        const readinessEvidence =
+          buildExecutionReadinessEvidence({
+            lifecycleResult: result
+          });
+
+        assert.strictEqual(
+          readinessEvidence.executionEvidenceReady,
+          true,
+          "genuine historical lifecycle did not produce readiness evidence"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.lifecycleResult,
+          result,
+          "readiness reconstructed the lifecycle result"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.preparedExecutionContext,
+          result.preparedExecutionContext,
+          "readiness reconstructed the prepared execution context"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.executionPlan,
+          measurementExecutionPlan,
+          "readiness reconstructed the measured execution plan"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.gasEvidence,
+          result.gasEvidence,
+          "readiness reconstructed the measured gas evidence"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.qualificationPolicySnapshot,
+          result.qualificationPolicySnapshot,
+          "readiness reconstructed the qualification policy"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.qualifiedContext,
+          result.qualifiedContext,
+          "readiness reconstructed the qualified context"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.simulationResult,
+          result.simulationResult,
+          "readiness reconstructed the final simulation wrapper"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.receipt,
+          result.simulationResult.simulationResult.receipt,
+          "readiness reconstructed the final simulation receipt"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.receipt.status,
+          1,
+          "historical final simulation receipt was unsuccessful"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.liveExecutionAuthorized,
+          false,
+          "historical evidence must not authorize live execution"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.signerAuthorized,
+          false,
+          "historical evidence must not authorize signing"
+        );
+
+        assert.strictEqual(
+          readinessEvidence.broadcastAuthorized,
+          false,
+          "historical evidence must not authorize broadcasting"
+        );
+
+        /*
+         * Validate the measured executor identity against the actual
+         * executor deployed inside the controlled historical fork.
+         */
+        assert.strictEqual(
+          result.gasEvidence.executorContext.executorAddress.toLowerCase(),
+          executor.address.toLowerCase(),
+          "measured executor address differs from fork deployment"
+        );
+
+        const deployedRuntimeCode =
+          await ethers.provider.getCode(executor.address);
+
+        assert.notStrictEqual(
+          deployedRuntimeCode,
+          "0x",
+          "historical executor runtime bytecode missing"
+        );
+
+        assert.strictEqual(
+          result.gasEvidence.executorContext.executorCodeHash.toLowerCase(),
+          ethers.utils.keccak256(deployedRuntimeCode).toLowerCase(),
+          "measured executor code hash differs from fork deployment"
+        );
+
+        const deployedExecutorOwner =
+          await executor.owner();
+
+        assert.strictEqual(
+          deployedExecutorOwner.toLowerCase(),
+          (await deployer.getAddress()).toLowerCase(),
+          "historical executor owner differs from deployment signer"
         );
       }
     );
