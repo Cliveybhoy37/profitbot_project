@@ -8219,3 +8219,44 @@ Do not run the three protected experimental tests without separate approval.
 Step 177X-O63 passed: isolated Hardhat regression 29/29 green,
 35 Solidity files compiled, original tracked artifact/cache hash
 mismatches 0/177, protected experimental tests unchanged.
+
+## Step 177X-O169J — Focused Economics and Cache Audit Checkpoint
+
+### Repository baseline
+
+- Branch: `repair/simulation-safety`
+- HEAD: `d4546a4d8abf57630f72295d54b9ea3c0bd2b729`
+- Audits O169E–O169I: read-only, with successful repository-integrity checks.
+- Before this checkpoint update: no tracked or staged changes; exactly three protected untracked gas experiment files.
+- This checkpoint update is intentionally uncommitted. Push remains separately approval-gated.
+
+### Verified source findings
+
+- O169E: Reviewed the V4 economics observer and its research/sweep/qualification callers. The observer validates V4 pool currencies against `zeroForOne` before quoting.
+- O169F–O169G: Reviewed economics job construction, direction mapping, venue selection and general research-runner integration. The forward/reverse token mapping is consistent with the observer's direction guard.
+- Job construction excludes identity external legs, requires conclusive structural evidence and successful outer quote venues, and rejects classification PoolId mismatches.
+- O169H: Reviewed pinned-block propagation, quote failure classification and V3 cache behavior. Source and existing test assertions support pinned-block V3/V4 calls and non-caching of V3 factory RPC failures.
+- O169I: Confirmed V3 cache key is `blockTag:sortedToken0:sortedToken1:fee`.
+- The amount-surface runner creates a fresh V3 cache within one surface acquisition, using one supplied provider and pinned block.
+- The inspected general research, targeted sweep, fine sweep and live qualification runners do not pass a shared persistent V3 cache.
+- The three-leg economics observer accepts an optional cache and forwards it to both outer quote legs.
+
+### Limits and unresolved considerations
+
+- The V3 cache key does not include chain ID, provider identity, factory address or venue identity. A future caller reusing one cache across those contexts could create contamination. No such unsafe reuse was demonstrated in the inspected runners.
+- These audit steps inspected implementation and existing test assertions; they did not rerun tests or perform live RPC verification.
+- Historical fork gas measurements are simulations, not genuine Polygon mainnet transaction receipt gas.
+- No new implementation defect was established by O169E–O169I. Do not make speculative repairs without new evidence.
+
+### Protected files — do not modify, stage or delete without separate approval
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+### Next action
+
+- Review this checkpoint update and choose the next concrete engineering or validation objective.
+- Require explicit approval before any tests, edits, commits, pushes, RPC interactions, deployment or transaction.
+- Preserve the current branch and protected experiments.
+- Never place private keys, seed phrases, passwords, API secrets or full RPC URLs in this checkpoint.
