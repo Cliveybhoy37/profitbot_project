@@ -404,6 +404,34 @@ async function observeThreeLegEconomics({
   const exit =
     normalizeAddress(exitToken);
 
+  const normalizedPoolKey =
+    normalizePoolKey(poolKey);
+
+  if (typeof zeroForOne !== "boolean") {
+    throw new Error(
+      "V4 direction must be boolean"
+    );
+  }
+
+  const expectedEntry =
+    zeroForOne
+      ? normalizedPoolKey.currency0
+      : normalizedPoolKey.currency1;
+
+  const expectedExit =
+    zeroForOne
+      ? normalizedPoolKey.currency1
+      : normalizedPoolKey.currency0;
+
+  if (
+    entry !== expectedEntry ||
+    exit !== expectedExit
+  ) {
+    throw new Error(
+      "V4 pool currency-direction mismatch"
+    );
+  }
+
   const amount0 =
     positiveBigNumber(
       startAmount,
@@ -449,7 +477,8 @@ async function observeThreeLegEconomics({
     await observeV4QuoteFn({
       provider,
       blockTag,
-      poolKey,
+      poolKey:
+        normalizedPoolKey,
       zeroForOne,
       amountIn:
         amount1

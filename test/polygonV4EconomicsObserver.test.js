@@ -579,6 +579,224 @@ test(
   }
 );
 
+
+test(
+  "three-leg currency direction accepts valid forward route",
+  async () => {
+    const calls = [];
+
+    const result = await observeThreeLegEconomics({
+      provider: {},
+      blockTag: BLOCK,
+      startToken: WPOL,
+      startAmount: "1000",
+      entryVenue: "UNISWAP_V3",
+      entryToken: WETH,
+      poolKey: POOL_KEY,
+      zeroForOne: true,
+      exitToken: USDT0,
+      exitVenue: "UNISWAP_V3",
+      async observeOuterQuoteFn(args) {
+        calls.push("OUTER");
+        return {
+          status: QUOTE_OK,
+          amountOut: calls.length === 1 ? "250" : "1010"
+        };
+      },
+      async observeV4QuoteFn(args) {
+        calls.push("V4");
+        assert.equal(args.zeroForOne, true);
+        assert.equal(args.poolKey.currency0, ethers.utils.getAddress(WETH));
+        assert.equal(args.poolKey.currency1, ethers.utils.getAddress(USDT0));
+        assert.equal(args.amountIn.toString(), "250");
+        return {
+          status: QUOTE_OK,
+          amountOut: "400",
+          gasEstimate: "1"
+        };
+      }
+    });
+
+    assert.equal(result.status, QUOTE_OK);
+    assert.deepEqual(calls, ["OUTER", "V4", "OUTER"]);
+    assert.equal(result.grossDelta, "10");
+  }
+);
+
+test(
+  "three-leg currency direction accepts valid reverse route",
+  async () => {
+    const calls = [];
+
+    const result = await observeThreeLegEconomics({
+      provider: {},
+      blockTag: BLOCK,
+      startToken: WPOL,
+      startAmount: "1000",
+      entryVenue: "UNISWAP_V3",
+      entryToken: USDT0,
+      poolKey: POOL_KEY,
+      zeroForOne: false,
+      exitToken: WETH,
+      exitVenue: "UNISWAP_V3",
+      async observeOuterQuoteFn() {
+        calls.push("OUTER");
+        return {
+          status: QUOTE_OK,
+          amountOut: calls.length === 1 ? "250" : "1010"
+        };
+      },
+      async observeV4QuoteFn(args) {
+        calls.push("V4");
+        assert.equal(args.zeroForOne, false);
+        assert.equal(args.poolKey.currency0, ethers.utils.getAddress(WETH));
+        assert.equal(args.poolKey.currency1, ethers.utils.getAddress(USDT0));
+        return {
+          status: QUOTE_OK,
+          amountOut: "400",
+          gasEstimate: "1"
+        };
+      }
+    });
+
+    assert.equal(result.status, QUOTE_OK);
+    assert.deepEqual(calls, ["OUTER", "V4", "OUTER"]);
+    assert.equal(result.grossDelta, "10");
+  }
+);
+
+test(
+  "three-leg currency direction rejects wrong entry currency before quotes",
+  async () => {
+    let calls = 0;
+
+    await assert.rejects(
+      observeThreeLegEconomics({
+        provider: {},
+        blockTag: BLOCK,
+        startToken: WPOL,
+        startAmount: "1000",
+        entryVenue: "UNISWAP_V3",
+        entryToken: WPOL,
+        poolKey: POOL_KEY,
+        zeroForOne: false,
+        exitToken: WETH,
+        exitVenue: "UNISWAP_V3",
+        async observeOuterQuoteFn() {
+          calls += 1;
+          throw new Error("Unexpected outer quote");
+        },
+        async observeV4QuoteFn() {
+          calls += 1;
+          throw new Error("Unexpected V4 quote");
+        }
+      }),
+      /V4 pool currency-direction mismatch/
+    );
+
+    assert.equal(calls, 0);
+  }
+);
+
+test(
+  "three-leg currency direction rejects wrong exit currency before quotes",
+  async () => {
+    let calls = 0;
+
+    await assert.rejects(
+      observeThreeLegEconomics({
+        provider: {},
+        blockTag: BLOCK,
+        startToken: WPOL,
+        startAmount: "1000",
+        entryVenue: "UNISWAP_V3",
+        entryToken: USDT0,
+        poolKey: POOL_KEY,
+        zeroForOne: false,
+        exitToken: WPOL,
+        exitVenue: "UNISWAP_V3",
+        async observeOuterQuoteFn() {
+          calls += 1;
+          throw new Error("Unexpected outer quote");
+        },
+        async observeV4QuoteFn() {
+          calls += 1;
+          throw new Error("Unexpected V4 quote");
+        }
+      }),
+      /V4 pool currency-direction mismatch/
+    );
+
+    assert.equal(calls, 0);
+  }
+);
+
+test(
+  "three-leg currency direction rejects reversed direction before quotes",
+  async () => {
+    let calls = 0;
+
+    await assert.rejects(
+      observeThreeLegEconomics({
+        provider: {},
+        blockTag: BLOCK,
+        startToken: WPOL,
+        startAmount: "1000",
+        entryVenue: "UNISWAP_V3",
+        entryToken: USDT0,
+        poolKey: POOL_KEY,
+        zeroForOne: true,
+        exitToken: WETH,
+        exitVenue: "UNISWAP_V3",
+        async observeOuterQuoteFn() {
+          calls += 1;
+          throw new Error("Unexpected outer quote");
+        },
+        async observeV4QuoteFn() {
+          calls += 1;
+          throw new Error("Unexpected V4 quote");
+        }
+      }),
+      /V4 pool currency-direction mismatch/
+    );
+
+    assert.equal(calls, 0);
+  }
+);
+
+test(
+  "three-leg currency direction rejects nonboolean direction before quotes",
+  async () => {
+    let calls = 0;
+
+    await assert.rejects(
+      observeThreeLegEconomics({
+        provider: {},
+        blockTag: BLOCK,
+        startToken: WPOL,
+        startAmount: "1000",
+        entryVenue: "UNISWAP_V3",
+        entryToken: USDT0,
+        poolKey: POOL_KEY,
+        zeroForOne: "false",
+        exitToken: WETH,
+        exitVenue: "UNISWAP_V3",
+        async observeOuterQuoteFn() {
+          calls += 1;
+          throw new Error("Unexpected outer quote");
+        },
+        async observeV4QuoteFn() {
+          calls += 1;
+          throw new Error("Unexpected V4 quote");
+        }
+      }),
+      /V4 direction must be boolean/
+    );
+
+    assert.equal(calls, 0);
+  }
+);
+
 test(
   "three-leg economics forwards one supplied V3 pool cache to both outer legs",
   async () => {
