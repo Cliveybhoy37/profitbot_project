@@ -474,3 +474,29 @@ test("rejects execution token mismatch", () => {
     /Execution leg 1 token mismatch with candidate/
   );
 });
+
+test(
+  "rounds non-divisible flashloan premiums upward",
+  () => {
+    const adjustedCandidate = candidate();
+    adjustedCandidate.amountIn = START.add(1);
+
+    const result = preflightObservedV4Candidate(
+      input({
+        candidate: adjustedCandidate,
+        requestedAmount: START.add(1),
+        premiumBps: 7
+      })
+    );
+
+    const numerator = START.add(1).mul(7);
+    const expected = numerator
+      .add(9999)
+      .div(10000);
+
+    assert.equal(
+      result.expectedPremium.toString(),
+      expected.toString()
+    );
+  }
+);

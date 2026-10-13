@@ -141,6 +141,7 @@ function amountSurfaceEconomics({
   const premium =
     start
       .mul(premiumRate)
+      .add(9999)
       .div(10000);
 
   const fixedProtectedCosts =

@@ -381,6 +381,7 @@ function preflightObservedV4Candidate({
   const expectedPremium =
     amountIn
       .mul(premium)
+      .add(9999)
       .div(10000);
 
   const estimatedGasCost =

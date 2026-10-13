@@ -256,3 +256,23 @@ test(
     );
   }
 );
+
+test(
+  "rounds non-divisible flashloan premiums upward",
+  () => {
+    const result = amountSurfaceEconomics({
+      amountIn: "100001",
+      finalAmount: "120000",
+      premiumBps: 5,
+      slippageBps: 50,
+      gasUnits: "100",
+      safetyReserveWei: "1000",
+      minimumNetProfitWei: "5000"
+    });
+
+    assert.equal(
+      result.premiumWei.toString(),
+      "51"
+    );
+  }
+);
