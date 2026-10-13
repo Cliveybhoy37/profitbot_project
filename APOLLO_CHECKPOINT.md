@@ -8278,3 +8278,75 @@ mismatches 0/177, protected experimental tests unchanged.
 - No deployment, signing, broadcasting, or live trading performed.
 - Do not modify or execute the three protected gas experiments without separate approval.
 - Next: review remaining profitability assumptions and fork-test requirements before considering live execution.
+
+---
+
+## Apollo recovery checkpoint — 2026-10-13
+
+### Repository and branch
+- Repository: `/workspaces/profitbot_project`
+- Branch: `repair/simulation-safety`
+- Latest verified commit: `daff30f`
+- Commit message: `fix: round V4 flashloan premium estimates upward`
+- Push confirmed: `origin/repair/simulation-safety` synchronized with local HEAD.
+- Previous safety commit: `64a6353` — WPOL-denominated V4 preflight route enforcement.
+
+### Completed work
+- Updated `scripts/utils/polygonV4AmountSurface.js` to round modeled flashloan premiums upward.
+- Updated `scripts/utils/polygonV4CandidatePreflight.js` to round expected premiums upward.
+- Added non-divisible-premium regression tests in:
+  - `test/polygonV4AmountSurface.test.js`
+  - `test/polygonV4CandidatePreflight.test.js`
+- Exactly those four files were committed in `daff30f`.
+- No smart-contract deployment, transaction broadcast, or live fork execution was performed.
+
+### Verified regression results
+- Node tests: 1,281 passed, 0 failed.
+- Hardhat tests: 29 passed, 0 failed.
+- Total: 1,310 passed, 0 failed.
+- Hardhat compiled 35 Solidity files successfully.
+- Hardhat tests used an isolated temporary configuration, with no Polygon fork.
+- Generated `artifacts/` and `cache/` were verified clean against HEAD before committing.
+- Final production change after the tests was indentation-only; no arithmetic was changed.
+
+### Important technical distinction
+- The rounding adjustment conservatively models flashloan premium costs.
+- Passing local tests does not establish live arbitrage profitability.
+- Do not assume this rounding exactly reproduces every Aave V3 on-chain fee calculation without separate verification.
+
+### Protected ongoing work — do not overwrite, restore, stage, or commit accidentally
+- `test/polygonV4PreparedExecutionLifecycleIntegration.test.js`
+- `.apollo-backups/`
+- `=`
+- `APOLLO_CHECKPOINT_V4_FIVE_BLOCK_PAIRED_GAS.md`
+- `scripts/utils/polygonV4UnsignedDeploymentPreparationEvidence.js`
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+- `test/polygonV4PreparedExecutionLifecycleIntegration.test.test.js.apollo-permit2-backup`
+- `test/polygonV4UnsignedDeploymentPreparationEvidence.test.js`
+
+Additional protected project files:
+- `contracts/ProfitBot.sol`
+- `scripts/utils/polygonExecutionRoute.js`
+- `scripts/utils/polygonExecutionCandidate.js`
+- `scripts/scanAndExecute.js`
+
+### Outstanding items
+- Investigate GitHub's reported 228 dependency vulnerability alerts separately and carefully; do not blindly run `npm audit fix`.
+- Decide the next V4 development or simulation objective before modifying code.
+- Do not run RPC/fork tests, deploy, sign, or broadcast without explicit approval.
+- Keep unrelated experimental files isolated from future commits.
+
+### Recovery instructions
+1. Read this checkpoint and any earlier checkpoint sections.
+2. Inspect `git status -sb` and `git log -5 --oneline`.
+3. Inspect relevant diffs before making changes.
+4. Confirm the active objective and preserve unrelated work.
+5. Use one copy-pastable terminal command per step.
+
+### Environment persistence
+- Git commits and saved repository files persist independently of the chat.
+- Unsaved editor buffers, running processes, terminal state, and chat context may not persist.
+- GitHub Codespaces may stop or time out independently.
+- Never store private keys, seed phrases, passwords, or API credentials in checkpoints.
