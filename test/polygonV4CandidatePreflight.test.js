@@ -15,6 +15,15 @@ const {
   "../scripts/utils/polygonV4CandidatePreflight"
 );
 
+const WPOL =
+  "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
+
+const DAI =
+  "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063";
+
+const APEPE =
+  "0xA3f751662e282E83EC3cBc387d225Ca56dD63D3A";
+
 const START =
   ethers.BigNumber.from(
     "125000000000000000"
@@ -31,18 +40,24 @@ function candidate() {
     amountIn: START,
     legs: [
       {
+        tokenIn: WPOL,
+        tokenOut: DAI,
         amountOut:
           ethers.BigNumber.from(
             "14481764747850506"
           )
       },
       {
+        tokenIn: DAI,
+        tokenOut: APEPE,
         amountOut:
           ethers.BigNumber.from(
             "12592522662788687883109"
           )
       },
       {
+        tokenIn: APEPE,
+        tokenOut: WPOL,
         amountOut: FINAL
       }
     ]
@@ -402,3 +417,60 @@ test(
     );
   }
 );
+
+test("rejects non-WPOL-denominated flashloan route", () => {
+  const observed = candidate();
+  observed.legs[0].tokenIn = DAI;
+  observed.legs[2].tokenOut = DAI;
+
+  assert.throws(
+    () => preflightObservedV4Candidate(
+      input({ candidate: observed })
+    ),
+    /WPOL-denominated closed route/
+  );
+});
+
+test("rejects missing candidate token address", () => {
+  const observed = candidate();
+  delete observed.legs[0].tokenIn;
+
+  assert.throws(
+    () => preflightObservedV4Candidate(
+      input({ candidate: observed })
+    ),
+    /Candidate leg 0 tokenIn must be a valid token address/
+  );
+});
+
+test("rejects broken candidate token continuity", () => {
+  const observed = candidate();
+  observed.legs[1].tokenIn = WPOL;
+
+  assert.throws(
+    () => preflightObservedV4Candidate(
+      input({ candidate: observed })
+    ),
+    /Candidate route token continuity mismatch/
+  );
+});
+
+test("rejects missing execution token address", () => {
+  const params = input();
+  delete params.executionLegs[0].tokenIn;
+
+  assert.throws(
+    () => preflightObservedV4Candidate(params),
+    /Execution leg 0 tokenIn must be a valid token address/
+  );
+});
+
+test("rejects execution token mismatch", () => {
+  const params = input();
+  params.executionLegs[1].tokenOut = WPOL;
+
+  assert.throws(
+    () => preflightObservedV4Candidate(params),
+    /Execution leg 1 token mismatch with candidate/
+  );
+});

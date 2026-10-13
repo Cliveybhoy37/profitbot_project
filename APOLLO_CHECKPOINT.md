@@ -8260,3 +8260,21 @@ mismatches 0/177, protected experimental tests unchanged.
 - Require explicit approval before any tests, edits, commits, pushes, RPC interactions, deployment or transaction.
 - Preserve the current branch and protected experiments.
 - Never place private keys, seed phrases, passwords, API secrets or full RPC URLs in this checkpoint.
+
+
+## WPOL Preflight Safety Regression — 2026-10-13
+
+- Branch: `repair/simulation-safety`
+- Scope: `scripts/utils/polygonV4CandidatePreflight.js` and `test/polygonV4CandidatePreflight.test.js`
+- WPOL-only closed route, candidate continuity, valid token addresses, and execution/candidate token matching enforced.
+- Three-leg array length checks verified before WPOL route validation.
+- Official Node regression: **1,279 passed, 0 failed**.
+- Official Hardhat regression: **29 passed, 0 failed**; 35 Solidity files compiled in an isolated `/tmp` workspace with forking disabled.
+- Combined official regression: **1,308 passed, 0 failed**.
+- `git diff --check` passed for both patch files.
+- Original tracked artifacts/cache status remained at 7 deleted and 25 modified after isolated Hardhat testing.
+- Fork-gated Mocha tests not verified in this round.
+- Remaining review note: `candidate.legs[2].amountOut` can throw a raw TypeError if the third leg is null; no change authorized.
+- No deployment, signing, broadcasting, or live trading performed.
+- Do not modify or execute the three protected gas experiments without separate approval.
+- Next: review remaining profitability assumptions and fork-test requirements before considering live execution.

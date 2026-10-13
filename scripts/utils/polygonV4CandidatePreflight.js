@@ -2,6 +2,77 @@
 
 const { ethers } = require("ethers");
 
+const POLYGON_WPOL =
+  "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
+
+function requireTokenAddress(value, label) {
+  if (typeof value !== "string" || !ethers.utils.isAddress(value)) {
+    throw new Error(`${label} must be a valid token address`);
+  }
+
+  return ethers.utils.getAddress(value);
+}
+
+function validateWpolRoute(candidateLegs, executionLegs) {
+  const candidateTokens = candidateLegs.map((leg, index) => {
+    if (!leg || typeof leg !== "object") {
+      throw new Error(`Candidate leg ${index} must be an object`);
+    }
+
+    return {
+      tokenIn: requireTokenAddress(
+        leg.tokenIn,
+        `Candidate leg ${index} tokenIn`
+      ),
+      tokenOut: requireTokenAddress(
+        leg.tokenOut,
+        `Candidate leg ${index} tokenOut`
+      )
+    };
+  });
+
+  if (
+    candidateTokens[0].tokenIn.toLowerCase() !== POLYGON_WPOL.toLowerCase() ||
+    candidateTokens[2].tokenOut.toLowerCase() !== POLYGON_WPOL.toLowerCase()
+  ) {
+    throw new Error("Preflight requires WPOL-denominated closed route");
+  }
+
+  for (let i = 0; i < 2; i++) {
+    if (
+      candidateTokens[i].tokenOut.toLowerCase() !==
+      candidateTokens[i + 1].tokenIn.toLowerCase()
+    ) {
+      throw new Error("Candidate route token continuity mismatch");
+    }
+  }
+
+  for (let i = 0; i < 3; i++) {
+    const leg = executionLegs[i];
+
+    if (!leg || typeof leg !== "object") {
+      throw new Error(`Execution leg ${i} must be an object`);
+    }
+
+    const tokenIn = requireTokenAddress(
+      leg.tokenIn,
+      `Execution leg ${i} tokenIn`
+    );
+
+    const tokenOut = requireTokenAddress(
+      leg.tokenOut,
+      `Execution leg ${i} tokenOut`
+    );
+
+    if (
+      tokenIn.toLowerCase() !== candidateTokens[i].tokenIn.toLowerCase() ||
+      tokenOut.toLowerCase() !== candidateTokens[i].tokenOut.toLowerCase()
+    ) {
+      throw new Error(`Execution leg ${i} token mismatch with candidate`);
+    }
+  }
+}
+
 function requireBigNumber(value, label) {
   if (!ethers.BigNumber.isBigNumber(value)) {
     throw new Error(
@@ -233,6 +304,8 @@ function preflightObservedV4Candidate({
       "Preflight requires exactly three execution legs"
     );
   }
+
+  validateWpolRoute(candidate.legs, executionLegs);
 
   for (let i = 0; i < 3; i++) {
     const candidateLeg =
