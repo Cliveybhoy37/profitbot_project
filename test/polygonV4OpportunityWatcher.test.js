@@ -95,6 +95,39 @@ test(
 );
 
 test(
+  "gas ceiling rounds fractional premium upward",
+  () => {
+    const result =
+      calculateGasCeiling({
+        amountIn:
+          ethers.BigNumber.from("100001"),
+        protectedFinalOutput:
+          ethers.BigNumber.from("20000000000000000"),
+        premiumBps: 5,
+        policyGasUnits:
+          ethers.BigNumber.from("100"),
+        safetyReserve:
+          ethers.constants.Zero,
+        minimumNetProfit:
+          ethers.constants.Zero
+      });
+
+    assert.equal(
+      result.premium.toString(),
+      "51"
+    );
+
+    assert.equal(
+      result.gasBudget.toString(),
+      ethers.BigNumber.from("20000000000000000")
+        .sub("100001")
+        .sub("51")
+        .toString()
+    );
+  }
+);
+
+test(
   "gas ceiling fails closed when protected output cannot fund policy",
   () => {
     const result =

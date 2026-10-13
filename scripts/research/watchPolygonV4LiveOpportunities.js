@@ -156,6 +156,7 @@ function calculateGasCeiling({
   const premium =
     start
       .mul(premiumBps)
+      .add(9999)
       .div(10000);
 
   const fixedCosts =
