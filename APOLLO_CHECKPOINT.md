@@ -8350,3 +8350,70 @@ Additional protected project files:
 - Unsaved editor buffers, running processes, terminal state, and chat context may not persist.
 - GitHub Codespaces may stop or time out independently.
 - Never store private keys, seed phrases, passwords, or API credentials in checkpoints.
+
+---
+
+## Apollo Step 53 — Standalone Polygon V4 Pre-Signer Safety
+
+### Scope and status
+
+- Branch: `repair/simulation-safety`.
+- Milestone: four standalone safety modules and four dedicated Node test files.
+- Status: IMPLEMENTED / FOCUSED TESTS PASSING / NOT INTEGRATED.
+- No live execution, signer authorization, broadcast authorization, or deployment is granted by this milestone.
+
+### Safety implementation
+
+1. `scripts/utils/polygonV4FinalTransactionEconomicsEvidence.js`
+   - Validates the preserved transaction-envelope and qualification evidence.
+   - Uses exact `gasLimit * maxFeePerGas` maximum gas exposure.
+   - Enforces rounded flashloan premium, safety reserve, minimum profit, and WPOL route requirements.
+
+2. `scripts/utils/polygonV4NativeGasAffordabilityEvidence.js`
+   - Requires native POL balance to cover maximum gas exposure plus transaction value.
+
+3. `scripts/utils/polygonV4NativeGasBalanceAcquisitionEvidence.js`
+   - Checks Polygon chain ID 137.
+   - Acquires the sender's pending native POL balance through an injected provider.
+
+4. `scripts/utils/polygonV4PreSignerSafetyCompositionEvidence.js`
+   - Composes final economics and native affordability checks before prospective signer authorization.
+   - Does not authorize signing or broadcasting.
+
+### Dedicated tests
+
+- `test/polygonV4FinalTransactionEconomicsEvidence.test.js`
+- `test/polygonV4NativeGasAffordabilityEvidence.test.js`
+- `test/polygonV4NativeGasBalanceAcquisitionEvidence.test.js`
+- `test/polygonV4PreSignerSafetyCompositionEvidence.test.js`
+
+### Step 53 verified results
+
+- Focused Node tests: 52 passed, 0 failed, 0 skipped.
+- No Hardhat compilation or RPC interaction was performed in Step 53.
+- Protected `contracts/ProfitBot.sol`, signer authorization composition, `artifacts/`, and `cache/` remained unchanged.
+- Git index contained no staged changes.
+
+### Integration limitations
+
+- These eight files remain standalone and are not yet connected to an operational Polygon V4 execution runner.
+- Existing 1S.65–1S.75 execution composition interfaces have not been modified by this milestone.
+- The older transaction scripts remain disabled.
+- Passing offline tests does not establish live profitability, gas sufficiency under future network conditions, or transaction execution readiness.
+
+### Protected unrelated work
+
+Preserve all unrelated modified and untracked files, including the prepared execution lifecycle test, protected gas experiments, backup files, unsigned deployment preparation work, and the file named `=`.
+
+Do not modify protected Solidity, routing, signer, or scanner files without separate approval.
+
+### Next actions
+
+1. Review this checkpoint's exact Git diff.
+2. Obtain separate approval before staging the eight safety files and this checkpoint.
+3. Verify the exact staged file list and staged diff before any commit.
+4. Obtain separate approval before committing or pushing.
+5. Continue the September 23–October 12 historical architecture review before execution-path integration.
+6. Design and test a fail-closed orchestration boundary before considering signer authorization.
+
+No RPC, deployment, signing, broadcasting, staging, commit, or push is authorized by this checkpoint.
