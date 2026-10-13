@@ -8417,3 +8417,68 @@ Do not modify protected Solidity, routing, signer, or scanner files without sepa
 6. Design and test a fail-closed orchestration boundary before considering signer authorization.
 
 No RPC, deployment, signing, broadcasting, staging, commit, or push is authorized by this checkpoint.
+
+---
+
+## Apollo Step 98 — Verified Canonical Regression Baseline
+
+Date: 2026-10-13
+Branch: repair/simulation-safety
+Commit: 62f310525cd8949c82145e98e30e29c6aeb43207
+Node.js: v18.20.8
+
+### Verified regression results
+
+**Step 96 — Canonical Node.js**
+
+- Command: `npm run test:node`
+- Selected test files: 146
+- Tests: 1,363
+- Passed: 1,363
+- Failed: 0
+- Cancelled: 0
+- Skipped: 0
+- Todo: 0
+- Duration: approximately 32.9 seconds
+- Captured log: `/tmp/apollo-step96-node.bqJBtwnA.log` (temporary; not durable across environment resets)
+
+**Step 92 — Canonical Hardhat/Mocha**
+
+- Command: `npm run test:hardhat`
+- Selected files: `test/ProfitBot.js`, `test/execution.js`, `test/threeLegExecution.js`
+- Passed: 29
+- Failed: 0
+- Solidity files compiled: 35
+
+**Combined result across separate runs: 1,392 passed, 0 failed.**
+
+### Repository integrity
+
+- Step 94 restored 32 tracked Hardhat-generated changes under `artifacts/` and `cache/`.
+- Step 96 confirmed generated state remained unchanged.
+- Protected production Solidity, routing, scanner and signer-authorization composition files remained unchanged.
+- Existing modification to `test/polygonV4PreparedExecutionLifecycleIntegration.test.js` was preserved.
+- Three protected untracked gas experiments remained excluded and untouched:
+  - `test/polygonV4GasStateSensitivityProbe.test.js`
+  - `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  - `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+- Git staging remained empty.
+- No commit, push, deployment or broadcast was performed.
+
+### Scope and limitations
+
+- Canonical Node and Hardhat suites were executed separately.
+- Historical fork tests and protected gas experiments were not part of these runs.
+- Passing offline/local regression tests does not establish live execution readiness.
+- Standalone safety-gate components are not yet proven to be enforced by the operational execution path.
+- Existing unrelated modified and untracked work must be preserved.
+
+### Next actions
+
+1. Review this checkpoint's exact Git diff.
+2. Keep staging and committing subject to separate explicit approval.
+3. Continue fail-closed safety-gate and signer-authorization integration analysis.
+4. Preserve historical fork-test isolation and protected gas experiments.
+5. Require separate authorization for RPC/fork execution, signing, deployment or broadcasting.
+
+No secrets, private keys, seed phrases or credentials are recorded here.
