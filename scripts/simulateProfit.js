@@ -1,3 +1,4 @@
+throw new Error("Legacy random-output simulator disabled: no real quotes or executable net-profit validation. Use tests and read-only scans.");
 require("dotenv").config();
 const fs = require("fs");
 const { ethers } = require("ethers");

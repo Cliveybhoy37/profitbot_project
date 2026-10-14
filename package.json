@@ -2,18 +2,21 @@
   "name": "profitbot_project",
   "version": "1.0.0",
   "scripts": {
-    "test": "echo \"No tests configured\"",
+    "test": "npm run test:node && npm run test:hardhat",
     "manual:flashloan": "node scripts/manualTrigger.js",
-    "scan:routes": "node scripts/autoScanner.js"
+    "scan:routes": "node scripts/autoScanner.js",
+    "test:node": "node --test $(grep -l 'node:test' test/*.test.js | sort | tr '\\n' ' ')",
+    "test:hardhat": "hardhat test test/ProfitBot.js test/execution.js test/threeLegExecution.js"
   },
   "dependencies": {
     "@aave/contract-helpers": "^1.33.3",
     "@openzeppelin/contracts": "4.9.6",
     "@uniswap/v3-periphery": "^1.4.4",
-    "axios": "^1.9.0",
+    "axios": "1.20.0",
     "bignumber.js": "^9.3.0",
     "dotenv": "^16.5.0",
     "ethers": "^5.8.0",
+    "form-data": "4.0.6",
     "minimist": "^1.2.8",
     "reflect-metadata": "^0.1.14"
   },
@@ -22,5 +25,23 @@
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "hardhat": "^2.20.2"
+  },
+  "overrides": {
+    "@ethersproject/providers": {
+      "ws": "^8.21.0"
+    },
+    "hardhat": {
+      ".": "$hardhat",
+      "ws": "7.5.11"
+    },
+    "brace-expansion": "2.1.7",
+    "immutable": "4.3.9",
+    "js-yaml": "4.3.2",
+    "minimatch": "5.1.9",
+    "diff": "5.2.2",
+    "picomatch@^2": "2.3.2",
+    "picomatch@^4": "4.0.4",
+    "bn.js@^4": "4.12.5",
+    "bn.js@^5": "5.2.5"
   }
 }

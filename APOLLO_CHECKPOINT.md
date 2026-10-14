@@ -1,0 +1,8534 @@
+# Apollo / ProfitBot Development Checkpoint
+
+Updated: 2026-10-02
+
+## ProfitBot Transition / Recovery Map
+
+This section is the interpretation boundary for recovering ProfitBot from the
+checkpoint history and Git history.
+
+The repository records a continuous repair and development lineage, but that
+lineage must not be interpreted as permission to merge historical
+architectures into the current build.
+
+Historical ProfitBot contracts, scanners, deployment paths, research tools,
+and execution paths remain evidence of earlier project state unless later Git
+history or a later checkpoint explicitly shows that they were retained,
+replaced, disabled, or deliberately integrated.
+
+A component belongs to the current build only when the current source tree and
+later Git history retain it, or when a later checkpoint explicitly records its
+approved integration.
+
+When checkpoint descriptions overlap, use Git history and the current source
+tree to determine the implemented state. Later recovery anchors supersede
+earlier recovery state without erasing the earlier historical evidence.
+
+Dated `APOLLO_CHECKPOINT_*.md` files are independent historical snapshots.
+They must not be merged, rewritten, or synchronized merely to make them match
+the current architecture.
+
+### Development transition
+
+The current build should be recovered as a chronological transition:
+
+1. **2026-09-23 through 2026-09-27 — ProfitBot repair and safety foundation**
+   - Unsafe execution paths were disabled or guarded.
+   - Polygon quoting, discovery, economics, fork simulation, contract
+     hardening, deployment inspection, and deployment validation were
+     developed and tested.
+   - This period establishes the repaired ProfitBot foundation; it is not a
+     V4 architecture.
+
+2. **2026-09-28 — Verified Polygon deployment and Balancer research**
+   - A verified Polygon ProfitBot deployment was recorded.
+   - Balancer opportunity discovery and economic research expanded.
+   - The deployed/production ProfitBot remains an important historical and
+     protected boundary.
+
+3. **2026-09-29 — Opportunity research and Uniswap V3 coverage**
+   - Balancer observations, broader Polygon opportunity research, and
+     Uniswap V3 fee-tier coverage were checkpointed.
+   - These findings form research inputs to the later transition; they do not
+     imply that every researched route became part of the current execution
+     architecture.
+
+4. **2026-09-30 — Explicit Polygon V4 research transition**
+   - Polygon V4 discovery, structural screening, economics, targeted sweeps,
+     isolated fork probes, Aave-funded V4 execution probes, protected
+     execution legs, preflight safety, live qualification, and the read-only
+     V4 watcher were introduced incrementally.
+   - V4 work was kept isolated from the protected production ProfitBot unless
+     an explicit later integration step said otherwise.
+
+5. **2026-10-01 — Persistent V4 observation and analysis**
+   - Persistent provider-only observation logging was validated.
+   - V4 observation analysis was added.
+   - The HP/WSL Bugs observer became the stable monitoring appliance and was
+     kept isolated from Codespace research work.
+
+6. **2026-10-02 — Protected V4 economic qualification**
+   - CI/toolchain guardrails were repaired and recorded.
+   - Qualification-envelope, protected-budget, economic-waterfall, and
+     protected amount-surface analysis were added.
+   - The amount-surface runner remained provider-only: no signer, no
+     transaction submission, and no broadcast.
+
+### Current recovery boundary
+
+At recovery anchor
+`8487a3494b1416b456504ab3ffff37cc357d035c`
+(`Update checkpoint after V4 protected amount surface`):
+
+- branch: `repair/simulation-safety`
+- local and remote branch state were synchronized
+- `ProfitBot CI` run `37021761375` passed
+- underlying Milestone 1B code anchor:
+  `c52ed052229627c89907529fcd56c7b47305c62f`
+- production execution contracts were not modified by Milestone 1B
+- HP/WSL Bugs monitoring remained isolated and untouched
+- signer: none
+- transaction: none
+- broadcast: false
+- `LIVE_READY=false`
+
+The current development direction is therefore the protected Polygon V4
+research/qualification track built on top of the repaired ProfitBot project,
+not an automatic merger of every historical ProfitBot component into V4.
+
+Any future production integration must be explicit, reviewed, tested, and
+checkpointed as a new transition. Until such a milestone exists, historical
+production execution and current V4 research remain separate architectural
+boundaries.
+
+### Recovery rule for future Apollo sessions
+
+Recover in this order:
+
+1. Read this transition map.
+2. Read the current objective, safety boundaries, and latest recovery anchor
+   in `APOLLO_CHECKPOINT.md`.
+3. Use the dated checkpoint files for historical context only.
+4. Follow Git history chronologically when determining how the old ProfitBot
+   became the current build.
+5. Verify important claims against the current source tree and relevant Git
+   commits before modifying code.
+6. Never resurrect a disabled or historical execution path merely because it
+   appears in an older checkpoint.
+7. Never infer that an old production component is part of V4 unless Git or a
+   later checkpoint explicitly records that integration.
+
+---
+
+## Current Objective
+
+Develop ProfitBot toward safe automated Polygon flashloan arbitrage.
+
+Current phase is deliberately READ-ONLY:
+
+- continuous Polygon V4 opportunity qualification
+- provider only
+- no signer
+- no transaction submission
+- no broadcast
+- fail closed unless all protected economics pass
+
+Long-term target:
+
+scan -> quote -> optimise loan size -> protected economics ->
+preflight/simulate -> LIVE_READY gate -> controlled flashloan execution ->
+verify realised profit -> continue scanning
+
+Automatic execution has NOT been enabled.
+
+---
+
+## Git State
+
+Branch:
+
+repair/simulation-safety
+
+Last confirmed code commit:
+
+a9c7933 Add Polygon V4 protected budget envelope analysis
+
+Previous commits:
+
+603f29f Add read-only Polygon V4 opportunity watcher
+980afda Generalize live Polygon V4 candidate qualification
+9eb6486 Add live Polygon V4 qualification probe
+08fb468 Bind V4 preflight to protected execution legs
+87981a0 Enforce worst-case V4 preflight profitability
+e5fc9bc Bind V4 execution profit policy to preflight
+b94a8ed Enforce V4 execution deadline and minimum profit
+fcd5f56 Add Polygon V4 candidate preflight safety
+6035d27 Bridge Polygon V4 observations to Aave execution
+bfa6ced Add candidate-driven Aave Polygon V4 fork executor
+4a11831 Add isolated Aave-funded Polygon V4 fork probe
+
+Heartbeat validation before commit:
+
+34 tests
+34 passed
+0 failed
+git diff --check passed
+protected production boundary clean
+
+Controlled live heartbeat test:
+
+3 iterations
+heartbeat every 2 iterations
+RUN_STATUS=0
+LIVE_READY=false
+BROADCAST=false
+
+---
+
+## Protected Production Boundary
+
+Do NOT modify without explicit review:
+
+contracts/ProfitBot.sol
+scripts/utils/polygonExecutionRoute.js
+scripts/utils/polygonExecutionCandidate.js
+scripts/scanAndExecute.js
+
+These remained clean during today's watcher work.
+
+Do NOT resurrect legacy executeFlashloan.js or scanAndExecute.js execution.
+
+---
+
+## Current Live Watcher
+
+File:
+
+scripts/research/watchPolygonV4LiveOpportunities.js
+
+Committed at:
+
+42d11b8
+
+Normal configuration used:
+
+POLYGON_V4_WATCH_POLL_MS=30000
+
+Behaviour:
+
+- qualifies all configured candidates every 30 seconds
+- full snapshot on initial state
+- full snapshot on qualification-state change
+- full snapshot on LIVE_READY
+- quiet heartbeat every 10 iterations (~5 minutes)
+- heartbeat contains current block, gas, best candidate, gross delta,
+  protected gas ceiling, LIVE_READY and BROADCAST state
+- evidence JSON is written if LIVE_READY occurs
+- watcher then stops
+- watcher has no signer
+- watcher has no transaction path
+- BROADCAST=false
+
+Codespaces suspended during the evening monitoring run.
+
+The watcher process was therefore lost, but the committed implementation is durable.
+
+---
+
+## Candidate Set
+
+Current candidates:
+
+1. V3_075
+   Start: 0.075 WPOL
+   Entry: UNISWAP_V3
+
+2. SUSHI_V2_075
+   Start: 0.075 WPOL
+   Entry: SUSHISWAP_V2
+
+3. QUICK_V2_075
+   Start: 0.075 WPOL
+   Entry: QUICKSWAP_V2
+
+4. V3_125_OPTIMIZED
+   Start: 0.125 WPOL
+   Entry: UNISWAP_V3
+
+All use the same core route family:
+
+WPOL -> DAI -> APEPE -> WPOL
+
+V4 pool ID:
+
+0x6c6627aba26b073dd60b88b472b608f4f48f4e9eb5635efbd32095a76bea6c60
+
+V4 PoolKey:
+
+currency0 = DAI
+currency1 = APEPE
+fee = 10000
+tickSpacing = 100
+hooks = zero address
+zeroForOne = true
+
+Exit venue:
+
+UNISWAP_V3
+
+V3_125_OPTIMIZED remained the best candidate throughout the observed
+evening monitoring period.
+
+---
+
+## Current Safety Policy
+
+Policy gas units:
+
+700000
+
+Safety reserve:
+
+0.001 WPOL
+
+Minimum net profit:
+
+0.005 WPOL
+
+Deadline:
+
+300 seconds
+
+Aave premium observed:
+
+5 bps
+
+Maximum observation age:
+
+3 blocks
+
+Qualification protects both optimistic and execution-floor economics.
+
+Protected final output is derived from the actual final execution leg's
+minAmountOut.
+
+The route must cover:
+
+principal
++ Aave premium
++ modeled gas
++ safety reserve
++ minimum net profit
+
+Worst-case protected profit must also satisfy the minimum-profit policy.
+
+LIVE_READY may only come from the authoritative qualification/preflight
+pipeline.
+
+The watcher must never independently invent LIVE_READY.
+
+Do NOT weaken these policies merely to force qualification.
+
+---
+
+## On-Chain Execution Safety
+
+Isolated fork-stage executor:
+
+PolygonV4CandidateExecutor.sol
+
+ExecutionPlan contains:
+
+deadline
+minimumProfit
+legs
+
+The executor:
+
+- validates deadline
+- requires nonzero minimumProfit
+- validates route
+- revalidates in callback
+- requires debt coverage
+- calculates incremental profit
+- requires realised incremental profit >= minimumProfit
+
+Incremental accounting prevents prefunded balances from masking losses.
+
+Production ProfitBot.sol has NOT been modified for V4.
+
+---
+
+## Proven Aave + V4 Fork Execution
+
+Pinned historical block:
+
+94709817
+
+Flashloan:
+
+0.125 WPOL
+
+Aave premium:
+
+0.0000625 WPOL
+5 bps
+
+Observed route output:
+
+0.141808483715718886 WPOL
+
+Debt:
+
+0.1250625 WPOL
+
+Retained after debt:
+
+0.016745983715718886 WPOL
+
+Hard-coded probe gas:
+
+618122
+
+Generic observed-candidate fork gas was approximately:
+
+652106
+
+Current live policy deliberately remains conservative at:
+
+700000 gas units
+
+---
+
+## Historical Route Optimisation
+
+Historical fine sweep tested approximately:
+
+0.100 through 0.150 WPOL
+
+Best observed gross point was:
+
+0.125 WPOL
+
+This is NOT established as the maximum possible flashloan size.
+
+Future work should optimise protected NET profit over a broader loan-size
+curve rather than assume 0.125 WPOL is permanently optimal.
+
+---
+
+## Evening Live Monitoring Results
+
+The watcher ran successfully for many heartbeat cycles before Codespaces
+suspended.
+
+V3_125_OPTIMIZED remained the best candidate throughout the observed run.
+
+Observed gross profit stayed approximately in the range:
+
+0.01781 to 0.01955 WPOL
+
+Observed protected gas ceiling stayed approximately in the range:
+
+15.76 to 18.24 gwei
+
+Lowest heartbeat gas observed in pasted watcher output:
+
+140.952118233 gwei
+
+Additional manually observed gas shortly before Codespaces suspension:
+
+approximately 147 gwei, then approximately 159 gwei
+
+Those last two values were seen by the operator but were not preserved in
+the pasted heartbeat log.
+
+Gas also repeatedly traded around approximately:
+
+230 to 284 gwei
+
+No observed candidate became LIVE_READY.
+
+No transaction was submitted.
+
+BROADCAST remained false.
+
+Main current blocker:
+
+Polygon gas price is substantially above the protected economic ceiling.
+
+Important observation:
+
+The gross V3_125_OPTIMIZED opportunity remained comparatively persistent
+while network gas moved dramatically.
+
+---
+
+## Best Observed Heartbeat During Monitoring
+
+Highest pasted gross observation:
+
+Block:
+94729543
+
+Candidate:
+V3_125_OPTIMIZED
+
+Gross:
+0.019552731696097667 WPOL
+
+Protected gas ceiling:
+18.239240053 gwei
+
+Gas:
+277.350033644 gwei
+
+LIVE_READY=false
+
+Lowest pasted gas heartbeat:
+
+Block:
+94728065
+
+Gas:
+140.952118233 gwei
+
+Candidate:
+V3_125_OPTIMIZED
+
+Gross:
+0.018279582355096607 WPOL
+
+Protected gas ceiling:
+16.429549204 gwei
+
+LIVE_READY=false
+
+The best gross conditions and lowest gas conditions did not occur at the
+same observation.
+
+---
+
+## If LIVE_READY Is Ever Detected
+
+DO NOT immediately broadcast.
+
+Required sequence:
+
+1. Freeze/save the watcher evidence.
+2. Independently requalify against current head/current gas.
+3. Verify candidate freshness.
+4. Run final fork/execution-path simulation.
+5. Verify protected slippage.
+6. Verify Aave premium.
+7. Verify gas economics.
+8. Verify minimum protected net profit.
+9. Only after explicit review consider introducing signer/broadcast.
+
+---
+
+## Infrastructure / Addresses
+
+Canonical WPOL:
+
+0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270
+
+Polygon V4 PoolManager:
+
+0x67366782805870060151383f4bbff9dab53e5cd6
+
+Polygon V4 StateView:
+
+0x5ea1bd7974c8a611cbab0bdcafcb1d9cc9b3ba5a
+
+Polygon V4 Quoter:
+
+0xb3d5c3dfc3a7aebff71895a7191796bffc2c81b9
+
+Universal Router:
+
+0xDc264714F68d84CF29BC605589405E78bDBE7C9f
+
+Permit2:
+
+0x000000000022D473030F116dDEE9F6B43aC78BA3
+
+Uniswap V3 Router:
+
+0xE592427A0AEce92De3Edee1F18E0157C05861564
+
+Aave PoolAddressesProvider:
+
+0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb
+
+Known-good deployed production ProfitBot:
+
+0xDDAdb712e936f6bEE8c98452E8913f212Dcd007a
+
+Do not change deployment addresses during research work.
+
+---
+
+## Environment / Secret Rules
+
+Never put any of the following in this checkpoint, git, terminal output,
+or chat:
+
+private keys
+seed phrases
+passwords
+API secrets
+RPC URLs containing credentials
+verification codes
+
+Known environment situation during today's work:
+
+- INFURA_POLYGON was available in the original watcher terminal.
+- A new terminal did not inherit INFURA_POLYGON.
+- ALCHEMY_POLYGON was available there.
+- No project-root .env file was present.
+- Controlled heartbeat test successfully used the configured Alchemy
+  Polygon RPC provider.
+
+Do not print credential values.
+
+---
+
+## Codespaces Limitation
+
+Git files and commits persist.
+
+These are transient and can disappear when Codespaces suspends:
+
+running watcher
+terminal processes
+shell exports
+unsaved editor buffers
+dev servers
+temporary environment state
+
+Do not rely on Codespaces as an always-on monitoring host.
+
+---
+
+## Planned Next Work
+
+Priority 1:
+
+Add persistent read-only watcher observation logging.
+
+Suggested format:
+
+JSONL and/or CSV
+
+Record at least:
+
+timestamp
+block
+gas price
+candidate
+gross delta
+protected gas ceiling
+qualification stage
+reason
+LIVE_READY
+BROADCAST=false
+
+Then add summary statistics:
+
+minimum gas
+maximum gas
+maximum gross
+maximum protected ceiling
+closest gas-to-ceiling ratio
+candidate changes
+qualification-state changes
+observation count
+
+Priority 2:
+
+Set up the newer HP laptop using WSL2 + Ubuntu.
+
+Do not reproduce the project directly in ordinary Windows PowerShell if
+avoidable.
+
+Target environment:
+
+Windows
+-> WSL2
+-> Ubuntu
+-> Git / Node / npm / Hardhat
+-> ProfitBot
+
+Verify GitHub SSH access from inside WSL without exposing private keys.
+
+Clone the repository rather than manually copying the Codespace.
+
+Run tests before starting Bugs.
+
+Priority 3:
+
+Run the read-only watcher on the HP for longer unattended observation
+periods.
+
+No signer is required for this stage.
+
+Priority 4:
+
+Expand Bugs' discovery surface beyond the current four candidate routes.
+
+Potential future work:
+
+- broader token/pool discovery
+- additional V2/V3/V4/Balancer combinations
+- both route directions
+- dynamic loan-size optimisation
+- protected NET-profit ranking
+- selective expensive simulation only after cheap filters pass
+
+Priority 5:
+
+Only after repeated real LIVE_READY/requalification/fork evidence,
+design the separately controlled automatic execution stage.
+
+---
+
+## Recovery Commands
+
+After any reset/session loss:
+
+cd /workspaces/profitbot_project || exit 1
+
+git status --short
+git --no-pager log -5 --oneline
+
+Expected durable code anchor before this checkpoint commit:
+
+42d11b8 Add heartbeat to Polygon V4 opportunity watcher
+
+Then inspect this file:
+
+APOLLO_CHECKPOINT.md
+
+Do not assume any watcher process survived a Codespaces suspension.
+
+---
+
+## Immediate Morning Plan
+
+1. Recover repository state.
+2. Confirm branch and clean worktree.
+3. Read this checkpoint.
+4. Decide whether to restart the current watcher temporarily.
+5. Add persistent observation logging + tests.
+6. Commit logging independently.
+7. Begin HP / WSL2 setup.
+8. Verify GitHub SSH inside WSL.
+9. Clone ProfitBot and reproduce the tested read-only environment.
+10. Run Bugs from a more persistent machine.
+
+---
+
+## 2026-10-01 Persistent Observation Logging Milestone
+
+Repository state at completion:
+
+Branch:
+
+repair/simulation-safety
+
+Code commit:
+
+cf56677 Add persistent Polygon V4 watcher observations
+
+Persistent observation logging is now implemented in:
+
+scripts/research/watchPolygonV4LiveOpportunities.js
+
+The watcher appends one JSON object per completed qualification cycle to:
+
+research/runtime/polygon-v4/live-opportunities/observations.jsonl
+
+The runtime directory is already excluded by `.gitignore`.
+
+This means completed observations survive terminal scroll and watcher
+process termination while remaining outside normal Git commits.
+
+The logger reuses the existing `serializableSummary()` representation.
+
+Logging occurs only after a qualification cycle has completed and a
+summary has been constructed.
+
+It does not modify:
+
+- candidate qualification
+- slippage policy
+- gas policy
+- minimum-profit policy
+- freshness policy
+- worst-case profitability policy
+- LIVE_READY authority
+- execution parameters
+
+The watcher remains:
+
+provider only
+NO SIGNER
+NO TRANSACTION
+NO BROADCAST
+
+BROADCAST=false
+
+Protected production files remained unchanged:
+
+contracts/ProfitBot.sol
+scripts/utils/polygonExecutionRoute.js
+scripts/utils/polygonExecutionCandidate.js
+scripts/scanAndExecute.js
+
+### Regression Validation
+
+Focused V4 regression suite:
+
+35 tests
+35 passed
+0 failed
+
+Included:
+
+- watcher
+- live candidate set
+- live qualification
+- candidate preflight
+- observed candidate
+- execution route
+
+`git diff --check` passed.
+
+### Controlled Live Polygon Validation
+
+Provider:
+
+ALCHEMY_POLYGON
+
+No RPC credential value was printed or stored in this checkpoint.
+
+Controlled run:
+
+3 iterations
+30-second polling
+heartbeat every 2 iterations
+
+Result:
+
+RUN_STATUS=0
+LIVE_READY=false
+BROADCAST=false
+
+Three JSONL observations were successfully persisted.
+
+Observed blocks:
+
+94767807
+94767829
+94767851
+
+Observation 1:
+
+block 94767807
+gas 275.707044585 gwei
+best candidate V3_125_OPTIMIZED
+gross 0.015487101534649177 WPOL
+protected gas ceiling 12.460237181 gwei
+LIVE_READY=false
+BROADCAST=false
+
+Observation 2:
+
+block 94767829
+gas 277.439228614 gwei
+best candidate V3_125_OPTIMIZED
+gross 0.015444545977764108 WPOL
+protected gas ceiling 12.399747496 gwei
+LIVE_READY=false
+BROADCAST=false
+
+Observation 3:
+
+block 94767851
+gas 273.994804609 gwei
+best candidate V3_125_OPTIMIZED
+gross 0.015512403142962512 WPOL
+protected gas ceiling 12.49620161 gwei
+LIVE_READY=false
+BROADCAST=false
+
+Current conclusion:
+
+The historical route family remains gross-positive, and
+V3_125_OPTIMIZED remained the best candidate during this controlled
+sample.
+
+Current Polygon gas remained far above the protected profitability
+ceiling.
+
+The current blocker remains gas economics rather than absence of gross
+route spread.
+
+Do not weaken profitability, slippage, gas, freshness, or worst-case
+safety policy to force LIVE_READY.
+
+### Runtime Evidence
+
+Controlled validation file:
+
+research/runtime/polygon-v4/live-opportunities/controlled-observations.jsonl
+
+Record count at validation:
+
+3
+
+This file is intentionally Git-ignored.
+
+The normal long-running watcher uses:
+
+research/runtime/polygon-v4/live-opportunities/observations.jsonl
+
+### Next Work
+
+Immediate next step:
+
+Run the committed persistent watcher and accumulate a larger observation
+sample.
+
+Then add read-only summary statistics over the JSONL observations,
+including:
+
+- observation count
+- minimum gas
+- maximum gas
+- maximum gross delta
+- maximum protected gas ceiling
+- closest gas-to-ceiling ratio
+- candidate changes
+- qualification-state changes
+
+Do not introduce a signer or broadcast capability during this stage.
+
+If LIVE_READY is ever observed:
+
+1. Stop/freeze the relevant evidence.
+2. Do not broadcast.
+3. Requalify against current head and current gas.
+4. Run the final fork/execution-path simulation.
+5. Preserve evidence.
+6. Only consider signer/execution work as a separate reviewed stage.
+
+### Updated Recovery Anchor
+
+Current durable code anchor:
+
+cf56677 Add persistent Polygon V4 watcher observations
+
+The watcher process itself remains transient.
+
+Codespaces suspension can terminate it.
+
+Persisted project files and Git commits survive independently of the
+watcher process.
+
+Runtime JSONL files persist only for as long as the Codespace filesystem
+itself remains available and should not be treated as a substitute for
+Git or external durable storage.
+
+## 2026-10-01 Polygon V4 Observation Analyzer Milestone
+
+### Source milestone
+
+Observation analysis was added in:
+
+- `9629a87 Add Polygon V4 observation analysis`
+
+Files added:
+
+- `scripts/research/analyzePolygonV4Observations.js`
+- `test/polygonV4ObservationAnalyzer.test.js`
+
+The analyzer is read-only research tooling. It consumes persistent Polygon V4 watcher JSONL observations and does not create or alter qualification readiness.
+
+It does not add a signer, submit transactions, broadcast, or modify production execution.
+
+### Analyzer capabilities
+
+The analyzer reports:
+
+- observation count
+- monitoring period and duration
+- first and last quote blocks
+- minimum, average, and maximum observed gas price
+- minimum, average, and maximum best-candidate gross delta
+- minimum, average, and maximum protected gas ceiling
+- candidate win frequency
+- candidate changes
+- qualification-state changes
+- LIVE_READY event count
+- qualification failure reasons
+- closest protected gas-ceiling-to-actual-gas observation
+- best historical gross observation
+- contiguous economics trend periods classified as:
+  - `IMPROVING`
+  - `DETERIORATING`
+  - `FLAT`
+
+Economics trend direction is based on the protected gas-ceiling / actual gas-price ratio. A higher ratio moves toward executable economics; a lower ratio moves away.
+
+### Validation
+
+Analyzer unit tests:
+
+- 9 tests
+- 9 passed
+- 0 failed
+
+Focused Polygon V4 regression after analyzer changes:
+
+- 44 tests
+- 44 passed
+- 0 failed
+
+`git diff --check` was clean.
+
+Protected execution files were unchanged.
+
+The regression was run under:
+
+- Node `v24.21.0`
+
+Repository `.nvmrc` still specifies:
+
+- Node `18.20.8`
+
+The restarted Codespace did not have Node 18.20.8 installed. No Node installation, dependency installation, dependency upgrade, or environment migration was performed during this milestone.
+
+### 744-observation research sample
+
+Persistent Mac/Codespace observation data survived the Codespace restart and contained:
+
+- observations: `744`
+- period: `2026-10-01T12:21:35.456Z -> 2026-10-01T19:11:09.203Z`
+- blocks: `94768101 -> 94784484`
+- duration: `6h 49m 33s`
+
+Observed gas:
+
+- minimum: `239.124478139 gwei`
+- average: `275.880224531 gwei`
+- maximum: `290.266772552 gwei`
+
+Best-candidate gross delta:
+
+- minimum: `0.014028934154687933 WPOL`
+- average: `0.016716184249653561 WPOL`
+- maximum: `0.019998569388452416 WPOL`
+
+Best protected gas ceiling:
+
+- minimum: `10.387556405 gwei`
+- average: `14.207290468 gwei`
+- maximum: `18.872966487 gwei`
+
+Candidate results:
+
+- `V3_125_OPTIMIZED` won `744 / 744`
+- candidate changes: `0`
+- qualification-state changes: `0`
+- LIVE_READY events: `0`
+
+Qualification failures:
+
+- `Candidate has negative expected net profit`: `2976`
+
+This is `744 observations * 4 candidates`.
+
+Economics trend periods:
+
+- total: `418`
+- improving: `209`
+- deteriorating: `208`
+- flat: `1`
+
+These are contiguous direction periods, not individual observation counts. The near-even improving/deteriorating split indicates frequent oscillation rather than a sustained move toward executable economics.
+
+Closest observation to the protected gas ceiling:
+
+- capturedAt: `2026-10-01T17:04:13.939Z`
+- block: `94779407`
+- candidate: `V3_125_OPTIMIZED`
+- actual gas: `266.30043875 gwei`
+- protected gas ceiling: `18.872966487 gwei`
+- ceiling / actual gas: `7.0870%`
+
+Best historical gross observation:
+
+- capturedAt: `2026-10-01T17:01:28.301Z`
+- block: `94779297`
+- candidate: `V3_125_OPTIMIZED`
+- gross: `0.019998569388452416 WPOL`
+- actual gas: `273.269376763 gwei`
+- protected gas ceiling: `18.872966487 gwei`
+- stage: `PREFLIGHT`
+- reason: `Candidate has negative expected net profit`
+
+Interpretation:
+
+The monitored route continued to show positive gross spread, but observed Polygon gas remained far above the protected execution ceiling. No observation qualified for LIVE_READY. The safety policy was not weakened to manufacture readiness.
+
+### HP / watcher operational boundary
+
+HP Bugs remains the primary persistent monitoring machine.
+
+The Mac/Codespace watcher was retired after HP persistence was proven.
+
+The analyzer milestone did not modify or restart the HP watcher service.
+
+Current operational policy remains:
+
+- provider-only monitoring
+- no signer
+- no transaction submission
+- no broadcast
+- `LIVE_READY=false` unless all existing qualification and safety-policy checks pass
+
+Do not weaken profitability, slippage, gas, freshness, minimum-profit, or worst-case policy to create readiness.
+
+### Current development boundary
+
+Continue to keep production integration isolated.
+
+Do not modify without a separately reviewed production-integration stage:
+
+- `ProfitBot.sol`
+- `ThreeLegExecution`
+- production execution route helpers
+- frontend / MetaMask integration
+- deployment addresses
+- `.env`
+
+Do not resurrect legacy `scanAndExecute.js`.
+
+Do not submit a live-network transaction during research/qualification work.
+
+### Recovery anchor
+
+Current analyzer code milestone:
+
+- `9629a87 Add Polygon V4 observation analysis`
+
+Before further development, verify branch, HEAD, origin state, and worktree status from Git.
+
+Next immediate repository action after this checkpoint update:
+
+1. inspect the checkpoint diff
+2. verify only `APOLLO_CHECKPOINT.md` changed
+3. commit the checkpoint separately if clean
+4. push the analyzer and checkpoint milestones to GitHub
+5. leave HP Bugs running unchanged
+
+## 2026-10-02 CI Repair and Toolchain Compatibility Guardrail
+
+### CI repair confirmed
+- Repair commit: `d954213` — `Fix CI test runner separation and Node alignment`
+- GitHub Actions run: `36992951559`
+- Result: SUCCESS
+- The CI failure was caused by the Node-native test wildcard including Hardhat/Mocha fork tests that depend on Mocha globals such as `describe` and `it`.
+- Normal tests are now separated by runner:
+  - Node-native tests run through `test:node`.
+  - Normal Hardhat/Mocha tests run through `test:hardhat`.
+- Fork-specific Polygon regression tests remain separate and must not be silently added to ordinary CI without deliberate fork/RPC gating.
+- GitHub Actions now takes its Node version from `.nvmrc`.
+- Local CI-equivalent validation passed under Node `18.20.8` before the repair was pushed.
+- GitHub's clean CI environment independently confirmed the repaired configuration passes.
+
+### Toolchain compatibility guardrail
+The currently validated build depends on the existing toolchain combination, including:
+- Node `18.20.8` via `.nvmrc`.
+- ethers `5.x` (currently `^5.8.0`).
+- Hardhat `2.x` (currently `^2.20.2`).
+- Existing Solidity compiler configuration, including Solidity `0.8.20` and the existing `0.7.6` fallback.
+
+Do NOT casually upgrade or change ethers, Hardhat, Solidity compiler versions, or their associated compatibility configuration.
+
+These versions are build-sensitive compatibility boundaries. A version change is not proven to break the build in every case, but it risks breaking the currently validated contract, test, plugin, ABI, fork, or deployment behavior.
+
+Any future ethers, Hardhat, or Solidity compiler upgrade must:
+1. Be performed as a separate, deliberate compatibility task.
+2. Not be bundled into unrelated ProfitBot or CI changes.
+3. Preserve the existing known-good configuration until the replacement is proven.
+4. Run the complete normal test and compile suite.
+5. Run applicable Polygon fork/execution regression tests before acceptance.
+6. Be committed separately with clear upgrade and compatibility evidence.
+
+### Checkpoint-file preservation rule
+- `APOLLO_CHECKPOINT.md` is the current/live recovery checkpoint.
+- Dated `APOLLO_CHECKPOINT_*.md` files are independent historical snapshots.
+- Do not merge, overwrite, rewrite, or synchronize historical checkpoint contents into each other.
+- New dated checkpoints must remain separate files alongside the existing checkpoints.
+
+---
+
+## 2026-10-02 Polygon V4 Qualification Envelope Milestone
+
+### Repository state
+
+Qualification-envelope code milestone:
+
+- `0ba0ef2 Add Polygon V4 qualification envelope analysis`
+- branch: `repair/simulation-safety`
+- local HEAD and `origin/repair/simulation-safety` confirmed at `0ba0ef2`
+- worktree clean after push and generated Hardhat artifact/cache cleanup
+
+GitHub Actions validation:
+
+- workflow: `ProfitBot CI`
+- run: `37000380171`
+- result: SUCCESS
+- elapsed: `39s`
+
+Validated local toolchain:
+
+- Node: `18.20.8`
+- npm: `10.8.2`
+- ethers remains `5.x` (`^5.8.0`)
+- Hardhat remains `2.x` (`^2.20.2`)
+- no toolchain compatibility boundary was changed
+
+### Qualification-envelope implementation
+
+The observation analyzer now reports diagnostic distance from the existing
+protected gas ceiling.
+
+For the closest observation it reports:
+
+- observed gas price
+- existing protected `maxGasPriceWei`
+- ceiling-to-observed-gas coverage
+- gas-price deficit
+- gas-price reduction required to reach that existing ceiling
+- `qualifiesAtObservedGas`
+
+`qualifiesAtObservedGas` is diagnostic only. It means the observed gas price
+is at or below the already-computed protected gas ceiling. It is NOT a
+replacement for, or equivalent to, the complete `LIVE_READY` qualification.
+
+The analyzer does not alter candidate readiness and does not weaken or replace
+the existing qualification policy.
+
+### Regression validation
+
+Focused observation-analyzer suite:
+
+- tests: `13`
+- passed: `13`
+- failed: `0`
+
+Complete normal regression:
+
+- Node-native tests: `311`
+- Hardhat tests: `29`
+- total: `340`
+- passed: `340`
+- failed: `0`
+
+Additional validation:
+
+- analyzer syntax check: PASS
+- `git diff --check`: PASS
+- real observation analysis: PASS
+
+The normal regression count increased from 338 to 340 because this milestone
+added two deterministic protected-budget economic-envelope tests.
+
+### Real 744-observation envelope result
+
+Observation dataset:
+
+- observations: `744`
+- period: `2026-10-01T12:21:35.456Z -> 2026-10-01T19:11:09.203Z`
+- blocks: `94768101 -> 94784484`
+- duration: `6h 49m 33s`
+- `V3_125_OPTIMIZED` wins: `744 / 744`
+- candidate changes: `0`
+- qualification-state changes: `0`
+- LIVE_READY events: `0`
+- negative expected-net-profit failures: `2976`
+
+Closest observation to the existing protected gas ceiling:
+
+- capturedAt: `2026-10-01T17:04:13.939Z`
+- block: `94779407`
+- candidate: `V3_125_OPTIMIZED`
+- observed gas: `266.30043875 gwei`
+- protected gas ceiling: `18.872966487 gwei`
+- ceiling / observed gas: `7.0870%`
+- gas-price deficit: `247.427472263 gwei`
+- gas-price reduction required: `92.9129%`
+- `qualifiesAtObservedGas=false`
+
+This is a diagnostic statement about that observed candidate under the
+existing protected policy. It does not manufacture or predict LIVE_READY.
+
+### Protected gas-budget economic envelope
+
+The analyzer now measures the protected gas budget directly against the
+observed gas cost using exact integer arithmetic and the existing `700000`
+gas-unit qualification assumption.
+
+No readiness or execution policy is changed by this analysis.
+
+Across all `744` observations / `2976` diagnostics:
+
+- qualifying at observed gas: `0`
+
+Smallest absolute protected gas-budget shortfall:
+
+- capturedAt: `2026-10-01T17:59:53.817Z`
+- block: `94781634`
+- candidate: `V3_125_OPTIMIZED`
+- protected gas budget: `0.009344708899712162 WPOL`
+- observed 700000-unit gas cost: `0.1673871346973 WPOL`
+- additional protected gas budget required: `0.158042425797587838 WPOL`
+- budget coverage: `5.5826%`
+- protected gas-budget uplift required: `1691.2503%`
+
+Best protected gas-budget coverage:
+
+- capturedAt: `2026-10-01T17:04:13.939Z`
+- block: `94779407`
+- candidate: `V3_125_OPTIMIZED`
+- protected gas budget: `0.013211076541510153 WPOL`
+- observed 700000-unit gas cost: `0.186410307125 WPOL`
+- additional protected gas budget required: `0.173199230583489847 WPOL`
+- budget coverage: `7.0870%`
+- protected gas-budget uplift required: `1311.0152%`
+
+The raw persisted observation at block `94781634` was independently checked:
+
+- `gasPriceWei=239124478139`
+- `gasBudgetWei=9344708899712162`
+- exact observed gas cost: `167387134697300000 wei`
+- exact protected-budget shortfall: `158042425797587838 wei`
+
+Use the terms `additional protected gas budget required` and
+`protected gas-budget uplift required`. These figures are not a pure
+required-profit calculation.
+
+The historical dataset therefore contains no observation whose protected gas
+budget covers the observed gas cost. This describes the analyzed dataset only;
+it is not a claim that future qualification is impossible.
+
+### Safety boundary remains unchanged
+
+This milestone did NOT change:
+
+- the `700000` gas-unit qualification assumption
+- Aave premium treatment
+- safety reserve
+- minimum net-profit requirement
+- slippage protection
+- freshness / `maxAgeBlocks`
+- worst-case protected-profit checks
+- candidate qualification logic
+- execution contracts
+- production routing
+- deployment addresses
+- `.env`
+- signer behavior
+- transaction submission
+- broadcast behavior
+
+Current research/monitoring boundary remains:
+
+- provider only
+- no signer
+- no transaction
+- no broadcast
+- fail closed
+- `LIVE_READY=false` unless every existing qualification and safety check passes
+
+Do not reduce the safety policy to make observed opportunities appear ready.
+
+### Machine boundary
+
+HP Bugs remains the stable persistent monitoring machine and should remain
+unchanged unless a separate monitoring change is deliberately reviewed.
+
+The Codespace remains the development environment.
+
+Do not assume Codespace processes survive suspension. Persist important state
+in project files and Git; terminal processes and runtime state are transient.
+
+### Recovery anchor
+
+For recovery after chat/session loss:
+
+1. `cd /workspaces/profitbot_project`
+2. `nvm use`
+3. `git status -sb`
+4. `git --no-pager log -5 --oneline --decorate`
+5. inspect this live `APOLLO_CHECKPOINT.md`
+
+Expected code milestone before this checkpoint update is committed:
+
+- branch: `repair/simulation-safety`
+- code HEAD: `a9c7933`
+- origin: `a9c7933`
+- protected-budget-envelope CI: SUCCESS (`37004189565`)
+- normal regression: `340 / 340`
+- Node-native tests: `311 / 311`
+- Hardhat tests: `29 / 29`
+- LIVE_READY events in analyzed 744-record dataset: `0`
+
+`APOLLO_CHECKPOINT.md` is the live recovery checkpoint.
+
+Dated `APOLLO_CHECKPOINT_*.md` files remain independent historical snapshots
+and must not be merged, overwritten, or synchronized by this update.
+
+---
+
+## Polygon V4 economic-waterfall milestone — 2026-10-02
+
+### Durable code milestone
+
+Economic-waterfall analysis is committed and pushed:
+
+- branch: `repair/simulation-safety`
+- code commit: `69d5f10`
+- commit title: `Add Polygon V4 economic waterfall analysis`
+- origin: `69d5f10`
+- ProfitBot CI run: `37009894588`
+- CI result: SUCCESS
+- CI duration: `38s`
+
+The implementation remains research/analyzer-only.
+
+Modified code files in the milestone:
+
+- `scripts/research/analyzePolygonV4Observations.js`
+- `test/polygonV4ObservationAnalyzer.test.js`
+
+No production contract, execution route, deployment configuration, `.env`,
+signer, transaction-submission path, or broadcast path was modified.
+
+### Economic-waterfall reconstruction
+
+The analyzer now reconstructs the persisted protected gas budget from its
+economic components using the same premium arithmetic as the live V4
+watcher/preflight:
+
+`premium = amountIn * premiumBps / 10000`
+
+The reconstruction is:
+
+`protectedFinalOutput`
+`- amountIn`
+`- Aave premium`
+`- safety reserve`
+`- minimum net profit`
+`= protected gas budget`
+
+The analyzer sources the qualification gas-unit assumption, safety reserve,
+and minimum-net-profit requirement from the existing live qualification
+policy rather than duplicating new policy values.
+
+The analysis is diagnostic only. It does not alter qualification or execution
+policy and cannot create LIVE_READY.
+
+### Real 744-observation waterfall result
+
+Dataset:
+
+- observations: `744`
+- diagnostics: `2976`
+- period: `2026-10-01T12:21:35.456Z -> 2026-10-01T19:11:09.203Z`
+- blocks: `94768101 -> 94784484`
+
+Waterfall integrity:
+
+- eligible diagnostics: `2976`
+- exact protected-budget reconstructions: `2976`
+- reconstruction mismatches: `0`
+
+Aggregate diagnostic components:
+
+- total gross delta: `42.217370943598531775 WPOL`
+- total protection haircut: `1.513086854717994217 WPOL`
+- total Aave premium: `0.1302 WPOL`
+- total safety reserve: `2.976 WPOL`
+- total minimum net profit: `14.88 WPOL`
+- total protected gas budget: `22.718084088880537558 WPOL`
+- total modeled observed gas cost: `574.713683743822 WPOL`
+- total economic deficit: `551.995599654941462442 WPOL`
+
+These aggregate totals describe repeated diagnostic observations. They are
+NOT realized trading P&L and must not be interpreted as realized losses or
+profits.
+
+### Best protected-budget waterfall
+
+Best protected-budget coverage remains:
+
+- capturedAt: `2026-10-01T17:04:13.939Z`
+- block: `94779407`
+- candidate: `V3_125_OPTIMIZED`
+- gross delta: `0.019998569388452416 WPOL`
+- protection haircut: `0.000724992846942263 WPOL`
+- Aave premium: `0.0000625 WPOL`
+- safety reserve: `0.001 WPOL`
+- minimum net profit: `0.005 WPOL`
+- protected gas budget: `0.013211076541510153 WPOL`
+- reconstructed gas budget: `0.013211076541510153 WPOL`
+- gas-budget difference: `0 wei`
+- exact reconstruction: `true`
+- modeled observed gas cost: `0.186410307125 WPOL`
+- economic deficit: `0.173199230583489847 WPOL`
+
+The observed modeled gas cost at this best-coverage point is therefore far
+larger than the protected gas budget. The historical sample remains
+economically unqualified under the existing policy.
+
+This is evidence about the analyzed historical window only. It does not prove
+that future qualification is impossible.
+
+### Readiness result
+
+For this dataset:
+
+- qualification-state changes: `0`
+- LIVE_READY events: `0`
+- broadcast: `false`
+
+Do not weaken profitability, gas, reserve, slippage, freshness, deadline,
+minimum-profit, or worst-case protected-output policy to manufacture
+readiness.
+
+### Defensive reporting correctness
+
+The final analyzer change also prevents a stale
+`bestProtectedBudgetWaterfall` from being retained if a newer best protected-
+budget-coverage row lacks the additional persisted fields required for
+waterfall reconstruction.
+
+The reporting path fails closed in that case rather than presenting the
+waterfall from an older row as if it belonged to the current best-coverage
+row.
+
+A dedicated regression test covers this case.
+
+### Validation
+
+Pinned development/CI toolchain:
+
+- Node: `18.20.8`
+- npm: `10.8.2`
+
+Before the final defensive reporting guard:
+
+- Node-native tests: `314 / 314`
+- Hardhat tests: `29 / 29`
+- total normal regression: `343 / 343`
+- failures: `0`
+- analyzer syntax: PASS
+- real observation analysis: PASS
+
+After the final defensive reporting guard:
+
+- focused observation-analyzer tests: `17 / 17`
+- analyzer syntax: PASS
+- real 744-observation analysis: PASS
+- waterfall reconstruction: `2976 / 2976` exact
+- waterfall mismatches: `0`
+- `git diff --check`: PASS
+
+Independent GitHub ProfitBot CI for commit `69d5f10`:
+
+- run: `37009894588`
+- result: SUCCESS
+- duration: `38s`
+
+### Codespace Node recovery note
+
+After the Codespace restarted/rebuilt, its active runtime was temporarily:
+
+- Node `24.21.0`
+- npm `11.19.0`
+
+Repository metadata had NOT been overwritten:
+
+- `.nvmrc` still pinned `18.20.8`
+- `package.json` unchanged
+- `package-lock.json` unchanged
+- declared `ethers` remained `^5.8.0`
+- declared `hardhat` remained `^2.20.2`
+- declared `@nomiclabs/hardhat-ethers` remained `^2.2.3`
+
+The rebuilt Codespace simply did not have Node `18.20.8` installed in its
+current NVM environment.
+
+Installing the exact `.nvmrc` version restored:
+
+- Node `18.20.8`
+- npm `10.8.2`
+
+No dependency upgrade or package-metadata change was required.
+
+On future Codespace recovery, verify the active runtime rather than assuming
+the runtime survived the rebuild.
+
+### Current research interpretation
+
+The economic waterfall confirms that the protected-budget calculation stored
+by the watcher is internally consistent across every diagnostic in this
+dataset.
+
+For the observed window, gas cost dominates the available protected budget by
+a large margin even at the best protected-budget-coverage observation.
+
+Research should therefore focus on discovering materially larger genuine
+gross edge and/or legitimately cheaper execution conditions while preserving
+the existing safety requirements.
+
+Do not interpret the historical deficit as proof that profitable future
+conditions cannot occur.
+
+### Safety boundary remains unchanged
+
+Continue to enforce:
+
+- provider only
+- no signer
+- no transaction
+- no broadcast
+- fail closed
+- `LIVE_READY=false` unless every existing qualification check passes
+
+Do NOT modify yet:
+
+- `ProfitBot.sol`
+- `ThreeLegExecution`
+- production execution route helpers
+- frontend / MetaMask integration
+- production deployment addresses
+- `.env`
+
+Do not increase `maxAgeBlocks` or weaken minimum profit, reserve, slippage,
+gas, deadline, or worst-case-output checks to make a candidate qualify.
+
+### Machine boundary
+
+HP Bugs remains the stable persistent monitoring machine and should remain
+unchanged unless a separate monitoring change is deliberately reviewed.
+
+The Codespace remains the development environment.
+
+Codespace processes, shell state, dev servers, and installed runtime state are
+transient across suspension/rebuild. Project files and committed/pushed Git
+history are the durable recovery source.
+
+### Superseding recovery anchor
+
+For recovery after chat/session loss:
+
+1. `cd /workspaces/profitbot_project`
+2. inspect `.nvmrc`
+3. verify `node --version` and `npm --version`
+4. install/select the exact `.nvmrc` Node version if the rebuilt Codespace no
+   longer has it
+5. `git status -sb`
+6. `git --no-pager log -5 --oneline --decorate`
+7. inspect this live `APOLLO_CHECKPOINT.md`
+
+Expected state at this recovery anchor:
+
+- branch: `repair/simulation-safety`
+- code HEAD: `69d5f10`
+- origin: `69d5f10`
+- economic-waterfall CI: SUCCESS (`37009894588`)
+- pinned Node: `18.20.8`
+- pinned npm: `10.8.2`
+- normal regression: `343 / 343`
+- focused final analyzer regression: `17 / 17`
+- waterfall reconstruction: `2976 / 2976` exact
+- waterfall mismatches: `0`
+- LIVE_READY events in analyzed 744-record dataset: `0`
+- signer: none
+- transaction: none
+- broadcast: false
+
+`APOLLO_CHECKPOINT.md` remains the live recovery checkpoint.
+
+Dated `APOLLO_CHECKPOINT_*.md` files remain independent historical snapshots
+and must not be merged, overwritten, or synchronized by this update.
+
+---
+
+## Checkpoint — Polygon V4 Protected Amount Surface (Milestone 1B)
+
+### Recovery anchor
+
+- Branch: `repair/simulation-safety`
+- Code milestone commit: `c52ed052229627c89907529fcd56c7b47305c62f`
+- Commit subject: `Add Polygon V4 protected amount surface runner`
+- Local and `origin/repair/simulation-safety` were synchronized after push.
+- Independent GitHub Actions run: `37020767562`
+- Workflow: `ProfitBot CI`
+- Event: `push`
+- Result: success
+- Duration: 39 seconds
+- This supersedes `147ce78e8ec8ad0718098259cbf7110ca006fb9d` as the latest fully CI-confirmed code recovery anchor before this checkpoint-only commit.
+
+### Milestone 1B implementation
+
+Added exactly two code/test files:
+
+- `scripts/research/runPolygonV4AmountSurface.js`
+- `test/polygonV4AmountSurfaceRunner.test.js`
+
+Committed code delta:
+
+- 2 files changed
+- 904 insertions
+- Runner: 537 lines
+- Tests: 367 lines
+
+The runner is research/provider-only. It does not introduce a signer, transaction submission, or broadcast path.
+
+The amount surface reuses the established Polygon V4 route:
+
+`WPOL -> DAI -> APEPE -> WPOL`
+
+using the dominant V4 pool:
+
+`0x6c6627aba26b073dd60b88b472b608f4f48f4e9eb5635efbd32095a76bea6c60`
+
+The runner evaluates the existing fine-sweep amounts from `0.100` through `0.150` WPOL in `0.005` WPOL increments.
+
+All observations in one surface run share:
+
+- one pinned quote block
+- one gas-price snapshot
+- one Aave premium snapshot
+
+Protected economics use the authoritative policy constants and the existing `amountSurfaceEconomics` helper rather than weakening or duplicating execution policy.
+
+### Local regression validation
+
+Node regression:
+
+- 325 tests
+- 325 passed
+- 0 failed
+
+Hardhat regression:
+
+- 29 tests
+- 29 passed
+- 0 failed
+- 35 Solidity files compiled successfully
+- SPDX output was warning-only
+
+Combined local regression:
+
+- 354 tests
+- 354 passed
+
+Hardhat-generated `artifacts/` and `cache/` churn was restored after testing.
+
+Before commit:
+
+- `git diff --cached --check` passed
+- exactly the two intended Milestone 1B files were staged
+- no unstaged tracked changes remained
+
+### First live provider-only amount surface
+
+The first live Milestone 1B surface completed successfully with:
+
+- Pinned quote block: `94830650`
+- Shared gas price: `275399891388` wei (~275.400 gwei)
+- Aave premium: 5 bps
+- Amounts tested: 11
+- Range: `0.100` to `0.150` WPOL
+- Quote result: 11/11 `QUOTE_OK`
+- Observed-gas qualifications: 0/11
+
+Best protected size in this surface:
+
+- Amount: `0.115` WPOL
+- Gross delta: `15385817510297865` wei
+- Protected gas budget: `8676388422746375` wei
+- Gas ceiling: `12394840603` wei/gas (~12.395 gwei)
+- Observed-gas economic deficit: `184103535548853625` wei
+- `observedGasQualifies=false`
+
+The protected surface improved from `0.100` WPOL through `0.115` WPOL, was nearly flat at `0.120` WPOL, and then declined through `0.150` WPOL.
+
+The best tested point therefore occurred inside the tested interval rather than at either boundary.
+
+This observation is historical evidence for block `94830650`; it is not permission to execute and must not be treated as a permanent optimum.
+
+### Safety interpretation
+
+Observed gas remained far above the protected gas ceiling.
+
+At the best protected point:
+
+- observed gas was ~275.400 gwei
+- protected ceiling was ~12.395 gwei
+- observed gas was roughly 22.2x the protected ceiling
+
+No profitability, reserve, slippage, gas, freshness, minimum-profit, or worst-case policy was weakened to manufacture qualification.
+
+Safety state remains:
+
+- signer: none
+- transaction: none
+- broadcast: false
+- `LIVE_READY=false`
+
+If a future observation qualifies, freeze the evidence and independently requalify through the established safety path before any separate reviewed execution stage.
+
+### RPC handling
+
+The Codespace did not initially inherit `INFURA_POLYGON`.
+
+A temporary RPC endpoint was supplied directly to the Codespace shell environment for provider-only research.
+
+No API key, API secret, RPC URL, private key, seed phrase, password, or other credential is stored in this checkpoint.
+
+The Codespace research credential is logically separated from the HP watcher credential.
+
+### HP / Bugs isolation
+
+The HP/WSL Bugs observer was not modified, restarted, pulled forward, or reconfigured during Milestone 1B.
+
+Keep the HP monitoring appliance isolated from Codespace research unless a deliberate migration is reviewed separately.
+
+### Next steps
+
+1. Commit this checkpoint update separately from the Milestone 1B code commit.
+2. Push the checkpoint commit and independently verify `ProfitBot CI`.
+3. Preserve `c52ed05` as the clean Milestone 1B code anchor underneath the checkpoint commit.
+4. Continue provider-only economic research without weakening established safety policy.
+5. Do not modify production execution contracts or submit live-network transactions as part of this research milestone.
+
+## Milestone 1C — Polygon V4 Protected Fine Amount Surface
+
+Recovery code anchor:
+- Commit: `9f4aee476faf024b1027a3a32a69fac1a6900ae2`
+- Subject: `Add Polygon V4 protected fine amount surface`
+- Independent CI: `ProfitBot CI` run `37027778583`
+- CI result: GREEN
+- CI elapsed: 42s
+
+Scope:
+- Added `scripts/research/runPolygonV4ProtectedFineSurface.js`.
+- Added `test/polygonV4ProtectedFineSurface.test.js`.
+- No production contract, execution path, deployment address, policy, signer, transaction, or broadcast changes.
+- Fine runner delegates protected economics and pinned observation behavior to the existing protected amount-surface runner.
+- Exact fine grid is `0.105` through `0.130 WPOL` inclusive in `0.001 WPOL` increments: 26 observations.
+
+Validation:
+- Focused amount-surface regression: 13/13 passing.
+- Full Node regression: 328/328 passing.
+- Hardhat regression: 29/29 passing.
+- Total local tests: 357/357 passing.
+- Hardhat compiled 35 Solidity files successfully; SPDX warnings only.
+- Generated `artifacts/` and `cache/` churn was restored before commit.
+- Staged diff check passed.
+- Independent CI passed after push.
+
+First provider-only 1C observation:
+- Pinned quote block: `94833132`.
+- PoolId: `0x6c6627aba26b073dd60b88b472b608f4f48f4e9eb5635efbd32095a76bea6c60`.
+- Route: `WPOL -> DAI -> APEPE -> WPOL`.
+- Shared observed gas price: `277605756458 wei/gas`.
+- Aave premium: `5 bps`.
+- Samples: 26.
+- Quote result: 26/26 `QUOTE_OK`.
+- No signer.
+- No transaction.
+- No broadcast.
+
+Best protected row in this pinned sample:
+- Amount: `0.123 WPOL`.
+- Gross delta: `16742610294200132 wei` (`0.016742610294200132 WPOL`).
+- Protected gas budget: `9982397242729131 wei` (`0.009982397242729131 WPOL`).
+- Protected gas ceiling: `14260567489 wei/gas` (`14.260567489 gwei`).
+- Gas coverage: `51369 ppm`.
+- Economic deficit at observed gas: `184341632277870869 wei` (`0.184341632277870869 WPOL`).
+- `observedGasQualifies=false`.
+
+Interpretation:
+- The finer sample moved the observed protected-budget maximum from the earlier coarse neighborhood toward `0.123 WPOL`.
+- The protected-budget surface rises through `0.122`, reaches the largest sampled value at `0.123`, and declines from `0.124` onward.
+- The top is shallow; `0.123 WPOL` is a historical sampled maximum at block `94833132`, not a permanent or globally optimal trade size.
+- Observed gas remained far above the protected gas ceiling.
+- This observation does not make the route `LIVE_READY` and does not justify weakening gas, slippage, reserve, minimum-profit, freshness, or worst-case policy.
+
+Next research direction:
+- If continuing amount-surface investigation, isolate the local peak with a provider-only micro-surface around approximately `0.1210–0.1250 WPOL` at `0.0001 WPOL` increments.
+- Keep the experiment read-only and isolated.
+- Do not modify `ProfitBot.sol`, production execution helpers, deployment addresses, `.env`, or live execution policy.
+
+## Milestone 1D — Polygon V4 Protected Micro Amount Surface
+
+### Code / CI anchor
+
+- Code commit: `3b46fb3d82451b315fe76a2ea4c8bc6bc1df14a5`
+- Subject: `Add Polygon V4 protected micro amount surface`
+- Independent `ProfitBot CI`: run `37030696495`, success in 35s.
+- Additive files only:
+  - `scripts/research/runPolygonV4ProtectedMicroSurface.js`
+  - `test/polygonV4ProtectedMicroSurface.test.js`
+- Code diff: 499 insertions across exactly those two files.
+- No production contract, execution path, deployment address, `.env`, profitability policy, signer, transaction, or broadcast changes.
+
+### Design / validation
+
+- Provider-only protected micro-surface.
+- Exact integer grid: `0.1210` through `0.1250 WPOL`, inclusive.
+- Step: `0.0001 WPOL`.
+- Observations: 41.
+- Reuses the protected fine-surface / amount-surface mechanics and one shared pinned block, gas price, and Aave premium snapshot.
+- Focused 1C + 1D regression: 6/6 passed.
+- Full Node regression: 331/331 passed.
+- Hardhat regression: 29/29 passed.
+- Total local tests: 360/360 passed.
+- Hardhat compiled 35 Solidity files successfully; SPDX warnings only.
+- Generated `artifacts/` and `cache/` churn was restored before staging.
+- Staged diff check passed and safety scan found no signer / transaction / broadcast / execution calls.
+
+### First provider-only 1D observation
+
+- Pinned quote block: `94834040`.
+- PoolId: `0x6c6627aba26b073dd60b88b472b608f4f48f4e9eb5635efbd32095a76bea6c60`.
+- Route: `WPOL -> DAI -> APEPE -> WPOL`.
+- Shared gas price: `278281592114 wei/gas`.
+- Aave premium: `5 bps`.
+- Quote result: 41/41 `QUOTE_OK`.
+- No signer, transaction, or broadcast.
+
+Best sampled protected row in this micro-grid:
+
+- Amount: `0.125 WPOL`.
+- Gross delta: `17606578371831757 wei`.
+- Protected gas budget: `10831045479972598 wei`.
+- Gas ceiling: `15472922114 wei/gas`.
+- Gas coverage: `55601 ppm`.
+- Economic deficit at observed gas: `183966068999827402 wei`.
+- Qualifies at observed gas: `false`.
+
+### Interpretation / next research boundary
+
+The protected gas budget increased across the entire sampled `0.1210` through `0.1250 WPOL` interval at block `94834040`. Therefore `0.125 WPOL` is only the upper-boundary maximum of this sampled grid; this observation does not establish an interior or permanent optimum.
+
+This differs from the earlier 1C snapshot, whose sampled maximum was near `0.123 WPOL`, and is evidence that the best protected amount can move with market state. Do not hard-code either sampled amount as a permanent optimum.
+
+Observed gas remained far above the protected ceiling, so nothing became `LIVE_READY`. Do not weaken gas, slippage, reserve, minimum-profit, freshness, or worst-case policy to manufacture readiness.
+
+A useful next research direction is provider-only peak/stability analysis across multiple pinned snapshots rather than repeatedly narrowing around one historical amount. Keep that research isolated from `ProfitBot.sol`, production execution helpers, deployment configuration, `.env`, signing, transactions, and broadcasting.
+
+## 2026-10-02 — Polygon V4 Protected Peak Stability (1E)
+
+### Verified code boundary
+
+- Commit: `e07a7c2900a51e36437b1a00da4cda23c522d6fa`
+- Subject: `Add Polygon V4 protected peak stability analysis`
+- ProfitBot CI: run `37033982901`
+- CI conclusion: success
+- CI elapsed: 44s
+- Local and `origin/repair/simulation-safety` matched after push.
+
+### Scope
+
+Added deterministic provider-independent orchestration for comparing the protected amount-surface peak across explicit snapshots:
+
+- `scripts/research/runPolygonV4ProtectedPeakStability.js`
+- `test/polygonV4ProtectedPeakStability.test.js`
+
+The runner reuses the existing 1C protected fine surface rather than implementing economics again.
+
+Each input snapshot explicitly carries:
+
+- `blockTag`
+- `gasPriceWei`
+- `premiumBps`
+
+Peak observations are classified as:
+
+- `NONE`
+- `LOWER_BOUNDARY`
+- `INTERIOR`
+- `UPPER_BOUNDARY`
+
+Boundary classifications are evidence that the sampled observation window may not bracket the peak. They are not proof of an optimum.
+
+Malformed delegated surface results and malformed peak classifications fail closed.
+
+### Validation
+
+- 1E focused tests: 5/5
+- Combined 1B + 1C + 1D + 1E: 17/17
+- Full Node suite: 336/336
+- Canonical Hardhat suite: 29/29
+- Total maintained Node + canonical Hardhat tests: 365/365
+- `git diff --check`: clean
+- prohibited execution-surface scan: empty
+- Solidity compilation: 35 files, EVM target `paris`
+- only existing SPDX warnings observed
+
+A bare `npx hardhat test` also discovers legacy tracked `test/Lock.js`, which imports absent Hardhat Toolbox helpers. The repository's canonical `test:hardhat` script intentionally runs `test/ProfitBot.js`, `test/execution.js`, and `test/threeLegExecution.js`; that maintained suite passed 29/29. No dependency/toolchain change was made for the unrelated legacy test.
+
+### Safety boundary
+
+1E adds no signer, transaction, broadcast, wallet, production execution, deployment, `.env`, or policy changes.
+
+Do not weaken profitability, slippage, gas, freshness, minimum-profit, or worst-case qualification policy to manufacture readiness.
+
+`LIVE_READY` remains false unless the existing safety policy genuinely passes.
+
+### Next research step
+
+Add provider-only snapshot acquisition around the deterministic 1E core.
+
+Important gas provenance rule:
+
+`provider.getGasPrice()` represents gas observed at acquisition time. It must not be represented as historical gas for an older `blockTag`.
+
+Historical/block-pinned Aave premium data and current observed gas therefore require explicit provenance. Never compare snapshots as though their inputs were contemporaneous unless they actually were.
+
+Continue with:
+
+- provider only
+- read/call only
+- no signer
+- no transaction
+- no broadcast
+
+Keep 1D unchanged as historical experimental evidence.
+
+## Milestone 1F — Protected Peak Snapshot Acquisition
+
+Status: COMPLETE / PROVIDER-ONLY / CI-CONFIRMED
+
+1F adds a deterministic acquisition boundary for producing snapshots compatible
+with the 1E protected peak stability analysis.
+
+Code:
+- `scripts/research/runPolygonV4ProtectedPeakSnapshot.js`
+- `test/polygonV4ProtectedPeakSnapshot.test.js`
+
+Acquisition semantics:
+- Acquire the current Polygon block number first.
+- Require `blockTag` to be a positive safe integer.
+- Observe `gasPriceWei` from the provider during acquisition.
+- Resolve Aave economics with the acquired `blockTag`.
+- Require `gasPriceWei` to be positive.
+- Require `premiumBps` to be an integer from 0 through 9999.
+- Preserve `gasPriceWei` as an ethers `BigNumber`.
+- Return explicit provenance:
+  - quote block: `PINNED`
+  - Aave premium: `BLOCK_PINNED`
+  - gas price: `OBSERVED_AT_ACQUISITION`
+
+Important provenance boundary:
+- The Aave premium is legitimately block-pinned because
+  `resolveAaveEconomics(..., blockTag)` passes the block override through the
+  relevant on-chain reads.
+- `provider.getGasPrice()` is a current observation and is NOT historical or
+  block-pinned.
+- Do not describe the observed gas price as belonging to the pinned quote block.
+
+Safety boundary:
+- Provider-only.
+- No signer.
+- No wallet.
+- No transaction.
+- No broadcast.
+- No timer or daemon.
+- No production-contract modification.
+- No `.env` modification.
+- No profitability, slippage, gas, freshness, reserve, or minimum-profit policy
+  weakening.
+- 1E remains unchanged.
+
+Validation before commit:
+- Focused 1B–1F: 21/21 passing.
+- Full Node suite: 340/340 passing.
+- Canonical Hardhat suite: 29/29 passing.
+- Maintained validation total: 369 passing tests.
+- `git diff --check`: clean.
+- Execution safety scan: no execution-capable matches.
+
+1F code commit:
+- Full SHA: `6f28413714c2566d53e6b946e66036b1a1ffdba4`
+- Short SHA: `6f28413`
+- Subject: `Add Polygon V4 protected peak snapshot acquisition`
+
+Exact-SHA CI:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37036687450`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T16:50:46Z`
+- Updated: `2026-10-02T16:51:24Z`
+- `gh run watch` return code: 0
+- Exact head SHA:
+  `6f28413714c2566d53e6b946e66036b1a1ffdba4`
+
+Recovery anchor:
+`6f28413714c2566d53e6b946e66036b1a1ffdba4`
+
+Next research direction:
+Build a separate provider-only orchestration layer that can collect multiple
+independent 1F snapshots and feed those snapshots into the existing 1E
+protected peak stability analysis. Preserve the distinction between pinned
+quote/Aave state and observed gas. Do not add execution or broadcast behavior.
+
+## 1G — Protected Peak Multi-Snapshot Acquisition Orchestration
+
+Status: implemented, locally validated, pushed, and exact-SHA CI-confirmed.
+
+### Purpose
+
+1G joins the existing provider-only research components without adding
+execution capability:
+
+1F snapshot acquisition
+-> 1G multi-snapshot collection
+-> 1E protected peak stability
+-> existing 1C / 1B protected surface economics.
+
+The milestone remains research-only and provider-only.
+
+### Files
+
+- `scripts/research/runPolygonV4ProtectedPeakAcquisition.js`
+- `test/polygonV4ProtectedPeakAcquisition.test.js`
+
+### Snapshot independence boundary
+
+For this milestone, independent snapshots are defined conservatively by
+strictly increasing positive `blockTag` values.
+
+A duplicate block or a backward-moving block fails closed.
+
+1G does not claim that strictly increasing blocks imply a minimum elapsed
+wall-clock time or minimum block separation.
+
+### Collection semantics
+
+`collectProtectedPeakSnapshots(...)`:
+
+- requires a provider;
+- requires a positive safe-integer snapshot count;
+- acquires snapshots sequentially through the injected/default 1F
+  acquisition function;
+- validates the accumulated block sequence after every acquisition;
+- rejects duplicate or backward block tags;
+- returns the acquired snapshots without adding timing or persistence
+  semantics.
+
+### Stability orchestration
+
+`runAcquiredProtectedPeakStability(...)`:
+
+- collects the requested snapshot set;
+- delegates the completed set to existing
+  `runProtectedPeakStability(...)`;
+- preserves the same provider;
+- forwards an `amounts` override only when the caller supplied one;
+- otherwise leaves 1E's existing default amount grid intact.
+
+### Deliberately excluded
+
+1G adds no:
+
+- timer;
+- sleep/retry loop;
+- daemon/watcher;
+- filesystem persistence;
+- `capturedAt`;
+- RPC/environment configuration;
+- executable `main()` entrypoint;
+- signer or wallet;
+- transaction construction;
+- transaction submission or broadcast;
+- production integration;
+- policy weakening.
+
+If a real caller acquires the same block twice, 1G rejects the second
+sample rather than manufacturing independent evidence.
+
+Waiting for block advancement, retry policy, timestamps, and durable
+observation persistence remain separate future orchestration decisions.
+
+### Validation
+
+Local validation before commit:
+
+- runner syntax: pass;
+- test syntax: pass;
+- focused 1B-1G regression: 26 / 26 pass;
+- full Node suite: 347 / 347 pass;
+- canonical Hardhat suite: 29 / 29 pass;
+- maintained total: 376 passing tests;
+- `git diff --check`: pass;
+- execution/timer/persistence safety scan: empty.
+
+Hardhat-generated tracked `artifacts/` and `cache/` churn was restored
+before commit scope was finalized.
+
+### Exact code anchor
+
+Commit:
+
+`484cc4353eba175f30494d39f7e09a85a1ab2048`
+
+Subject:
+
+`Add Polygon V4 protected peak acquisition orchestration`
+
+Commit scope:
+
+- 2 files changed;
+- 569 insertions;
+- no production files changed.
+
+Local and remote branch heads matched this exact SHA after push.
+
+### Exact-SHA CI evidence
+
+Workflow: `ProfitBot CI`
+
+Run name: `ProfitBot checks`
+
+Run ID:
+
+`37039177840`
+
+Head SHA:
+
+`484cc4353eba175f30494d39f7e09a85a1ab2048`
+
+Status: `completed`
+
+Conclusion: `success`
+
+Created:
+
+`2026-10-02T17:12:51Z`
+
+Updated:
+
+`2026-10-02T17:13:30Z`
+
+CI job ID:
+
+`110944773777`
+
+All CI steps passed, including environment-file guard, `npm ci`,
+`npm test`, scanner syntax checks, and Hardhat compile.
+
+The GitHub Actions Node.js 20 -> 24 compatibility notice and upcoming
+`ubuntu-latest` Ubuntu 26 migration are infrastructure notices, not 1G
+failures.
+
+### Safety state after 1G
+
+1G does not change live readiness.
+
+No signer, transaction, or broadcast path was added.
+
+No profitability, slippage, gas, freshness, minimum-profit, or
+worst-case policy was weakened.
+
+`LIVE_READY=false` remains the safe state unless the existing full
+qualification policy independently passes.
+
+### Next research boundary
+
+Do not automatically add a timer or persistent watcher merely to gather
+more snapshots.
+
+Before the next implementation milestone, decide explicitly how real
+multi-block sampling should handle:
+
+- waiting for block advancement;
+- retry/timeout limits;
+- minimum block separation, if any;
+- wall-clock acquisition timestamps;
+- persistence versus caller-owned storage;
+- partial acquisition failure.
+
+Keep those concerns outside the deterministic 1G core unless evidence
+shows they belong there.
+
+## Milestone 1H — Polygon V4 Protected Peak Block-Separation Policy
+
+Status:
+- Implemented.
+- Locally validated.
+- Pushed.
+- Exact-SHA CI confirmed.
+- Provider/execution safety boundary remains unchanged.
+
+Purpose:
+- Add a deterministic policy layer above the 1G protected-peak acquisition sequence.
+- Distinguish merely different quote blocks from snapshots separated by a caller-selected minimum number of blocks.
+- Preserve the existing 1G requirement that snapshot blockTags are positive safe integers and strictly increasing.
+- Keep block-separation qualification independent from acquisition mechanics.
+
+Files:
+- `scripts/research/runPolygonV4ProtectedPeakBlockSeparation.js`
+- `test/polygonV4ProtectedPeakBlockSeparation.test.js`
+
+Policy semantics:
+- `validateMinimumBlockGap(minimumBlockGap)` requires a positive safe integer.
+- `validateProtectedPeakBlockSeparation({ snapshots, minimumBlockGap })` first delegates snapshot-sequence validation to the existing 1G `validateSnapshotSequence`.
+- Every adjacent snapshot pair must satisfy:
+  - `currentBlockTag - previousBlockTag >= minimumBlockGap`.
+- Exact minimum separation is accepted.
+- Larger separation is accepted.
+- Any adjacent pair below the configured minimum fails closed.
+- Duplicate and backward blockTags continue to fail through the underlying 1G sequence policy.
+- The original snapshot array is returned unchanged.
+- A single valid snapshot vacuously satisfies any valid block-separation value because there is no adjacent pair; minimum sample-count requirements belong to orchestration/stability policy, not this validator.
+
+Important interpretation:
+- 1H validates the separation of snapshots that already exist.
+- 1H does NOT advance blocks.
+- 1H does NOT wait for blocks.
+- 1H does NOT acquire snapshots.
+- `minimumBlockGap` is caller-selected research policy; 1H does not claim a universal economically sufficient block separation.
+- Block separation is not wall-clock separation and does not prove market-state independence.
+
+Deliberately excluded:
+- No timer, sleep, polling loop, daemon, or watcher.
+- No provider or RPC calls.
+- No `getBlockNumber`.
+- No wall-clock timestamp or `capturedAt`.
+- No persistence, JSONL, filesystem writes, or checkpointing logic.
+- No RPC configuration or environment handling.
+- No `main`.
+- No signer, wallet, private key, transaction, or broadcast.
+- No production execution integration.
+- No changes to profitability, slippage, gas, freshness, reserve, minimum-profit, or worst-case qualification policy.
+- No changes to `LIVE_READY`.
+
+Validation:
+- Implementation syntax: pass.
+- Test syntax: pass.
+- Focused 1B–1H regression: 33/33 pass.
+- Full Node suite: 354/354 pass.
+- Canonical Hardhat suite: 29/29 pass.
+- Maintained passing total: 383 tests.
+- `git diff --check`: pass.
+- Execution/timer/persistence/network safety scan: empty.
+- Hardhat-generated tracked artifact/cache churn was restored after validation.
+- An intermediate manual Hardhat command used incorrect filenames and returned `MODULE_NOT_FOUND`; this was a validation-command mistake, not a code failure. The repository-defined canonical command `hardhat test test/ProfitBot.js test/execution.js test/threeLegExecution.js` was then run directly and passed 29/29.
+
+Immutable 1H code anchor:
+- Commit: `50e1245d795814c0e11436989d5c5d7932adeac1`
+- Subject: `Add Polygon V4 protected peak block separation policy`
+- Scope: exactly 2 files, 263 insertions.
+- No production files changed.
+- Local and remote branch SHAs matched exactly after push.
+
+Exact-SHA CI evidence:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37041580800`
+- Head SHA: `50e1245d795814c0e11436989d5c5d7932adeac1`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T17:34:09Z`
+- Updated: `2026-10-02T17:35:24Z`
+- Job: `test`
+- Job ID: `110952729450`
+- Job started: `2026-10-02T17:34:47Z`
+- Job completed: `2026-10-02T17:35:24Z`
+- Exact run watch returned rc=0.
+- CI passed checkout, Node setup, tracked-environment-file guard, `npm ci`, `npm test`, scanner syntax checks, Hardhat compile, and post steps.
+
+Safety state:
+- 1H is pure deterministic research-policy validation.
+- No signer exists in this milestone.
+- No transaction is constructed or submitted.
+- No broadcast path is introduced.
+- Existing execution safety policy is unchanged.
+- `LIVE_READY` remains false unless the existing complete policy independently qualifies a candidate.
+
+Next research boundary:
+- Decide whether 1G acquisition should remain caller-driven or gain a separate block-advancement orchestration layer.
+- If block advancement is added later, define retry behavior and timeout/failure semantics explicitly rather than embedding them in 1H.
+- Decide whether wall-clock separation is independently useful in addition to block separation.
+- Decide whether acquired research sets need durable persistence or should remain caller-owned.
+- Define partial-acquisition failure behavior before introducing any long-running acquisition process.
+- Do not conflate `minimumBlockGap` with proof of economically independent market states.
+
+## Milestone 1I — Polygon V4 Protected Peak Block-Advancement Orchestration
+
+Status:
+- Implemented.
+- Locally validated.
+- Pushed.
+- Exact-SHA CI confirmed.
+- Provider/execution safety boundary remains unchanged.
+
+Purpose:
+- Add a deterministic bounded block-advancement orchestration primitive above the 1H block-separation policy.
+- Define explicitly what constitutes successful block advancement.
+- Bound observation work with a caller-selected attempt budget.
+- Distinguish ordinary insufficient advancement from malformed evidence or invalid dependencies.
+- Keep actual waiting, timers, polling cadence, provider access, and snapshot acquisition outside this deterministic core.
+
+Files:
+- `scripts/research/runPolygonV4ProtectedPeakBlockAdvancement.js`
+- `test/polygonV4ProtectedPeakBlockAdvancement.test.js`
+
+Orchestration semantics:
+- `validateBlockTag(blockTag, name)` requires a positive safe integer.
+- `validateMaxAttempts(maxAttempts)` requires a positive safe integer.
+- `observeProtectedPeakBlockAdvancement({ previousBlockTag, minimumBlockGap, maxAttempts, observeBlockFn })` reuses the 1H `validateMinimumBlockGap` policy.
+- Required advancement is:
+  - `requiredBlockTag = previousBlockTag + minimumBlockGap`.
+- The required block must remain within JavaScript's safe-integer range.
+- `maxAttempts` is exactly the maximum number of calls to `observeBlockFn`; there is no hidden attempt zero.
+- Each observer result must itself be a positive safe-integer block tag.
+- Success is the first observation satisfying:
+  - `observedBlockTag >= requiredBlockTag`.
+- Exact required advancement is accepted.
+- Larger advancement is accepted.
+- Success stops observation immediately and returns a structured `advanced: true` result.
+- Duplicate, backward, and intermediate positive safe-integer observations do not satisfy advancement but remain valid observations within the bounded attempt budget.
+- Exhausting the attempt budget without sufficient advancement returns a structured `advanced: false` result rather than throwing.
+- Invalid arguments, invalid dependencies, malformed observed block evidence, and safe-integer overflow fail immediately by exception.
+- Results record the previous block, configured gap, required block, final observed block, attempts used, maximum attempts, and all observations.
+
+Important interpretation:
+- 1I observes advancement evidence; it does not itself advance the chain.
+- `observeBlockFn` is injected and deliberately abstract.
+- 1I does not directly depend on an ethers provider or `getBlockNumber`.
+- 1I contains no delay between attempts.
+- Therefore repeated observations may occur immediately unless a future caller supplies waiting/cadence outside this primitive.
+- Attempt count is a bounded observation budget, not a wall-clock timeout.
+- A backward observation is not accepted as advancement, but a positive safe-integer backward block is treated as valid observed evidence and can consume an attempt.
+- Block advancement remains distinct from wall-clock separation and does not prove economically independent market states.
+- `minimumBlockGap` remains caller-selected research policy, not a universal economic-independence threshold.
+
+Deliberately excluded:
+- No timer, sleep, polling interval, daemon, or watcher.
+- No provider or RPC dependency.
+- No `getBlockNumber`.
+- No snapshot acquisition.
+- No integration into the existing 1G acquisition loop.
+- No wall-clock timestamp or `capturedAt`.
+- No persistence, JSONL, filesystem writes, or checkpointing logic in the implementation.
+- No RPC configuration or environment handling.
+- No `main`.
+- No signer, wallet, private key, transaction, or broadcast.
+- No production execution integration.
+- No changes to profitability, slippage, gas, freshness, reserve, minimum-profit, or worst-case qualification policy.
+- No changes to `LIVE_READY`.
+
+Validation:
+- Implementation syntax: pass.
+- Test syntax: pass.
+- Focused protected-peak 1B–1I regression: 40/40 pass.
+- Full Node suite: 361/361 pass.
+- Canonical Hardhat suite: 29/29 pass.
+- Maintained passing total: 390 tests.
+- `npm test`: rc=0.
+- `git diff --check`: pass before and after generated-artifact cleanup.
+- Execution/timer/persistence/network safety scan: empty.
+- Hardhat-generated tracked `artifacts/` and `cache/` churn was restored after validation.
+- An intermediate cleanup helper supplied during validation contained a malformed `awk` expression, so the first automatic generated-churn restoration did not run. This was a cleanup-command mistake, not a code or test failure. A guarded follow-up verified there were no unexpected non-generated tracked changes and restored only `artifacts/` and `cache/`; the final worktree scope returned exactly to the two intended 1I files before commit.
+
+Immutable 1I code anchor:
+- Commit: `5dd3622d67ae0143bc4dc66fa688e1f2708b68cd`
+- Subject: `Add Polygon V4 protected peak block advancement orchestration`
+- Scope: exactly 2 files, 423 insertions.
+- Implementation: 138 lines.
+- Tests: 285 lines.
+- No production files changed.
+- Local and remote branch SHAs matched exactly after push.
+
+Exact-SHA CI evidence:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37043983921`
+- Head SHA: `5dd3622d67ae0143bc4dc66fa688e1f2708b68cd`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T17:55:27Z`
+- Updated: `2026-10-02T17:56:12Z`
+- Job: `test`
+- Job ID: `110960713410`
+- Job started: `2026-10-02T17:55:31Z`
+- Job completed: `2026-10-02T17:56:11Z`
+- Exact run watch returned rc=0.
+- CI passed setup, checkout, Node setup, tracked-environment-file guard, `npm ci`, `npm test`, scanner syntax checks, Hardhat compile, and post steps.
+- CI emitted infrastructure notices that Node.js 20-targeting actions are being forced to Node.js 24 and that `ubuntu-latest` is scheduled to migrate to Ubuntu 26 beginning October 19, 2026; these were not test failures.
+
+Safety state:
+- 1I is deterministic research orchestration with an injected observation dependency.
+- No signer exists in this milestone.
+- No transaction is constructed or submitted.
+- No broadcast path is introduced.
+- Existing execution safety policy is unchanged.
+- `LIVE_READY` remains false unless the existing complete policy independently qualifies a candidate.
+
+Next research boundary:
+- Decide whether a separate caller should compose 1I block advancement between 1G snapshot acquisitions.
+- Define how that composition handles `advanced: false` without accepting an under-separated snapshot.
+- Decide whether the injected observation function should eventually be backed by provider `getBlockNumber` in a separate adapter.
+- Decide whether waiting/cadence should be another injected dependency rather than embedded into deterministic orchestration.
+- Define wall-clock timeout semantics separately from `maxAttempts`; attempt count alone is not elapsed-time protection.
+- Define partial-acquisition behavior if advancement succeeds but subsequent snapshot acquisition fails.
+- Decide whether completed or partially completed research sets require durable persistence.
+- Do not conflate block advancement or minimum block gap with proof of economically independent market states.
+
+## Milestone 1J — Polygon V4 Protected Peak Gated Acquisition
+
+Status:
+- Implemented.
+- Locally validated.
+- Pushed.
+- Exact-SHA CI confirmed.
+- Provider/execution safety boundary remains unchanged.
+
+Purpose:
+- Compose deterministic 1I block-advancement gating with protected-peak snapshot acquisition without modifying the existing 1G, 1H, or 1I primitives.
+- Acquire the first research snapshot immediately.
+- Require successful block-advancement evidence before every later acquisition.
+- Gate each later acquisition relative to the last successfully acquired snapshot.
+- Revalidate actual acquired snapshot separation with 1H rather than assuming observed advancement proves the subsequently pinned snapshot is sufficiently separated.
+- Preserve bounded exhaustion as a structured incomplete research result rather than accepting an under-separated snapshot.
+
+Files:
+- `scripts/research/runPolygonV4ProtectedPeakGatedAcquisition.js`
+- `test/polygonV4ProtectedPeakGatedAcquisition.test.js`
+
+Composition semantics:
+- `validateCount(count)` requires a positive safe integer.
+- `collectGatedProtectedPeakSnapshots(...)` validates count, minimum block gap, maximum observation attempts, acquisition dependency, block-observation dependency, and advancement dependency before acquiring the first snapshot.
+- Snapshot number one is acquired without an advancement gate because no prior acquired snapshot exists.
+- Before each subsequent snapshot, advancement is evaluated relative to the `blockTag` of the last successfully acquired snapshot.
+- The configured `minimumBlockGap`, `maxAttempts`, and injected `observeBlockFn` are passed into the advancement dependency.
+- An advancement result must be an object containing a boolean `advanced`.
+- Advancement policy provenance must match the gate:
+  - `previousBlockTag` must equal the last successfully acquired snapshot block.
+  - `minimumBlockGap` must equal the caller-selected gap.
+  - `maxAttempts` must equal the caller-selected attempt budget.
+- A successful advancement result must contain a safe-integer `observedBlockTag` satisfying the required block gap.
+- `advanced: false` stops acquisition before another snapshot is requested and returns a structured incomplete result with:
+  - `complete: false`
+  - requested and acquired counts
+  - configured gap and attempt budget
+  - successfully acquired snapshots
+  - advancement evidence
+  - `stopReason: BLOCK_ADVANCEMENT_EXHAUSTED`
+- `advanced: true` permits the next acquisition attempt but is not itself accepted as proof that the resulting snapshot is sufficiently separated.
+- After the next snapshot is acquired, the candidate snapshot sequence is revalidated through the existing 1H `validateProtectedPeakBlockSeparation` policy.
+- Therefore inconsistent provider behavior cannot turn observed head advancement into acceptance of an actually under-separated pinned snapshot.
+- Successful completion returns all acquired snapshots and advancement evidence with `complete: true` and `stopReason: null`.
+- Acquisition exceptions after successful advancement propagate as exceptions; 1J does not invent a completed or partial success result for that failure.
+- Malformed advancement evidence and policy-provenance mismatches fail closed before another snapshot is acquired.
+
+Important interpretation:
+- 1J composes deterministic research primitives; it does not itself access a provider.
+- `observeBlockFn` remains injected.
+- `acquireSnapshotFn` remains injected.
+- The default advancement dependency is the deterministic 1I `observeProtectedPeakBlockAdvancement`.
+- Block advancement evidence and actual pinned snapshot separation remain distinct evidence.
+- Minimum block separation remains caller-selected research policy and is not proof of economically independent market states.
+- Attempt count remains an observation budget, not a wall-clock timeout.
+- Partial structured return is used specifically for ordinary bounded block-advancement exhaustion.
+- Acquisition failures, malformed dependencies, malformed evidence, and actual snapshot separation violations remain exceptions.
+
+Tests:
+- 10 dedicated 1J tests cover:
+  - positive safe-integer snapshot-count validation
+  - first acquisition without an advancement gate
+  - gating each later acquisition from the last successfully acquired snapshot
+  - structured incomplete return on exhausted advancement without another acquisition
+  - revalidation of actual acquired snapshot separation after successful advancement
+  - propagation of acquisition failure after successful advancement
+  - rejection of malformed advancement results
+  - rejection of invalid dependencies before first acquisition
+  - rejection of advancement policy-provenance mismatch
+  - rejection of successful advancement evidence below the required block gap
+
+Deliberately excluded:
+- No modification to 1G acquisition.
+- No modification to 1H separation policy.
+- No modification to 1I advancement orchestration.
+- No direct provider or RPC dependency.
+- No `getBlockNumber`.
+- No timer, sleep, polling interval, daemon, watcher, or wall-clock timeout.
+- No persistence, JSONL, filesystem writes, or implementation checkpointing.
+- No RPC configuration or environment handling.
+- No `main`.
+- No signer, wallet, private key, transaction, or broadcast.
+- No production execution integration.
+- No changes to `ProfitBot.sol`.
+- No changes to `ThreeLegExecution`.
+- No changes to production route helpers.
+- No changes to profitability, slippage, gas, freshness, reserve, minimum-profit, or worst-case qualification policy.
+- No changes to `LIVE_READY`.
+
+Validation:
+- Implementation syntax: pass.
+- Test syntax: pass.
+- Dedicated 1J focused tests: 10/10 pass.
+- Corrected protected research regression: 46/46 pass.
+- Full Node suite: 371/371 pass.
+- Canonical Hardhat suite: 29/29 pass.
+- Maintained passing total: 400 tests.
+- `npm test`: rc=0.
+- `git diff --check`: pass.
+- Execution/timer/persistence/network safety scan: empty.
+- Hardhat-generated tracked `artifacts/` and `cache/` churn was identified as generated-only and restored after validation.
+- An initial focused-regression command supplied during 1J validation referenced the nonexistent file `test/polygonV4ProtectedAmountSurface.test.js`; that command returned rc=1 before the intended focused tests ran. This was a validation-command filename mistake, not an implementation or test failure. A subsequent discovery-based command used the actual protected research test filenames and passed 46/46.
+
+Immutable 1J code anchor:
+- Commit: `89f041a62567338c2f951291f5e9a41d259278ff`
+- Subject: `Add Polygon V4 protected peak gated acquisition`
+- Parent: `8818361e5dbbbd06e7bd83910c50da308b4152f9`
+- Scope: exactly 2 files, 781 insertions.
+- Implementation: 211 lines.
+- Tests: 570 lines.
+- No production files changed.
+- Local and remote branch SHAs matched exactly after push.
+
+Exact-SHA CI evidence:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37045905719`
+- Head SHA: `89f041a62567338c2f951291f5e9a41d259278ff`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T18:12:47Z`
+- Updated: `2026-10-02T18:13:28Z`
+- Job: `test`
+- Job ID: `110967151613`
+- Job started: `2026-10-02T18:12:50Z`
+- Job completed: `2026-10-02T18:13:27Z`
+- Exact run watch returned rc=0.
+- CI passed setup, checkout, Node setup, tracked-environment-file guard, `npm ci`, `npm test`, scanner syntax checks, Hardhat compile, and post steps.
+- CI emitted infrastructure notices that Node.js 20-targeting actions are being forced to Node.js 24 and that `ubuntu-latest` is scheduled to migrate to Ubuntu 26 beginning October 19, 2026; these were notices rather than test failures.
+- The push also reported existing Dependabot vulnerability counts on the repository default branch. Dependency remediation remains separate from this milestone and no dependency changes were made for 1J.
+
+Safety state:
+- 1J remains provider-abstract deterministic research composition.
+- No signer exists in this milestone.
+- No transaction is constructed or submitted.
+- No broadcast path is introduced.
+- Existing execution safety policy is unchanged.
+- `LIVE_READY` remains false unless the existing complete policy independently qualifies a candidate.
+
+Layering through 1J:
+- 1F snapshot acquisition primitive.
+- 1G repeated acquisition/stability composition primitive.
+- 1H minimum block-separation policy.
+- 1I bounded block-advancement observation primitive.
+- 1J advancement-gated acquisition composition with actual snapshot separation revalidation.
+- 1E protected-peak stability analysis remains a separate downstream analysis layer.
+
+Next research boundary:
+- Decide whether 1J should next be composed with 1E stability analysis in a separate additive layer rather than modifying 1J.
+- Decide whether a future provider adapter should supply `getBlockNumber` to the injected block observer.
+- Define waiting/cadence separately from deterministic advancement observation.
+- Define wall-clock timeout semantics separately from `maxAttempts`.
+- Decide whether incomplete research sets require durable persistence before introducing any long-running orchestration.
+- Preserve the distinction between observed block advancement, pinned snapshot separation, elapsed time, and economically independent market states.
+- Do not introduce signer, transaction, or broadcast behavior as part of this research composition.
+
+## Milestone 1K — Polygon V4 Gated Protected Peak Stability Composition
+
+Status:
+- Implemented.
+- Locally validated.
+- Pushed.
+- Exact-SHA CI confirmed.
+- Provider/execution safety boundary remains unchanged.
+
+Purpose:
+- Compose the existing 1J advancement-gated protected-peak acquisition layer with the existing 1E protected-peak stability analysis in a separate additive research layer.
+- Preserve incomplete 1J acquisition evidence without incorrectly treating a partial snapshot set as a completed stability sample.
+- Run stability analysis only after gated acquisition explicitly reports completion.
+- Keep acquisition and stability dependencies injectable for deterministic testing without introducing provider, timer, persistence, signer, transaction, or broadcast behavior.
+
+Files:
+- `scripts/research/runPolygonV4ProtectedPeakGatedStability.js`
+- `test/polygonV4ProtectedPeakGatedStability.test.js`
+
+Composition semantics:
+- `runGatedProtectedPeakStability(...)` delegates acquisition to the existing 1J `collectGatedProtectedPeakSnapshots` by default.
+- The composition passes through:
+  - requested snapshot count
+  - caller-selected minimum block gap
+  - maximum advancement observation attempts
+  - injected snapshot acquisition dependency
+  - injected block-observation dependency
+  - optional injected advancement dependency
+- The composition validates its acquisition and stability dependencies before acquisition.
+- The returned acquisition envelope must be an object containing:
+  - boolean `complete`
+  - array `snapshots`
+- A malformed acquisition envelope fails closed before stability analysis.
+- `complete: false` is preserved as explicit incomplete research evidence.
+- An incomplete acquisition returns:
+  - the exact acquisition object
+  - `stability: null`
+- Stability analysis is not called for an incomplete acquisition.
+- `complete: true` requires at least one acquired snapshot.
+- A completed acquisition with an empty snapshot array fails closed before stability analysis.
+- A completed non-empty snapshot set is passed unchanged into the existing 1E `runProtectedPeakStability` by default.
+- An explicit `amounts` override is forwarded to stability analysis only when the caller supplied it.
+- If `amounts` is omitted, 1K does not invent an override.
+- The exact acquisition object is preserved in the composed result rather than reconstructing or flattening its evidence.
+- Acquisition exceptions propagate.
+- Stability-analysis exceptions propagate.
+- 1K intentionally does not duplicate all 1J internal provenance validation; the default 1J dependency remains responsible for its own acquisition, advancement, and separation evidence rules.
+- Existing 1E/default 1J validation remains responsible for the underlying snapshot/economic evidence.
+
+Incomplete-result interpretation:
+- Ordinary bounded block-advancement exhaustion remains a structured incomplete research outcome from 1J.
+- 1K does not reinterpret that incomplete set as completed stability evidence.
+- 1K does not require one specific future incomplete stop reason; it preserves the acquisition result and prevents analysis whenever `complete` is false.
+- This keeps partial acquisition evidence visible while avoiding false stability conclusions.
+
+Tests:
+- 9 dedicated 1K tests cover:
+  - gated acquisition argument pass-through and completed stability analysis
+  - no stability analysis for incomplete acquisition
+  - omission of an invented `amounts` override
+  - propagation of gated acquisition failure without stability execution
+  - propagation of stability failure after completed acquisition
+  - rejection of invalid composition dependencies before acquisition
+  - rejection of malformed acquisition envelopes without stability execution
+  - preservation of the exact acquisition evidence object
+  - rejection of a completed acquisition containing zero snapshots
+
+Deliberately excluded:
+- No modification to 1E stability analysis.
+- No modification to 1G acquisition/stability composition.
+- No modification to 1H separation policy.
+- No modification to 1I advancement observation.
+- No modification to 1J gated acquisition.
+- No direct provider or RPC dependency.
+- No `getBlockNumber`.
+- No timer, sleep, polling interval, daemon, watcher, or wall-clock timeout.
+- No persistence, JSONL, filesystem writes, or implementation checkpointing in the 1K code path.
+- No RPC configuration or environment handling.
+- No `main`.
+- No signer, wallet, private key, transaction, or broadcast.
+- No production execution integration.
+- No changes to `ProfitBot.sol`.
+- No changes to `ThreeLegExecution`.
+- No changes to production execution route helpers.
+- No changes to profitability, slippage, gas, freshness, reserve, minimum-profit, or worst-case qualification policy.
+- No changes to `LIVE_READY`.
+
+Validation:
+- Implementation syntax: pass.
+- Test syntax: pass.
+- Dedicated 1K focused tests: 9/9 pass.
+- Protected research regression discovered by filename rather than a hard-coded test list: 55/55 pass.
+- Full Node suite: 380/380 pass.
+- Canonical Hardhat suite: 29/29 pass.
+- Maintained passing total: 409 tests.
+- `npm test`: rc=0.
+- `git diff --check`: pass.
+- Execution/timer/persistence/network safety scan: empty.
+- Hardhat compiled 35 Solidity files successfully; only existing SPDX warnings were emitted for Uniswap V2 interface files.
+- Hardhat-generated tracked `artifacts/` and `cache/` churn was restored after validation.
+- During the first full-validation cleanup, an assistant-supplied `awk` expression intended to classify generated versus non-generated tracked changes was malformed. The `awk` commands failed, so generated Hardhat churn was not restored in that command and final scope correctly reported failure. This was a cleanup-command error, not an implementation or test failure.
+- A subsequent guarded cleanup verified there were no tracked changes outside `artifacts/` and `cache/`, verified the only untracked files were the two intended 1K files, restored only `artifacts/` and `cache/`, and confirmed:
+  - tracked worktree clean
+  - both 1K files preserved
+  - `git diff --check` pass
+  - exact intended two-file scope
+- The already-passing test suites were not unnecessarily rerun after that cleanup-only correction.
+
+Immutable 1K code anchor:
+- Commit: `c965e652ec7482f6d2ba609b33634e977855441e`
+- Subject: `Add Polygon V4 gated protected peak stability composition`
+- Parent: `8cc7b5cb15e5373ba5357759b62bef1a61eaca74`
+- Scope: exactly 2 files, 603 insertions.
+- Implementation: 105 lines.
+- Tests: 498 lines.
+- No production files changed.
+- Local and remote branch SHAs matched exactly after push.
+
+Exact-SHA CI evidence:
+- Workflow: `ProfitBot CI`
+- Run name: `ProfitBot checks`
+- Run ID: `37048143940`
+- Head SHA: `c965e652ec7482f6d2ba609b33634e977855441e`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T18:32:37Z`
+- Updated: `2026-10-02T18:33:15Z`
+- Job: `test`
+- Job ID: `110974574243`
+- Job started: `2026-10-02T18:32:39Z`
+- Job completed: `2026-10-02T18:33:15Z`
+- Exact run watch returned rc=0.
+- CI passed setup, checkout, Node setup, tracked-environment-file guard, `npm ci`, `npm test`, scanner syntax checks, Hardhat compile, and post steps.
+- CI emitted infrastructure notices that Node.js 20-targeting actions are being forced to Node.js 24 and that `ubuntu-latest` is scheduled to migrate to Ubuntu 26 beginning October 19, 2026; these were notices rather than test failures.
+- The push also reported existing Dependabot vulnerability counts on the repository default branch: 228 total, including 12 critical, 99 high, 79 moderate, and 38 low. Dependency remediation remains separate from this milestone and no dependency changes were made for 1K.
+
+Safety state:
+- 1K remains deterministic research composition around injected dependencies.
+- No signer exists in this milestone.
+- No transaction is constructed or submitted.
+- No broadcast path is introduced.
+- Existing execution safety policy is unchanged.
+- `LIVE_READY` remains false unless the existing complete policy independently qualifies a candidate.
+
+Layering through 1K:
+- 1E protected-peak stability analysis.
+- 1F snapshot acquisition primitive.
+- 1G repeated acquisition/stability composition primitive.
+- 1H minimum block-separation policy.
+- 1I bounded block-advancement observation primitive.
+- 1J advancement-gated acquisition with actual snapshot separation revalidation.
+- 1K gated-acquisition-to-stability composition that refuses to analyze incomplete acquisition sets.
+
+Next research boundary:
+- Keep actual provider adaptation separate from the deterministic 1K composition.
+- Decide whether a future provider adapter should supply `getBlockNumber` to the existing injected block observer.
+- Define waiting/cadence separately from deterministic advancement observation.
+- Define wall-clock timeout semantics separately from `maxAttempts`.
+- Decide whether incomplete research evidence requires durable persistence before any long-running orchestration.
+- Preserve the distinction between observed block advancement, pinned snapshot separation, elapsed time, and economically independent market states.
+- Do not introduce signer, transaction, or broadcast behavior as part of provider adaptation or research orchestration.
+
+---
+
+## 1K.1 Corrective Milestone — Provider Forwarding
+
+### Supersession
+
+This section corrects and supersedes the earlier 1K closure
+claims recorded by checkpoint commit
+`0f5b1225478136840502598ee587b15438f46df8`.
+
+Published history is retained unchanged.
+
+Original 1K code commit:
+`c965e652ec7482f6d2ba609b33634e977855441e`
+
+The original 1K composition omitted forwarding `provider` into
+the default 1E protected-peak stability runner.
+
+1E requires provider. Therefore the original statement that 1K
+had no provider dependency was incorrect.
+
+### Why original CI passed
+
+The original 1K tests injected `runStabilityFn` stubs that did
+not require provider.
+
+Those tests validated the injected composition behavior but did
+not expose the missing provider requirement of the default 1E
+integration.
+
+The original green CI therefore did not prove correct default
+1K-to-1E provider forwarding.
+
+### Additive 1K.1 correction
+
+Corrective commit:
+`8d24d18678f8a1262d4a9509c2e8908f57c440ff`
+
+Subject:
+`Fix Polygon V4 gated stability provider forwarding`
+
+Corrected behavior:
+
+- 1K accepts `provider`.
+- 1K forwards that exact provider to stability.
+- 1K makes no direct provider calls.
+- Provider is not passed into 1J gated acquisition.
+- 1J remains provider-abstract through injected acquisition and
+  observation dependencies.
+- Default 1E remains responsible for provider validation and use.
+- Incomplete acquisition still returns before stability runs.
+- Omitted `amounts` remains omitted.
+- Completed-empty-snapshot hardening remains unchanged.
+
+No signer, wallet, transaction, broadcast, timer, polling loop,
+persistence, production execution change, or safety-policy
+weakening was introduced.
+
+### Regression and validation evidence
+
+A dedicated regression test verifies exact provider identity is
+forwarded to stability after complete acquisition.
+
+Validation after the correction:
+
+- focused 1K: 10/10 passing
+- full Node suite: 381/381 passing
+- canonical Hardhat suite: 29/29 passing
+- maintained total: 410 passing
+- `git diff --check`: pass
+- intended corrective scope: exactly two files
+- Hardhat-generated artifacts/cache churn restored
+- corrective diff preserved unchanged
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+An accidental broader Hardhat invocation included Polygon fork
+tests and produced three fork/environment failures. It was not
+the canonical maintained Hardhat gate. The explicit canonical
+29-test suite was subsequently rerun and passed 29/29.
+
+### Exact-SHA CI
+
+Corrective SHA:
+`8d24d18678f8a1262d4a9509c2e8908f57c440ff`
+
+Workflow:
+`ProfitBot CI`
+
+Run ID:
+`37050797742`
+
+Status:
+`completed`
+
+Conclusion:
+`success`
+
+The CI `headSha` exactly matched the corrective SHA.
+
+### Corrected layering
+
+1J remains the provider-abstract gated acquisition layer.
+
+1K accepts provider only so it can forward provider, together
+with the completed acquired snapshots, into 1E.
+
+1E validates and consumes provider for protected-peak stability.
+
+Therefore accepting/forwarding provider in 1K does not make 1K
+a direct RPC/provider layer.
+
+### Recovery anchor
+
+The corrected 1K code anchor is:
+
+`8d24d18678f8a1262d4a9509c2e8908f57c440ff`
+
+Do not use the original 1K closure statements in checkpoint
+`0f5b1225478136840502598ee587b15438f46df8`
+as current truth. This 1K.1 section supersedes them.
+
+### Next boundary
+
+No 1L modifying work should begin until this corrective
+checkpoint itself is committed, pushed, and exact-SHA CI-green.
+
+Existing safety boundaries remain unchanged:
+
+- no signer
+- no transaction
+- no broadcast
+- no production execution-path modification
+- no profitability/slippage/gas/freshness/worst-case weakening
+- `LIVE_READY=false` unless existing policy independently passes
+
+## 1L — Provider-Backed Block Observer
+
+### Milestone
+
+1L adds the isolated provider-backed block-observation adapter
+needed by the protected-peak research stack.
+
+Code commit:
+
+`1e2ea71ef940692b95b8d1f70d2a75125878c682`
+
+Subject:
+
+`Add Polygon V4 protected peak provider block observer`
+
+Files:
+
+- `scripts/research/runPolygonV4ProtectedPeakProviderBlock.js`
+- `test/polygonV4ProtectedPeakProviderBlock.test.js`
+
+Commit scope:
+
+- exactly 2 files
+- 156 insertions
+
+### Responsibility
+
+1L exports:
+
+`observeProtectedPeakProviderBlock({ provider })`
+
+The adapter:
+
+- requires a provider
+- requires `provider.getBlockNumber`
+- performs exactly one `getBlockNumber()` observation per call
+- requires the returned block tag to be a positive safe integer
+- returns that block tag unchanged
+- propagates provider observation failure unchanged
+
+The adapter intentionally requires only `getBlockNumber`.
+
+It does not require `getGasPrice`, because gas-price acquisition
+belongs to the 1F snapshot-acquisition responsibility rather than
+the block-observation responsibility.
+
+### Layering
+
+1I remains the deterministic bounded block-advancement layer and
+continues to consume an injected zero-argument `observeBlockFn`.
+
+1J remains provider-abstract gated acquisition.
+
+1K remains gated-acquisition-to-stability composition. It accepts
+provider only for forwarding to 1E stability and makes no direct
+provider calls.
+
+1L supplies the small provider-backed primitive capable of
+satisfying the block-observer shape expected by 1I/1J.
+
+1L is not yet wired into 1J or 1K. Integration remains a separate
+reviewed milestone rather than silently changing established
+layers.
+
+### Explicit non-responsibilities
+
+1L does not:
+
+- retry provider reads
+- sleep or poll
+- define cadence
+- define wall-clock timeout semantics
+- read gas price
+- perform a network check
+- acquire protected-peak snapshots
+- run stability analysis
+- persist observations
+- modify watcher behavior
+- create or use a signer or wallet
+- construct or submit a transaction
+- broadcast anything
+- modify production execution paths
+- weaken profitability, slippage, gas, freshness, or worst-case policy
+
+Observed block advancement, elapsed wall-clock time, snapshot
+separation, and economically independent market states remain
+distinct concepts.
+
+### Tests and validation
+
+Focused 1L tests:
+
+- 5/5 passing
+
+The focused tests verify:
+
+- exact valid provider block is returned
+- exactly one provider block observation is made
+- missing provider is rejected
+- provider without `getBlockNumber` is rejected
+- malformed block evidence is rejected
+- provider observation failure is propagated unchanged
+
+Full maintained validation:
+
+- Node: 386/386 passing
+- canonical Hardhat: 29/29 passing
+- maintained total: 415 passing
+- `git diff --check`: pass
+- safety scan: clean
+- final code scope: exactly two intended files
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+### Exact-SHA CI
+
+Code SHA:
+
+`1e2ea71ef940692b95b8d1f70d2a75125878c682`
+
+Workflow:
+
+`ProfitBot checks`
+
+Run ID:
+
+`37053807292`
+
+Event:
+
+`push`
+
+Status:
+
+`completed`
+
+Conclusion:
+
+`success`
+
+Created:
+
+`2026-10-02T19:23:32Z`
+
+Updated:
+
+`2026-10-02T19:24:02Z`
+
+The CI `headSha` exactly matched the 1L code SHA.
+
+### Safety state
+
+1L remains provider-only research infrastructure.
+
+No signer exists in this milestone.
+
+No transaction is constructed or submitted.
+
+No broadcast path is introduced.
+
+Existing execution safety policy is unchanged.
+
+`LIVE_READY` remains false unless the existing complete policy
+independently qualifies a candidate.
+
+### Next boundary
+
+Any integration of the 1L provider observer into 1J/1K should be
+handled as a separate additive milestone with explicit tests.
+
+Waiting/cadence and wall-clock timeout semantics should remain
+separate unless later repository evidence justifies combining
+them.
+
+Do not introduce signer, transaction, broadcast, or production
+execution behavior as part of provider-observer integration.
+## Milestone 1M — Polygon V4 protected peak provider observer binding
+
+Status: code complete, locally validated, pushed, and exact-SHA CI green.
+
+Code commit:
+- SHA: `67bda0bbff61d034fa8418c4bdbb47db87c387b8`
+- Subject: `Add Polygon V4 protected peak provider observer binding`
+- Parent: `df84d2b6efc6d28d9788bb383e229b514b273779`
+- Scope: exactly two new files, 191 insertions:
+  - `scripts/research/runPolygonV4ProtectedPeakProviderObserver.js`
+  - `test/polygonV4ProtectedPeakProviderObserver.test.js`
+
+Purpose:
+- Bind a provider to the 1L provider-block observer and expose the zero-argument `observeBlockFn()` contract consumed by 1I/1J.
+- Resolve only the interface mismatch between 1L `{ provider }` observation and the existing zero-argument observer boundary.
+
+Behavior:
+- `createProtectedPeakProviderObserver({ provider, observeProviderBlockFn })` returns an async zero-argument observer.
+- Creating the observer performs zero provider reads.
+- Each observer invocation delegates exactly once to the provider-block dependency with the exact provider.
+- The default dependency is 1L `observeProtectedPeakProviderBlock`.
+- Provider validation remains owned by 1L rather than duplicated in 1M.
+- Invalid injected provider-block dependencies fail before observation.
+- Provider-block failures propagate unchanged.
+
+Architecture boundaries:
+- 1M does not implement retry, sleep, polling, cadence, or wall-clock timeout.
+- 1M does not decide how often observation occurs.
+- 1M does not acquire snapshots or perform stability analysis.
+- 1M does not directly call provider methods.
+- 1I remains responsible for deterministic bounded block-advancement attempts.
+- 1J remains responsible for gated snapshot acquisition and remains provider-abstract.
+- 1K remains responsible for gated acquisition -> stability composition.
+- 1L remains responsible for one provider-backed block-number observation.
+- 1I, 1J, and 1K were not modified by 1M.
+- Wiring 1M into a higher composition layer remains a separate reviewed milestone.
+
+Safety:
+- Provider-only/read-only architecture.
+- No signer.
+- No wallet/private key handling.
+- No transaction creation.
+- No broadcast.
+- No persistence or watcher modification.
+- No production contract or execution-route modification.
+- No profitability, slippage, gas, freshness, minimum-profit, or worst-case policy weakening.
+- `LIVE_READY` remains policy-gated.
+
+Validation:
+- Focused 1M: 6/6 passing.
+- Maintained Node suite: 392/392 passing.
+- Canonical Hardhat suite: 29/29 passing.
+- Maintained total: 421 passing.
+- Pre/post `git diff --check`: passing.
+- Safety scan: empty.
+- Direct provider-read scan in 1M implementation: empty.
+- Final implementation scope: exactly the intended two files.
+
+CI:
+- Workflow: `ProfitBot checks`
+- Run: `37055510322`
+- Event: `push`
+- Exact head SHA: `67bda0bbff61d034fa8418c4bdbb47db87c387b8`
+- Status: `completed`
+- Conclusion: `success`
+
+Next boundary:
+- Do not add timers or hidden polling to 1M.
+- Any integration of the bound observer into the gated acquisition/stability chain must be a separate additive, reviewed milestone.
+- Keep provider observation, block-advancement attempt policy, wall-clock waiting/cadence, snapshot acquisition, and stability analysis as distinct responsibilities unless repository evidence justifies a later composition.
+
+## Milestone 1N — Polygon V4 provider gated stability composition
+
+Status: code complete, locally validated, pushed, and exact-SHA CI green.
+
+Code commit:
+- SHA: `3e56841d3fca545b50ca1ad5770d8bfc6dae3338`
+- Subject: `Add Polygon V4 provider gated stability composition`
+- Parent: `6c8226e8ac1b075eace5c8c05964a9320d0f94fc`
+- Scope: exactly two new files, 402 insertions:
+  - `scripts/research/runPolygonV4ProtectedPeakProviderGatedStability.js`
+  - `test/polygonV4ProtectedPeakProviderGatedStability.test.js`
+
+Purpose:
+- Add the provider-backed composition layer above 1K without making 1J provider-aware or making 1K construct provider observers.
+- Bind the existing provider-backed snapshot and block-observation capabilities to the zero-argument function boundaries already consumed by 1J/1K.
+
+Behavior:
+- `runProviderGatedProtectedPeakStability(...)` composes the existing provider-only research layers.
+- The exact provider is supplied to the provider-observer factory.
+- The exact provider is captured by a zero-argument snapshot closure and supplied to the existing provider snapshot dependency only when snapshot acquisition is requested.
+- The resulting zero-argument `observeBlockFn` and `acquireSnapshotFn` are passed to 1K.
+- `provider`, `count`, `minimumBlockGap`, and `maxAttempts` are forwarded unchanged to 1K.
+- `amounts` is forwarded only when explicitly supplied.
+- Invalid composition dependencies fail before observer construction.
+- A malformed observer-factory result fails before gated stability execution.
+- Observer-factory and gated-stability failures propagate unchanged.
+
+Architecture boundaries:
+- 1N is a binding/composition layer only.
+- 1N performs no direct provider reads.
+- 1N does not itself acquire a snapshot during dependency composition.
+- 1N does not implement block-advancement attempt policy.
+- 1N does not implement retry, sleep, polling, cadence, or wall-clock timeout.
+- 1N does not perform stability calculations itself.
+- 1F remains responsible for provider-backed snapshot acquisition.
+- 1L remains responsible for one provider-backed block-number observation.
+- 1M remains responsible for binding provider observation to the zero-argument observer contract.
+- 1I remains responsible for deterministic bounded block-advancement attempts.
+- 1J remains provider-abstract and responsible for gated snapshot acquisition.
+- 1K remains responsible for gated acquisition -> stability composition.
+- 1E remains responsible for protected peak stability analysis.
+- Existing 1E through 1M implementation files were not modified by 1N.
+
+Safety:
+- Provider-only/read-only architecture.
+- No signer.
+- No wallet or private-key handling.
+- No transaction construction.
+- No transaction submission or broadcast.
+- No persistence or watcher modification.
+- No production contract or execution-route modification.
+- No profitability, slippage, gas, freshness, minimum-profit, or worst-case policy weakening.
+- `LIVE_READY` remains independently policy-gated.
+
+Validation:
+- Focused 1N: 6/6 passing.
+- Maintained Node suite: 398/398 passing.
+- Canonical Hardhat suite: 29/29 passing.
+- Maintained total: 427 passing.
+- Pre-validation `git diff --check`: passing.
+- Post-validation `git diff --check`: passing.
+- Safety scan: empty.
+- Direct provider-read scan in the 1N implementation: empty.
+- Final implementation scope: exactly the intended two files.
+
+CI:
+- Workflow: `ProfitBot checks`
+- Run: `37057302827`
+- Event: `push`
+- Exact head SHA: `3e56841d3fca545b50ca1ad5770d8bfc6dae3338`
+- Status: `completed`
+- Conclusion: `success`
+- Created: `2026-10-02T19:55:56Z`
+- Updated: `2026-10-02T19:57:11Z`
+- Note: the immediate `gh run list --commit` lookup returned an empty result, but the branch run listing independently reported this exact head SHA and completed successful run.
+
+Next boundary:
+- Do not add timers, hidden polling, cadence, or wall-clock waiting inside 1I through 1N.
+- Any real repeated observation cadence should remain a separate reviewed responsibility.
+- Do not introduce signer, transaction, broadcast, or production execution behavior as part of this provider-backed research composition.
+- Preserve the separation between provider observation, block-advancement attempt policy, wall-clock waiting, snapshot acquisition, gated acquisition, and stability analysis.
+
+## Milestone 1O — Polygon V4 protected peak provider cadence
+
+Status: code complete, locally validated, pushed, and exact-SHA CI green.
+
+### Code commit
+
+- SHA: `fd91be5d07e3c9fca3a3660d84eac404e632940b`
+- Subject: `Add Polygon V4 protected peak provider cadence`
+- Parent: `30968333c41e16dada0e5f7aabedfab2b1457a7d`
+- Scope:
+  - `scripts/research/runPolygonV4ProtectedPeakProviderCadence.js`
+  - `test/polygonV4ProtectedPeakProviderCadence.test.js`
+- Change size: 2 new files, 568 insertions.
+
+### Purpose and behavior
+
+1O adds a bounded orchestration layer above unchanged 1N provider-backed gated stability.
+
+- Runs exactly `maxCycles` unless an invoked dependency throws.
+- `maxCycles` must be a positive safe integer.
+- `waitMs` must be a non-negative safe integer.
+- Waiting is injected through `waitFn`; the core 1O implementation does not own `setTimeout`.
+- The first cycle runs immediately.
+- Waiting occurs only between cycles, never before the first cycle or after the final cycle.
+- Each cycle delegates to 1N with the exact provider, count, minimum block gap, maximum attempt budget, and optional amounts override.
+- Omitted `amounts` remains omitted.
+- Each exact 1N result is preserved in the returned cycle evidence.
+- An incomplete gated acquisition is preserved as cycle evidence and does not by itself terminate later bounded cycles.
+- Cycle failures propagate unchanged.
+- Wait failures propagate unchanged and prevent the next cycle from starting.
+- Wall-clock waiting never counts as block advancement. Existing 1I block observation and minimum-gap policy remain authoritative.
+
+### Responsibility boundaries
+
+- 1I remains responsible for deterministic bounded block-advancement observation.
+- 1J remains responsible for block-gated snapshot acquisition.
+- 1K remains responsible for composing gated acquisition with protected-peak stability.
+- 1L remains responsible for one provider block-number observation.
+- 1M remains responsible for provider-to-zero-argument observer binding.
+- 1N remains responsible for provider-backed gated-stability composition.
+- 1O owns only bounded multi-cycle orchestration and injected between-cycle waiting.
+- No existing 1I through 1N implementation was modified.
+
+### Safety boundary
+
+1O remains research-only and provider-only.
+
+- No signer.
+- No wallet or private key.
+- No transaction construction or submission.
+- No broadcast.
+- No direct provider reads in 1O.
+- No `setInterval` or internal daemon.
+- No persistence or filesystem writes.
+- No environment-variable policy.
+- No production execution integration.
+- No profitability, slippage, gas, freshness, block-gap, or worst-case policy weakening.
+- `LIVE_READY` remains independently gated by the existing qualification and safety policy.
+
+### Validation
+
+- Focused 1O tests: 7/7 passing.
+- Maintained Node suite: 405/405 passing.
+- Canonical Hardhat suite: 29/29 passing.
+- Maintained total: 434 passing.
+- Safety scan: empty.
+- Direct provider-read scan: empty.
+- Existing 1I through 1N change check: unchanged.
+- Final pre-commit scope: exactly the two intended 1O files.
+- Generated Hardhat artifact/cache churn was restored before commit.
+
+### Exact-SHA CI
+
+- Workflow: `ProfitBot CI`
+- Run: `37060384205`
+- Event: `push`
+- Head SHA: `fd91be5d07e3c9fca3a3660d84eac404e632940b`
+- Created: `2026-10-02T20:24:34Z`
+- Updated: `2026-10-02T20:25:15Z`
+- Status: `completed`
+- Conclusion: `success`
+
+### Next boundary
+
+The next stage may provide a controlled provider-only runner around 1O for real multi-block stability observation.
+
+That stage must remain bounded and read-only. Real wall-clock waiting may be supplied outside the 1O core, but elapsed time must never substitute for observed block advancement.
+
+Do not add signer, transaction, broadcast, or production execution behavior. If future evidence reaches `LIVE_READY`, freeze and preserve the evidence, requalify against current head and gas, perform final fork/execution simulation, and keep any execution integration as a separate reviewed stage.
+
+## Milestone 1P — Protected Peak Provider Timed Cadence
+
+Status: CODE COMPLETE, LOCALLY VALIDATED, PUSHED, EXACT-SHA CI GREEN
+
+Code commit:
+- SHA: `b5d0ac5bfea0fe2df369cf6ecc310d3b93bcd873`
+- Parent: `6f0ab1066c1213f15c8bd9640509fb65dba36703`
+- Subject: `Add Polygon V4 protected peak timed cadence`
+- Scope: exactly two new files, 283 insertions
+  - `scripts/research/runPolygonV4ProtectedPeakProviderTimedCadence.js`
+  - `test/polygonV4ProtectedPeakProviderTimedCadence.test.js`
+
+Purpose:
+- Add the smallest real wall-clock timing adapter above unchanged 1O.
+- Provide a concrete `sleep(ms)` implementation using `setTimeout`.
+- Delegate the supplied provider and bounded cadence policy exactly once to 1O.
+- Preserve the exact 1O result unchanged.
+- Preserve omitted `amounts` rather than inventing an override.
+
+Boundary:
+- 1P does not choose `count`.
+- 1P does not choose `minimumBlockGap`.
+- 1P does not choose `maxAttempts`.
+- 1P does not choose `maxCycles`.
+- 1P does not choose `waitMs`.
+- 1P does not construct a provider.
+- 1P does not read `process.env`.
+- 1P does not directly read the provider.
+- 1P does not interpret or rewrite cadence results.
+- 1P does not persist observations.
+- 1P does not create a daemon, heartbeat, interval, or unbounded loop.
+- 1P does not add signer, wallet, private-key, transaction, flashloan execution, or broadcast behavior.
+- Existing 1I through 1O remain unchanged.
+
+Timing semantics:
+- Real wall-clock waiting exists only through the wait function supplied to 1O.
+- 1O waits only between bounded cadence cycles.
+- There is no wait before the first cycle or after the final cycle.
+- Wall-clock elapsed time never counts as block advancement.
+- 1I/provider block observation remains authoritative for block advancement.
+- 1P does not add waiting inside 1I bounded block-observation attempts.
+- An incomplete 1N result remains an exact recorded cycle result; a later bounded 1O cycle may retry after the configured between-cycle wait.
+
+Validation:
+- Focused 1P tests: 6/6 passing.
+- Maintained Node suite: 411/411 passing.
+- Canonical Hardhat suite:
+  - `test/ProfitBot.js`
+  - `test/execution.js`
+  - `test/threeLegExecution.js`
+  - 29/29 passing.
+- Maintained Node + canonical Hardhat total: 440 passing.
+- 1P execution-safety scan: empty.
+- 1P direct-provider-read scan: empty.
+- Timer ownership: exactly one intentional `setTimeout`; no `setInterval`.
+- 1I through 1O unchanged.
+- Hardhat-generated `artifacts/` and `cache/` churn was restored before commit.
+
+Exact-SHA CI:
+- Workflow: `ProfitBot checks`
+- Run ID: `37062202993`
+- Event: `push`
+- Head SHA: `b5d0ac5bfea0fe2df369cf6ecc310d3b93bcd873`
+- Created: `2026-10-02T20:41:34Z`
+- Updated: `2026-10-02T20:42:18Z`
+- Status: `completed`
+- Conclusion: `success`
+
+Protected-peak layering now:
+- 1I: deterministic bounded block-advancement observation.
+- 1J: block-gated snapshot acquisition.
+- 1K: gated acquisition plus protected-peak stability.
+- 1L: one provider block-number observation.
+- 1M: provider-to-zero-argument observer binding.
+- 1N: provider-backed gated-stability composition.
+- 1O: bounded multi-cycle provider cadence with injected between-cycle waiting.
+- 1P: concrete timed-cadence adapter supplying real wall-clock waiting to 1O.
+
+Next boundary:
+- Keep the next layer provider-only and read-only.
+- A later operational runner may construct the Polygon provider and choose explicit bounded policy values.
+- Do not hide policy choices inside 1P.
+- Do not treat elapsed wall-clock time as evidence of block advancement.
+- Do not add signer, transaction, broadcast, or production integration as part of provider monitoring.
+- If `LIVE_READY` is ever observed, freeze the evidence, requalify against current head and gas, perform final fork/execution simulation, preserve the evidence, and keep any execution action as a separate reviewed stage.
+
+## Milestone 1Q — Polygon V4 protected peak operational runner
+
+Status: code complete, locally validated, pushed, and exact-SHA CI green.
+
+### Code identity
+
+- Commit: `1fedc1d602837853a21ff9f9cb0e18ee86d52974`
+- Parent: `d72f2e2ca4746c4da723ab50c9a02b5c4eb3a692`
+- Subject: `Add Polygon V4 protected peak operational runner`
+- Scope: exactly two new files, 390 insertions:
+  - `scripts/research/runPolygonV4ProtectedPeakProviderOperational.js`
+  - `test/polygonV4ProtectedPeakProviderOperational.test.js`
+
+### Purpose and boundary
+
+1Q adds the small provider-only operational layer above the unchanged 1P timed cadence adapter.
+
+It may:
+
+- read `INFURA_POLYGON` in `main()`;
+- construct an ethers v5 `JsonRpcProvider` pinned to Polygon chain ID 137;
+- choose explicit bounded monitoring configuration in `main()`;
+- invoke the 1P timed cadence path exactly once;
+- print the returned observation structure.
+
+It does not:
+
+- obtain a signer;
+- create or use a wallet or private key;
+- send or broadcast a transaction;
+- call flashloan execution;
+- persist observations;
+- create an interval, daemon, heartbeat, or unbounded loop;
+- directly read provider block, gas, transaction, or call data;
+- modify production execution integration;
+- interpret returned observations as execution authorization.
+
+### Policy ownership
+
+The reusable `runProtectedPeakProviderOperational(...)` function does not invent omitted monitoring policy.
+
+`main()` explicitly owns the current bounded operational monitoring configuration:
+
+- `OPERATIONAL_COUNT = 2`
+- `OPERATIONAL_MINIMUM_BLOCK_GAP = 1`
+- `OPERATIONAL_MAX_ATTEMPTS = 3`
+- `OPERATIONAL_MAX_CYCLES = 2`
+- `OPERATIONAL_WAIT_MS = 5000`
+
+These values are bounded observation/cadence configuration. They do not relax profitability, slippage, gas, freshness, reserve, protected-output, worst-case, or minimum-profit safety policy.
+
+Timing semantics remain important:
+
+- the 5000 ms wait is only between 1O cadence cycles;
+- there is no wait before the first cycle or after the final cycle;
+- 1I block-observation attempts remain immediate bounded observations;
+- elapsed wall-clock time never counts as block advancement;
+- provider-observed block evidence remains authoritative;
+- an incomplete cycle may be retried only by a later bounded cadence cycle.
+
+### Validation
+
+Focused 1Q:
+
+- 8 tests passed.
+
+Maintained Node suite:
+
+- 419 tests passed.
+
+Canonical Hardhat suite:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+- 29 tests passed.
+
+Maintained suite total:
+
+- 448 passing tests = 419 Node + 29 Hardhat.
+- The 8 focused 1Q tests are included in the 419 Node tests and are not double-counted.
+
+Validation return codes:
+
+- `FOCUSED_RC=0`
+- `NODE_RC=0`
+- `HARDHAT_RC=0`
+- `1I_TO_1P_UNCHANGED_RC=0`
+
+Safety verification:
+
+- 1Q execution-safety scan empty.
+- 1Q direct-provider-action scan empty.
+- 1Q timer scan empty.
+- Existing protected 1I through 1P files were byte-for-byte unchanged across validation.
+- Hardhat-generated `artifacts/` and `cache/` churn was restored only from those generated directories before commit.
+- Final code commit contained exactly the two intended 1Q files.
+
+### Exact-SHA CI
+
+GitHub Actions:
+
+- Workflow: `ProfitBot CI`
+- Run ID: `37065074015`
+- Event: `push`
+- Head SHA: `1fedc1d602837853a21ff9f9cb0e18ee86d52974`
+- Created: `2026-10-02T21:08:57Z`
+- Updated: `2026-10-02T21:09:44Z`
+- Status: `completed`
+- Conclusion: `success`
+- `WATCH_RC=0`
+
+### Current protected-peak layering
+
+The provider-only protected-peak path now extends through 1Q:
+
+- 1I: deterministic bounded block advancement
+- 1J: gated snapshot acquisition
+- 1K/1K.1: gated stability composition with exact provider forwarding
+- 1L: one provider block observation
+- 1M: zero-argument provider observer adapter
+- 1N: provider-backed gated stability composition
+- 1O: bounded cadence/orchestration
+- 1P: real wall-clock timed cadence adapter
+- 1Q: provider construction plus explicit bounded operational monitoring configuration
+
+### Safety boundary after 1Q
+
+1Q remains provider-only/read-only infrastructure.
+
+`LIVE_READY` remains false unless the existing protected qualification policy independently passes.
+
+No observation from 1Q authorizes execution.
+
+Before any future execution-stage integration:
+
+1. freeze qualifying evidence;
+2. requalify against current head and current gas;
+3. run final fork/execution simulation;
+4. preserve the evidence;
+5. review execution as a separate stage;
+6. only then consider any signer or transaction path.
+
+Do not weaken profitability, slippage, gas, freshness, reserve, protected-output, worst-case, or minimum-profit policy to manufacture readiness.
+
+## Milestone 1R.2 — protected peak surface timing instrumentation
+
+Status: code committed and pushed; live timing observation not yet rerun.
+
+Code commit:
+
+- `33c41aa18cfd4edfe808f55d31e06748707799c6`
+- subject: `Instrument Polygon V4 protected peak stability timing`
+- parent: `d8e7a7a867dbfaf655a08ae4dc3607a29605e784`
+
+Purpose:
+
+- measure the wall-clock duration of each complete protected fine surface;
+- preserve the existing sequential provider-only observation architecture;
+- gather evidence before considering any deeper per-row timing, concurrency,
+  timeout, batching, or quote-path changes.
+
+Implementation:
+
+- `runProtectedPeakStability` accepts injectable `nowFn`, defaulting to
+  `Date.now`;
+- each complete delegated protected surface records `durationMs`;
+- the returned stability summary records `totalSurfaceDurationMs`;
+- timing values must be non-negative safe integers;
+- invalid timing dependency is rejected before surface work;
+- deterministic tests use an injected clock.
+
+Scope intentionally unchanged:
+
+- protected amount grid remains unchanged;
+- surfaces remain sequential;
+- observations inside each surface remain sequential;
+- no concurrency was introduced;
+- no timeout/retry policy was changed;
+- no profitability policy was changed;
+- no slippage policy was changed;
+- no freshness policy was changed;
+- qualification gas remains `700000`;
+- no signer, transaction, or broadcast capability was added.
+
+Validation before commit:
+
+- focused protected-peak stability suite: `8 / 8` passing;
+- canonical Node suite: `422 / 422` passing;
+- canonical Hardhat suite: `29 / 29` passing;
+- maintained total: `451` passing tests;
+- pre-validation `git diff --check`: passing;
+- post-validation `git diff --check`: passing;
+- execution-safety diff scan: empty;
+- Hardhat-generated `artifacts/` and `cache/` churn restored before commit;
+- no live RPC run was performed during implementation or validation.
+
+Hardhat validation note:
+
+- a broader diagnostic Hardhat invocation temporarily included Polygon fork
+  tests and did not provide the required historical fork configuration;
+- that invocation was not the repository's maintained Hardhat regression gate;
+- repository discovery confirmed the canonical maintained command is
+  `hardhat test test/ProfitBot.js test/execution.js test/threeLegExecution.js`;
+- that canonical suite subsequently passed `29 / 29`;
+- no dependency or Hardhat configuration change was made.
+
+1R evidence motivating this instrumentation:
+
+- the completed provider-only 1R run performed four protected fine surfaces;
+- each surface contains 26 amounts;
+- therefore the run performed 104 sequential three-leg economic observations;
+- the stable protected peak was `0.118 WPOL` across all four snapshots;
+- qualification remained false because observed gas price was far above the
+  protected break-even ceiling;
+- policy must not be weakened to manufacture readiness.
+
+Next exact step:
+
+1. keep code commit `33c41aa18cfd4edfe808f55d31e06748707799c6`
+   unchanged;
+2. run one separately approved provider-only 1R observation using the existing
+   operational runner;
+3. capture the four new per-surface `durationMs` values and cycle-level
+   `totalSurfaceDurationMs` values;
+4. compare those timings with the prior apparent runtime;
+5. only after timing evidence exists decide whether per-row instrumentation is
+   justified;
+6. do not introduce concurrency, timeout changes, gas-policy changes, or live
+   transaction capability as part of the timing measurement.
+
+Separate future workstream:
+
+Gas calibration remains independent of 1R.2. The proven isolated Aave + V4
+historical fork measured `618122` gas while protected qualification continues
+to use the conservative `700000` gas-unit assumption. Do not change that
+assumption from latency evidence alone. Any future gas calibration should
+compare fork-measured gas, conservative qualification gas, and—only after a
+separately reviewed real transaction exists—actual receipt gas usage.
+
+## Milestone 1R.3 — live provider-only timing observation
+
+Status: completed successfully at durable head
+`d8817e186430a6f42a8af6190b912cd46c1b838f`.
+
+Safety and repository state:
+
+- provider-only Polygon observation;
+- no signer;
+- no transaction;
+- no broadcast;
+- executable transaction-primitive launch scan: none;
+- `LIVE_RUN_RC=0`;
+- `PROVIDER_ONLY_OBSERVATION_COMPLETE=yes`;
+- worktree remained clean;
+- local HEAD and remote remained identical.
+
+Operational policy remained unchanged:
+
+- snapshot count: `2`;
+- minimum block gap: `1`;
+- maximum advancement attempts: `3`;
+- maximum cadence cycles: `2`;
+- inter-cycle wait: `5000 ms`;
+- protected qualification gas units: `700000`;
+- no profitability, reserve, slippage, freshness, or worst-case policy change.
+
+Wall-clock evidence:
+
+- started: `2026-10-02T22:16:52Z`;
+- finished: `2026-10-02T22:28:21Z`;
+- outer wall time: `689 seconds`.
+
+Measured protected fine-surface durations:
+
+- cycle 1 / snapshot 1: `155530 ms`;
+- cycle 1 / snapshot 2: `182919 ms`;
+- cycle 1 total: `338449 ms`;
+- cycle 2 / snapshot 1: `156903 ms`;
+- cycle 2 / snapshot 2: `184150 ms`;
+- cycle 2 total: `341053 ms`;
+- all four surfaces total: `679502 ms`.
+
+Derived latency evidence:
+
+- protected surfaces consumed approximately `98.62%` of the measured
+  689-second outer wall time;
+- approximately `9.5 seconds` remained outside the four measured surfaces,
+  including acquisition, block advancement, the explicit 5-second inter-cycle
+  wait, output overhead, and timing granularity;
+- each surface contains 26 sequential amount observations;
+- average surface time per amount was approximately `5.98`, `7.04`, `6.03`,
+  and `7.08` seconds respectively;
+- this localizes the dominant measured latency to the protected amount-surface
+  path, but does not yet identify which RPC or quote operation inside each
+  amount observation is responsible;
+- do not infer from this evidence alone that provider latency causes Polygon
+  gas prices to be high.
+
+Acquisition / advancement evidence:
+
+- cycle 1 blocks: `94849515`, `94849516`;
+- cycle 2 blocks: `94849745`, `94849746`;
+- both block advancements succeeded on attempt `1`;
+- the large block movement during the complete run is consistent with the
+  directly measured serial surface runtime.
+
+Economic evidence:
+
+- all four surfaces returned `26 / 26` `QUOTE_OK`;
+- all four selected protected optimum `0.118 WPOL`;
+- all four peak positions were `INTERIOR`;
+- gross delta remained approximately `0.01456537 WPOL`;
+- protected gas-price ceiling remained approximately `11.205 gwei`;
+- observed acquisition gas was approximately `274.4-276.9 gwei`;
+- gas coverage remained approximately `4.05-4.08%`;
+- `qualifiesAtObservedGas=false` for all four protected optima;
+- this observation does not justify weakening or changing economic policy.
+
+Interpretation boundary:
+
+The observation proves that the current qualification/research path is too
+slow for freshness-sensitive execution if comparable latency persists. It does
+not prove that the latency causes high network gas prices, and it does not yet
+identify the slow operation inside each three-leg economic observation.
+
+Next engineering step:
+
+Instrument per-row observation duration at the existing amount-surface
+boundary while preserving sequential execution and all current economics.
+Use that evidence to determine whether latency is broadly uniform across rows
+or concentrated in particular observations before considering concurrency,
+batching, RPC-provider changes, timeout changes, caching, or other
+optimizations.
+
+Do not change `gasUnits=700000` as part of latency investigation. Gas
+calibration remains a separate evidence-driven workstream.
+
+## Milestone 1R.4 — V3 RPC bottleneck instrumentation and pinned-block pool cache
+
+Status: implementation and performance evidence validated locally at base durable
+head `be121dcd5e60da622f0dec72cac682258a18e076`; changes are not yet committed
+or pushed.
+
+Objective:
+
+Identify the actual RPC bottleneck inside each protected three-leg amount
+observation before attempting optimization, then apply the smallest
+evidence-supported optimization without weakening route coverage, economics,
+freshness, or execution safety.
+
+Instrumentation diagnosis:
+
+A controlled provider-only measurement on Polygon using `ALCHEMY_POLYGON`
+showed that a successful `0.118 WPOL` observation performed up to 17 sequential
+RPC operations:
+
+- 8 Uniswap V3 factory `getPool` lookups;
+- up to 8 amount-dependent Uniswap V3 Quoter calls;
+- 1 V4 quote.
+
+Five pre-cache observations on the same provider context measured:
+
+- total wall times: `2415`, `2410`, `2634`, `2351`, `2399 ms`;
+- mean total wall time: `2441.8 ms`;
+- mean measured RPC time: `2432.6 ms`;
+- mean V3 pool-lookup time: `1137.0 ms` (`46.56%`);
+- mean V3 quote time: `1154.6 ms` (`47.28%`);
+- mean V4 quote time: `141.0 ms` (`5.77%`);
+- mean unaccounted time: `9.2 ms` (`0.38%`).
+
+This localized the current-provider bottleneck to accumulated sequential V3
+network round trips, split approximately evenly between structural factory
+lookups and required amount-dependent V3 quotes. V4 and local processing were
+not the dominant bottlenecks.
+
+The approximately `2.4 second` current-provider observations must not be
+treated as directly interchangeable with the approximately `6-7 second`
+per-amount timings from 1R.3 because the provider/context differs.
+
+Implemented optimization:
+
+The strict V3 observer now supports an explicitly supplied, surface-scoped pool
+cache.
+
+Cache invariants:
+
+- no module-global cache was introduced;
+- one cache is created per amount-surface invocation;
+- the cache is shared by ENTRY and EXIT observations within that surface;
+- keys include the pinned block, unordered lowercase token pair, and fee tier;
+- all four V3 fee tiers remain enabled;
+- successful factory resolutions are cached, including zero-address `NO_POOL`
+  resolutions;
+- factory RPC failures are never cached;
+- amount-dependent V3 Quoter calls are never cached;
+- ENTRY -> V4 -> EXIT ordering remains unchanged;
+- no concurrency was introduced;
+- no retry or timeout behavior was changed;
+- no economic, slippage, reserve, freshness, worst-case, or gas-unit policy was
+  changed;
+- no-cache callers retain the prior lookup behavior.
+
+Timing evidence remains explicit:
+
+- actual factory lookups record measured `poolLookupDurationMs` and
+  `poolLookupCacheHit=false`;
+- cache hits record `poolLookupCacheHit=true` and
+  `poolLookupDurationMs=0`;
+- V3 Quoter and V4 quote durations remain independently measured.
+
+Validation:
+
+Focused cache/instrumentation gate:
+
+- `39 / 39` tests passed.
+
+Canonical regression gate under Node `18.20.8`:
+
+- Node tests: `434 / 434`;
+- Hardhat tests: `29 / 29`;
+- total: `463 / 463`;
+- `git diff --check` passed;
+- generated Hardhat artifact/cache churn was restored separately;
+- the intended implementation/test scope remained six files before this
+  checkpoint update.
+
+Controlled post-cache provider-only benchmark:
+
+- provider environment: `ALCHEMY_POLYGON`;
+- chain: Polygon `137`;
+- pinned block: `94858727`;
+- amount: `0.118 WPOL`;
+- repeats: `5`;
+- one cache shared across the five observations;
+- no signer;
+- no transaction;
+- no broadcast.
+
+Cold observation:
+
+- status: `QUOTE_OK`;
+- total: `2452 ms`;
+- V3 pool lookup: `1167 ms`;
+- V3 quote: `1128 ms`;
+- V4 quote: `146 ms`;
+- cache hits: `0`;
+- cache misses: `8`;
+- V3 quote calls: `8`;
+- resulting cache size: `8`.
+
+Warm observations:
+
+- wall times: `1227`, `1373`, `1275`, `1207 ms`;
+- mean wall time: `1270.5 ms`;
+- mean V3 pool-lookup time: `0 ms`;
+- mean V3 quote time: `1129.25 ms`;
+- mean V4 quote time: `138 ms`;
+- mean unaccounted time: `3.25 ms`;
+- cache hits per observation: `8`;
+- cache misses per observation: `0`;
+- V3 quote calls per observation: `8`;
+- final cache size: `8`;
+- all observations remained `QUOTE_OK`.
+
+Measured effect:
+
+- cold-to-warm reduction: `1181.5 ms`, approximately `48.2%`;
+- pre-cache five-run mean to warm mean reduction: `1171.3 ms`,
+  approximately `48.0%`;
+- the eliminated wall time closely matches the independently measured
+  structural V3 factory-lookup component;
+- required amount-dependent V3 Quoter work remains present.
+
+Interpretation:
+
+The evidence supports the pinned-block structural V3 pool cache as a targeted
+optimization of the measured bottleneck. It removes redundant factory network
+round trips without reducing fee-tier coverage or changing quote economics.
+
+After cache warming, the dominant measured latency is the required
+amount-dependent V3 Quoter work. This evidence does not by itself justify
+concurrency, fee-tier removal, retry/timeout changes, provider changes, or any
+weakening of qualification policy.
+
+The optimization does not change the separate gas-policy conclusion:
+`gasUnits=700000` remains unchanged. Gas calibration remains an independent
+evidence-driven workstream.
+
+Current closeout state:
+
+- six implementation/test files plus this checkpoint are modified;
+- implementation is not yet committed;
+- implementation is not yet pushed;
+- no live transaction was performed.
+
+Next exact step:
+
+1. review the final semantic diff and exact seven-file scope;
+2. verify prohibited execution/deployment/environment paths remain untouched;
+3. verify `git diff --check`;
+4. only after that review decide whether 1R.4 is ready to commit;
+5. do not push until explicitly approved.
+
+## Milestone 1S.40 — Final Signed Transaction Current-State Validation Evidence
+
+Status: code complete, committed, and fully locally validated; not yet pushed.
+
+### Code identity
+
+- Commit: `907dbbd`
+- Subject: `Add final signed transaction current-state validation evidence`
+- Parent: `cdc3280`
+- Branch: `repair/simulation-safety`
+- Scope: exactly two new files, 878 insertions:
+  - `scripts/utils/polygonV4FinalSignedTransactionCurrentStateValidationEvidence.js`
+  - `test/polygonV4FinalSignedTransactionCurrentStateValidationEvidence.test.js`
+
+### Purpose
+
+1S.40 adds the final current-state validation boundary for the exact signed
+transaction produced by 1S.39.
+
+It validates the immutable signed transaction context immediately before any
+future broadcast-authorization decision.
+
+1S.40 does not authorize broadcast and does not perform broadcast.
+
+### Validation behavior
+
+`validateFinalSignedTransactionCurrentStateEvidence(...)` requires:
+
+- ready 1S.39 transaction-signing evidence;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `liveExecutionAuthorized=false`;
+- `broadcastAuthorized=false`;
+- ready signer-capability binding evidence;
+- exact transaction-envelope identity preserved from signer-capability binding;
+- signer, signer-capability, binding, and envelope-from identities to agree;
+- a provider exposing `getNetwork`, `getTransactionCount`, and `call`;
+- current network chain ID exactly `137`;
+- current pending nonce acquired using:
+  `provider.getTransactionCount(transactionEnvelope.from, "pending")`;
+- current pending nonce exactly equal to the immutable signed transaction nonce;
+- a final `provider.call(...)` using the exact seven-field call projection:
+  `from`, `to`, `data`, `value`, `gasLimit`, `maxFeePerGas`,
+  `maxPriorityFeePerGas`.
+
+A resolved final simulation result, including `0x`, remains successful under
+the established 1S.34 simulation semantics.
+
+Provider rejection/revert fails closed.
+
+### Immutable transaction boundary
+
+1S.40 validates; it never repairs.
+
+If the current pending nonce differs from the signed transaction nonce, the
+signed transaction is rejected as stale.
+
+1S.40 does not:
+
+- change or repair the nonce;
+- change gas limit;
+- change `maxFeePerGas`;
+- change `maxPriorityFeePerGas`;
+- change calldata;
+- change value;
+- substitute a route or amount;
+- rebuild the transaction envelope;
+- re-sign the transaction;
+- obtain a private key or seed phrase;
+- call `sendTransaction`;
+- call `broadcastTransaction`;
+- call `eth_sendRawTransaction`;
+- grant live execution authorization;
+- grant broadcast authorization.
+
+Nonce drift requires rebuilding from the current-transaction-parameter stage
+rather than mutating the already signed transaction.
+
+### Cryptographic responsibility boundary
+
+1S.39 remains responsible for independently parsing and verifying the exact
+raw signed type-2 transaction, including signer recovery, transaction fields,
+empty access list, and signed transaction hash.
+
+1S.40 does not duplicate that cryptographic verification.
+
+Instead, it requires the established 1S.39 evidence and hardens the preserved
+identity lineage before performing the new current-state checks.
+
+### Fee and gas boundary
+
+1S.40 does not invent a fee-refresh policy.
+
+It does not reacquire current fee data and require exact equality with the
+signed EIP-1559 fee fields.
+
+It does not apply a fee multiplier, gas multiplier, percentage margin, fixed
+buffer, historical receipt constant, or protected experimental gas constant.
+
+The signed fee and gas fields remain immutable.
+
+Any future fee-freshness or gas-policy change requires separate objective
+evidence and a separately reviewed milestone.
+
+### Current-state scope
+
+The current production architecture does not expose a single acquisition
+boundary capable of reconstructing a fresh complete 1S.27 current-state
+evidence graph at 1S.40.
+
+Therefore 1S.40 deliberately does not fabricate or duplicate current
+economics, deployment, balance, allowance, or deadline acquisition.
+
+Its current-state responsibility is intentionally narrow:
+
+- current Polygon chain identity;
+- current pending nonce equality;
+- final provider-call simulation of the immutable signed envelope projection.
+
+Broader current-state reacquisition remains separate future work if the
+production architecture gains an authoritative acquisition boundary for it.
+
+### Validation
+
+Focused 1S.40:
+
+- `11 / 11` passing.
+
+Immediate 1S.38 through 1S.40 regression:
+
+- `38 / 38` passing.
+
+Explicit 1S.30 through 1S.40 safety lineage:
+
+- `180 / 180` passing.
+
+Canonical full repository validation:
+
+- Node: `841 / 841` passing;
+- Hardhat: `29 / 29` passing;
+- maintained total: `870 / 870` passing.
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+Solidity compilation:
+
+- Hardhat `2.24.3`;
+- Node `18.20.8`;
+- `35` Solidity files compiled successfully;
+- EVM target: `paris`;
+- only existing dependency SPDX warnings were observed.
+
+Generated `artifacts/` and `cache/` changes from compilation/testing were
+restored before the 1S.40 commit.
+
+Final 1S.40 commit scope remained exactly the two intended files.
+
+### Protected gas experiments
+
+The following experimental tests remain untracked and protected:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+They were not staged or committed as part of 1S.40.
+
+They are not discovered by the current canonical `npm run test:node` command.
+
+Do not silently modify, stage, commit, promote, delete, or execute these
+experiments.
+
+No arbitrary gas margin, multiplier, or fixed buffer has been promoted into
+the execution lineage.
+
+### Authorization state after 1S.40
+
+A successful 1S.40 result means only that the exact signed transaction has
+passed the currently defined final current-state validation boundary.
+
+It still returns:
+
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `liveExecutionAuthorized=false`;
+- `broadcastAuthorized=false`.
+
+Therefore:
+
+- signing authorization is not broadcast authorization;
+- current-state validation is not broadcast authorization;
+- possession of a valid signed raw transaction is not broadcast authorization;
+- successful final simulation is not broadcast authorization.
+
+No transaction was broadcast as part of 1S.40.
+
+### Next boundary
+
+The next execution-safety milestone must remain separate from 1S.40.
+
+It may define an explicit, narrow controlled-broadcast authorization boundary,
+but that authorization must not be silently inferred from successful signing
+or successful 1S.40 validation.
+
+Actual submission of a first controlled live transaction must remain a
+separate deliberate action after that authorization boundary.
+
+The intended first live transaction remains a controlled measurement
+flashloan rather than unrestricted production execution.
+
+Its purpose is to obtain empirical live receipt evidence such as:
+
+- transaction hash;
+- block number;
+- status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+Only after a separately reviewed successful live receipt exists should the
+protected gas experiments be evaluated for possible production relevance.
+
+Do not fabricate live gas evidence from fork or simulation results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
+
+## Milestone 1S.41 — Controlled Broadcast Authorization Evidence
+
+### Code commit
+
+1S.41 implementation was committed separately as:
+
+- commit: `c4823cb`
+- subject: `Add controlled broadcast authorization evidence`
+- parent: `7a11bc7`
+- branch: `repair/simulation-safety`
+- scope: exactly `2` files and `729` insertions.
+
+Committed files:
+
+- `scripts/utils/polygonV4ControlledBroadcastAuthorizationEvidence.js`
+- `test/polygonV4ControlledBroadcastAuthorizationEvidence.test.js`
+
+### Purpose
+
+1S.41 establishes an explicit controlled-broadcast authorization evidence
+boundary after successful 1S.40 final signed transaction current-state
+validation.
+
+It is authorization evidence only.
+
+1S.41 does not submit, broadcast, rebuild, repair, modify, or re-sign the
+transaction.
+
+### Required input state
+
+1S.41 requires established 1S.40 final signed transaction current-state
+evidence with:
+
+- `finalSignedTransactionCurrentStateReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `liveExecutionAuthorized=false`;
+- `broadcastAuthorized=false`.
+
+It also requires the preserved transaction-signing lineage to remain ready
+with the expected pre-broadcast authorization state.
+
+### Immutable transaction lineage
+
+1S.41 preserves:
+
+- the 1S.40 evidence object;
+- the exact transaction envelope by object identity;
+- the signed raw transaction;
+- the signed transaction hash.
+
+It rejects transaction-envelope identity drift.
+
+It rejects signed raw transaction drift.
+
+It rejects signed transaction hash drift.
+
+It rejects invalid transaction-signing readiness or authorization state before
+controlled-broadcast authorization is requested.
+
+1S.41 does not rebuild or reinterpret the transaction and does not duplicate
+the independent cryptographic verification owned by 1S.39.
+
+### Controlled authorization boundary
+
+Controlled-broadcast authorization is supplied through the injected
+`authorizeControlledBroadcast` capability.
+
+The authorization callback receives only:
+
+- `transactionEnvelope`;
+- `signedTransactionHash`.
+
+The signed raw transaction is deliberately not supplied to the authorization
+callback.
+
+The callback must return exactly `true`.
+
+False, undefined, null, numeric, string, rejected, or thrown authorization
+results do not produce controlled-broadcast authorization evidence.
+
+Lineage validation occurs before the authorization callback is invoked.
+
+### Capability boundary
+
+The 1S.41 production module contains no provider, RPC, wallet, signing, or
+transaction-submission capability.
+
+It does not call:
+
+- `signTransaction`;
+- `sendTransaction`;
+- `sendRawTransaction`;
+- `broadcastTransaction`;
+- `eth_sendRawTransaction`.
+
+It does not obtain a private key, seed phrase, mnemonic, or environment
+credential.
+
+Successful 1S.41 authorization therefore cannot by itself move funds or submit
+the signed transaction.
+
+### Authorization state after 1S.41
+
+A successful 1S.41 result returns:
+
+- `controlledBroadcastAuthorizationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `liveExecutionAuthorized=false`;
+- `broadcastAuthorized=true`.
+
+The existing `broadcastAuthorized` flag is the controlled-broadcast
+authorization gate.
+
+No redundant second broadcast-authorization flag was introduced.
+
+Critically, `broadcastAuthorized=true` is not evidence that a transaction was
+broadcast.
+
+No transaction was submitted or broadcast as part of 1S.41.
+
+`liveExecutionAuthorized` remains false.
+
+### Validation
+
+Focused 1S.41:
+
+- `13 / 13` passing.
+
+Immediate 1S.36 through 1S.41 regression:
+
+- `77 / 77` passing.
+
+Explicit 1S.30 through 1S.41 safety lineage:
+
+- `193 / 193` passing.
+
+Canonical full repository validation:
+
+- Node: `854 / 854` passing;
+- Hardhat: `29 / 29` passing;
+- maintained total: `883 / 883` passing.
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+Solidity compilation:
+
+- Hardhat `2.24.3`;
+- Node `18.20.8`;
+- `35` Solidity files compiled successfully;
+- EVM target: `paris`;
+- only existing dependency SPDX warnings were observed.
+
+Generated `artifacts/` and `cache/` changes from canonical testing were restored
+before the 1S.41 code commit.
+
+Final 1S.41 code commit scope remained exactly the two intended files.
+
+### Protected gas experiments
+
+The following experimental tests remain untracked and protected:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Their verified SHA-256 hashes remain:
+
+- `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+They were not executed, modified, staged, committed, or promoted as part of
+1S.41.
+
+No arbitrary gas margin, multiplier, percentage margin, fixed buffer, or
+protected experimental gas constant has been promoted into the execution
+lineage.
+
+### Next boundary
+
+Actual controlled transaction submission remains a separate future execution
+boundary.
+
+1S.41 authorization must not be interpreted as transaction submission or as
+unrestricted production execution readiness.
+
+The intended first live transaction remains a deliberately controlled
+measurement flashloan.
+
+Its purpose is to obtain empirical live receipt evidence including:
+
+- transaction hash;
+- block number;
+- receipt status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+Only after a separately reviewed successful live receipt exists should the
+protected gas experiments be evaluated for possible production relevance.
+
+Do not fabricate live gas evidence from fork or simulation results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
+
+---
+
+## 1S.42 — Controlled Live Execution Authorization Evidence
+
+### Code commit
+
+- Commit: `342a9dc51362f04993eae02e18dfb5edadcaf6cf`
+- Subject: `Add controlled live execution authorization evidence`
+- Parent: `0d382b7f15c383940cb127de4e6b853a612dd100`
+- Branch: `repair/simulation-safety`
+- Scope: exactly `2` files changed, `704` insertions.
+
+Committed files:
+
+- `scripts/utils/polygonV4ControlledLiveExecutionAuthorizationEvidence.js`
+- `test/polygonV4ControlledLiveExecutionAuthorizationEvidence.test.js`
+
+### Purpose
+
+1S.42 adds controlled live-execution authorization evidence only.
+
+It does not submit, send, broadcast, rebuild, repair, modify, or re-sign a
+transaction.
+
+Actual transaction submission remains a separate future boundary.
+
+### Required immediate authorization state
+
+1S.42 consumes the exact preserved 1S.41 controlled-broadcast authorization
+evidence.
+
+The immediate 1S.41 state must have:
+
+- `controlledBroadcastAuthorizationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `broadcastAuthorized=true`;
+- `liveExecutionAuthorized=false`.
+
+1S.42 does not reinterpret the historical authorization state of earlier
+boundaries as the current authorization state.
+
+### Immutable transaction lineage
+
+1S.42 preserves the exact:
+
+- 1S.41 controlled-broadcast authorization evidence object;
+- 1S.40 final signed-transaction current-state evidence object;
+- transaction-envelope object identity;
+- signed raw transaction;
+- signed transaction hash.
+
+The transaction envelope must remain the exact object preserved through the
+immediate lineage.
+
+The signed raw transaction and signed transaction hash must exactly equal the
+values preserved by the 1S.40 evidence.
+
+Any envelope, raw-transaction, or transaction-hash drift is rejected before
+live-execution authorization is requested.
+
+1S.42 does not duplicate the 1S.39 cryptographic signed-transaction
+verification boundary.
+
+It does not rebuild or repair the transaction.
+
+### Controlled live-execution authorization
+
+Live-execution authorization is obtained only through the injected
+`authorizeControlledLiveExecution` capability.
+
+That authorization callback receives only:
+
+- `transactionEnvelope`;
+- `signedTransactionHash`.
+
+The signed raw transaction is deliberately not supplied to the authorization
+callback.
+
+The callback must return exactly `true`.
+
+False, undefined, null, numeric, string, rejected, or thrown authorization
+results do not produce controlled live-execution authorization evidence.
+
+Lineage validation occurs before the authorization callback is invoked.
+
+### Capability boundary
+
+The 1S.42 production module contains no provider, RPC, wallet, signing, or
+transaction-submission capability.
+
+It does not call:
+
+- `signTransaction`;
+- `sendTransaction`;
+- `sendRawTransaction`;
+- `broadcastTransaction`;
+- `eth_sendRawTransaction`.
+
+It does not obtain a private key, seed phrase, mnemonic, or environment
+credential.
+
+Successful 1S.42 authorization therefore cannot by itself move funds or submit
+the signed transaction.
+
+### Authorization state after 1S.42
+
+A successful 1S.42 result returns:
+
+- `controlledLiveExecutionAuthorizationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `broadcastAuthorized=true`;
+- `liveExecutionAuthorized=true`.
+
+Both controlled broadcast authorization and controlled live-execution
+authorization are therefore established as evidence.
+
+Critically, these authorization flags are not evidence that a transaction was
+submitted or broadcast.
+
+No transaction was submitted or broadcast as part of 1S.42.
+
+### Validation
+
+Focused 1S.42:
+
+- `14 / 14` passing.
+
+Immediate 1S.36 through 1S.42 regression:
+
+- `91 / 91` passing.
+
+Explicit 1S.30 through 1S.42 safety lineage:
+
+- `207 / 207` passing.
+
+Canonical full repository validation:
+
+- Node: `868 / 868` passing;
+- Hardhat: `29 / 29` passing;
+- maintained total: `897 / 897` passing;
+- canonical exit code: `0`.
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+Solidity compilation:
+
+- Hardhat `2.24.3`;
+- Node `18.20.8`;
+- npm `10.8.2`;
+- `35` Solidity files compiled successfully;
+- EVM target: `paris`;
+- only existing dependency SPDX warnings were observed.
+
+Generated `artifacts/` and `cache/` changes from canonical testing were
+inspected and restored before the 1S.42 code commit.
+
+Final 1S.42 code commit scope remained exactly the two intended files.
+
+### Protected gas experiments
+
+The following experimental tests remain untracked and protected:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Their verified SHA-256 hashes remain:
+
+- `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+They were not executed, modified, staged, committed, or promoted as part of
+1S.42.
+
+No arbitrary gas margin, multiplier, percentage margin, fixed buffer, or
+protected experimental gas constant has been promoted into the execution
+lineage.
+
+### Next boundary
+
+Actual controlled transaction submission remains a separate future 1S.43
+boundary.
+
+1S.42 authorization must not be interpreted as transaction submission,
+broadcast evidence, or unrestricted production execution readiness.
+
+Before any actual submission, the submission boundary must preserve the exact
+authorized signed transaction and fail closed on any invalid required
+current-state condition rather than repairing the transaction.
+
+In particular, nonce drift must not be repaired. If the required current
+pending nonce no longer matches the signed transaction, the transaction must
+not be submitted and the transaction-parameter lineage must be rebuilt from
+the appropriate earlier boundary.
+
+No arbitrary fee-refresh or gas-buffer policy is authorized by 1S.42.
+
+The intended first live transaction remains a deliberately controlled
+measurement flashloan.
+
+Its purpose is to obtain empirical live receipt evidence including:
+
+- transaction hash;
+- block number;
+- receipt status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+Only after a separately reviewed successful live receipt exists should the
+protected gas experiments be evaluated for possible production relevance.
+
+Do not fabricate live gas evidence from fork or simulation results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
+
+---
+
+## Post-1S.43 session handoff — Immediate Pre-Submission Validation Evidence
+
+### Milestone status
+
+1S.43 — Immediate Pre-Submission Validation Evidence is complete, validated,
+committed, and pushed.
+
+Code commit:
+
+- full: `cef9d2d357d57e808d29b4ab67c19ddff2ecd4aa`
+- short: `cef9d2d`
+- subject: `Add immediate pre-submission validation evidence`
+
+Committed files:
+
+- `scripts/utils/polygonV4ImmediatePreSubmissionValidationEvidence.js`
+- `test/polygonV4ImmediatePreSubmissionValidationEvidence.test.js`
+
+Commit scope:
+
+- exactly `2` files;
+- exactly `973` insertions;
+- no protected gas experiment was staged or committed.
+
+Verified SHA-256 hashes:
+
+- production:
+  `cf638eed083f5cc97c0ce0c6e59622a65e74a2df1cf2a387bc8fcb5fd209f73e`
+- test:
+  `58b40ba56f664e8e95e9dd92e8964583059bbedc0b21a7fdf927db5939d58e9d`
+
+### 1S.43 purpose
+
+1S.43 consumes the completed 1S.42 controlled live-execution authorization
+evidence and immediately revalidates the exact already-authorized signed
+transaction against current provider state before any future transaction
+submission boundary.
+
+1S.43 is validation evidence only.
+
+It does not sign, re-sign, rebuild, repair, submit, send, or broadcast a
+transaction.
+
+Successful 1S.43 validation cannot by itself move funds.
+
+### Required authorization state
+
+The immediate 1S.42 evidence must have:
+
+- `controlledLiveExecutionAuthorizationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `broadcastAuthorized=true`;
+- `liveExecutionAuthorized=true`.
+
+These flags establish the authorization state entering 1S.43.
+
+They do not prove that a transaction has been submitted or broadcast.
+
+### Immutable transaction lineage
+
+1S.43 preserves and validates the exact transaction artifacts across the
+immediate authorization lineage:
+
+- 1S.42 controlled live-execution authorization evidence;
+- 1S.41 controlled broadcast authorization evidence;
+- 1S.40 final signed transaction current-state validation evidence.
+
+The following artifacts must remain identical through that lineage:
+
+- `transactionEnvelope` by exact object identity;
+- `signedRawTransaction` by exact equality;
+- `signedTransactionHash` by exact equality.
+
+1S.43 does not rebuild, reinterpret, re-sign, or repair these artifacts.
+
+It deliberately validates the immediate 1S.42 authorization state rather than
+reinterpreting the historical false authorization flags preserved by 1S.40.
+Those historical flags were legitimately advanced by 1S.41 and 1S.42.
+
+1S.43 does not duplicate the 1S.39 cryptographic signing verification.
+
+### Immediate current-state validation
+
+1S.43 requires a provider exposing:
+
+- `getNetwork`;
+- `getTransactionCount`;
+- `call`.
+
+It reacquires the current network and requires Polygon chain ID `137`.
+
+It reacquires:
+
+- `getTransactionCount(transactionEnvelope.from, "pending")`.
+
+The returned pending nonce must:
+
+- be a safe integer;
+- be non-negative;
+- exactly equal the nonce already present in the signed transaction envelope.
+
+Nonce drift fails closed.
+
+1S.43 does not repair the nonce.
+
+If the current pending nonce no longer equals the signed transaction nonce,
+the transaction must not be submitted and the transaction-parameter lineage
+must be rebuilt from the appropriate earlier boundary.
+
+### Final pre-submission simulation
+
+After chain and nonce validation, 1S.43 performs a final `provider.call` using
+the exact seven-field ethers-v5 projection established by the earlier
+simulation boundary:
+
+- `from`;
+- `to`;
+- `data`;
+- `value`;
+- `gasLimit`;
+- `maxFeePerGas`;
+- `maxPriorityFeePerGas`.
+
+`chainId` and `nonce` are validated separately rather than being represented
+as part of the public `provider.call` transaction request.
+
+A successful `"0x"` simulation result remains valid evidence.
+
+Provider/network/nonce/simulation failure fails closed.
+
+### Fee and gas policy
+
+1S.43 does not call `getFeeData`.
+
+It does not alter the already-signed fee fields.
+
+It does not invent or promote:
+
+- a fee-refresh rule;
+- a gas multiplier;
+- a percentage gas margin;
+- a fixed gas buffer;
+- a protected experimental gas constant.
+
+Any future fee-freshness policy requires separate objective evidence and must
+not silently mutate this signed transaction.
+
+### Capability boundary
+
+The 1S.43 production module contains current-state validation capability but
+no transaction-signing or transaction-submission primitive.
+
+It does not call:
+
+- `signTransaction`;
+- `sendTransaction`;
+- `sendRawTransaction`;
+- `broadcastTransaction`;
+- `eth_sendRawTransaction`.
+
+It does not obtain a private key, seed phrase, mnemonic, or environment
+credential.
+
+No transaction was submitted or broadcast as part of 1S.43.
+
+### Successful 1S.43 result
+
+A successful result preserves:
+
+- `controlledLiveExecutionAuthorizationEvidence`;
+- `controlledBroadcastAuthorizationEvidence`;
+- `finalSignedTransactionCurrentStateEvidence`;
+- `transactionEnvelope`;
+- `signedRawTransaction`;
+- `signedTransactionHash`;
+- `callRequest`;
+- `simulationResult`.
+
+It returns:
+
+- `immediatePreSubmissionValidationReady=true`;
+- `signerAuthorized=true`;
+- `signingAuthorized=true`;
+- `broadcastAuthorized=true`;
+- `liveExecutionAuthorized=true`.
+
+The result object is frozen.
+
+These flags and readiness evidence still do not constitute transaction
+submission.
+
+### Validation
+
+Focused 1S.43:
+
+- `14 / 14` passing.
+
+Immediate 1S.40 through 1S.43 lineage regression:
+
+- `52 / 52` passing.
+
+Explicit 1S.30 through 1S.43 safety lineage:
+
+- `221 / 221` passing.
+
+Canonical repository validation:
+
+- Node: `882 / 882` passing;
+- configured Hardhat: `29 / 29` passing;
+- maintained canonical total: `911 / 911` passing;
+- canonical exit code: `0`.
+
+Canonical test scripts were verified as:
+
+- `test = npm run test:node && npm run test:hardhat`
+- `test:node = node --test $(grep -l 'node:test' test/*.test.js | sort | tr '\n' ' ')`
+- `test:hardhat = hardhat test test/ProfitBot.js test/execution.js test/threeLegExecution.js`
+
+Canonical Hardhat files:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+The canonical Hardhat run compiled `35` Solidity files successfully and
+reported `29` passing tests.
+
+Generated tracked `artifacts/` and `cache/` changes produced by Hardhat were
+inspected and restored before the 1S.43 code commit.
+
+### Unrestricted Hardhat discovery observation
+
+A separate unrestricted:
+
+`npx hardhat test`
+
+was also attempted as an additional discovery check.
+
+That noncanonical command discovers the tracked legacy/scaffold
+`test/Lock.js`, which imports:
+
+`@nomicfoundation/hardhat-toolbox/network-helpers`
+
+and also references the Hardhat chai matchers package.
+
+The root ProfitBot package does not declare the toolbox/network-helper
+dependency used by that legacy test.
+
+The current root Hardhat configuration uses:
+
+`@nomiclabs/hardhat-ethers`
+
+and the repository setup guidance explicitly warns against introducing
+`@nomicfoundation/hardhat-toolbox` unless upgrading to ethers v6.
+
+The unrestricted discovery run therefore failed while loading the legacy
+`test/Lock.js`.
+
+This does not change the successful result of the maintained canonical test
+command described above.
+
+No toolbox dependency was installed.
+
+No dependency version was changed.
+
+`test/Lock.js` was not modified or deleted.
+
+Any legacy test/dependency cleanup remains separate from the 1S.43
+execution-safety milestone.
+
+### Protected gas experiments
+
+The following experimental tests remain untracked and protected:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Their verified SHA-256 hashes remain:
+
+- `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+They were not executed, modified, staged, committed, or promoted as part of
+1S.43.
+
+### Boundary numbering clarification
+
+The historical post-1S.42 checkpoint described actual controlled transaction
+submission as a future 1S.43 boundary.
+
+The implementation sequence was deliberately refined before submission:
+
+- 1S.41 — Controlled Broadcast Authorization Evidence;
+- 1S.42 — Controlled Live Execution Authorization Evidence;
+- 1S.43 — Immediate Pre-Submission Validation Evidence;
+- future 1S.44 — separately reviewed controlled transaction-submission
+  boundary.
+
+The historical checkpoint text is retained unchanged as a record of the plan
+at that time.
+
+No actual transaction submission occurred in 1S.43.
+
+### Next boundary
+
+Actual transaction submission remains a separate future 1S.44 boundary.
+
+1S.44 must not be implemented or exercised merely because 1S.43 is ready.
+Its capability and tests require separate review.
+
+Any future submission boundary must consume the exact validated signed raw
+transaction rather than rebuild or re-sign it.
+
+Submission must remain narrow and fail closed.
+
+The intended first live transaction remains a deliberately controlled
+measurement flashloan, not unrestricted production execution readiness.
+
+Receipt evidence should be treated as a separately explicit boundary and
+should capture, at minimum:
+
+- transaction hash;
+- block number;
+- receipt status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+Only after separately reviewed successful live receipt evidence exists should
+the protected gas experiments be evaluated for possible production relevance.
+
+Do not fabricate empirical live gas evidence from simulation or fork results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
+
+## Post-1S.44 session handoff — Controlled Exact Signed Transaction Submission Evidence
+
+### Milestone status
+
+1S.44 is complete, tested, committed, and pushed.
+
+Milestone:
+
+**1S.44 — Controlled Exact Signed Transaction Submission Evidence**
+
+Code commit:
+
+- full: `1fd705e8f963a115697cd892b60c3f8b15d70bc9`
+- short: `1fd705e`
+- subject: `Add controlled exact signed transaction submission evidence`
+
+The local branch and `origin/repair/simulation-safety` were verified synchronized
+at this commit with ahead/behind `0 0`.
+
+### 1S.44 implementation
+
+Production module:
+
+`scripts/utils/polygonV4ControlledExactSignedTransactionSubmissionEvidence.js`
+
+Verified SHA-256:
+
+`c7d7659df984812dd69bf00e2c7843c36b9eea122b2fa6699de1f3292a2a0a96`
+
+Test module:
+
+`test/polygonV4ControlledExactSignedTransactionSubmissionEvidence.test.js`
+
+Verified SHA-256:
+
+`1a7805230a23b0f6279f740b1b6c71fdaae7e101f27a0ea91b13133b3d639ee2`
+
+The code commit contains exactly these two files:
+
+- production module: 157 lines;
+- test module: 413 lines;
+- total commit: 570 insertions.
+
+### Boundary semantics
+
+1S.44 consumes completed 1S.43 immediate pre-submission validation evidence
+and an explicitly injected narrow submission capability.
+
+Before exposing the signed transaction to that capability, 1S.44 requires:
+
+- `immediatePreSubmissionValidationReady === true`;
+- `signerAuthorized === true`;
+- `signingAuthorized === true`;
+- `broadcastAuthorized === true`;
+- `liveExecutionAuthorized === true`;
+- a valid preserved transaction envelope object;
+- a non-empty preserved signed raw transaction;
+- a non-empty preserved signed transaction hash.
+
+The submission capability receives only the exact preserved signed raw
+transaction.
+
+The production boundary performs one submission attempt through:
+
+`await submitSignedTransaction(signedRawTransaction)`
+
+It does not:
+
+- rebuild the transaction;
+- re-sign the transaction;
+- repair or change the nonce;
+- refresh or alter fees;
+- alter the gas limit;
+- alter calldata;
+- acquire a signer or wallet;
+- retry submission;
+- wait for a receipt;
+- poll for a receipt;
+- claim successful on-chain execution.
+
+The returned submission response must be an object with a non-empty `hash`.
+
+That returned hash must exactly equal the already-established signed
+transaction hash. A mismatch fails closed.
+
+Successful 1S.44 output preserves:
+
+- the exact 1S.43 immediate pre-submission validation evidence;
+- the exact transaction envelope;
+- the exact signed raw transaction;
+- the exact signed transaction hash;
+- the submission response.
+
+It sets:
+
+- `controlledExactSignedTransactionSubmissionReady: true`;
+- `signerAuthorized: true`;
+- `signingAuthorized: true`;
+- `broadcastAuthorized: true`;
+- `liveExecutionAuthorized: true`.
+
+The returned evidence object is frozen.
+
+### Important submission/receipt distinction
+
+1S.44 introduces the narrowly controlled exact-signed-transaction submission
+boundary.
+
+No live Polygon transaction was submitted while developing or validating
+1S.44.
+
+All 1S.44 development and test execution used injected synthetic submission
+callbacks.
+
+A successful submission response and matching transaction hash do not prove
+that the transaction was mined or that execution succeeded on-chain.
+
+Receipt evidence remains a separate boundary.
+
+Do not infer receipt status, block inclusion, `gasUsed`, economic success, or
+successful flashloan execution from 1S.44 submission evidence alone.
+
+### Validation evidence
+
+Focused 1S.44 GREEN:
+
+- tests: 14;
+- pass: 14;
+- fail: 0.
+
+Immediate 1S.40 through 1S.44 regression:
+
+- tests: 66;
+- pass: 66;
+- fail: 0;
+- exit code: 0.
+
+Explicit 1S.30 through 1S.44 regression:
+
+- tests: 235;
+- pass: 235;
+- fail: 0;
+- exit code: 0.
+
+Maintained canonical suite:
+
+- Node tests: 896/896 PASS;
+- configured Hardhat tests: 29/29 PASS;
+- maintained canonical total: 925/925 PASS;
+- canonical command exit code: 0.
+
+The canonical Hardhat run generated normal tracked `artifacts/` and `cache/`
+changes. Those generated changes were restored before the 1S.44 code commit.
+
+The known unrestricted `npx hardhat test` legacy `test/Lock.js` dependency
+incompatibility remains separate from the maintained canonical test surface.
+Do not install Hardhat toolbox, modify dependencies, or alter the legacy
+scaffold as part of this milestone merely to remove that unrelated issue.
+
+### Protected gas experiments
+
+The following files remain untracked and protected:
+
+`test/polygonV4GasStateSensitivityProbe.test.js`
+
+SHA-256:
+
+`5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+
+`test/polygonV4PairedGasMeasurementIntegration.test.js`
+
+SHA-256:
+
+`5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+
+`test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+SHA-256:
+
+`3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+They were not staged, committed, promoted, modified, or executed as part of
+1S.44.
+
+No arbitrary gas margin, multiplier, or fixed buffer has been promoted into
+the execution lineage.
+
+### Next boundary
+
+The next logical milestone is:
+
+**1S.45 — Transaction Receipt Evidence**
+
+It must remain separately reviewed and fail closed.
+
+Receipt evidence should bind the exact 1S.44 submission lineage to actual
+on-chain receipt evidence and should capture, at minimum:
+
+- the exact transaction hash;
+- block number;
+- receipt status;
+- exact execution context;
+- actual receipt `gasUsed`.
+
+1S.45 must not reinterpret successful submission as successful execution.
+
+The intended first live transaction remains a deliberately controlled
+measurement flashloan, not unrestricted production execution readiness.
+
+No live empirical gas value exists merely because 1S.44 is complete.
+
+Only separately reviewed successful live receipt evidence may establish
+empirical live `gasUsed`.
+
+After that evidence exists, the protected gas experiments may be evaluated
+separately for possible production relevance.
+
+Do not fabricate live gas evidence from simulation or fork results.
+
+Do not weaken profitability, slippage, freshness, gas, reserve, protected
+output, minimum-profit, or worst-case policy to manufacture execution
+readiness.
+
+## Post-1S.45 handoff — Controlled Transaction Receipt Evidence
+
+### Milestone status
+1S.45 — Controlled Transaction Receipt Evidence is implemented, validated, committed, and pushed.
+
+Code commit:
+- f26b648585ccc450524148dea4dd677bb5851ebc
+- Add controlled transaction receipt evidence
+
+### Production boundary
+Production file:
+- scripts/utils/polygonV4ControlledTransactionReceiptEvidence.js
+- 193 lines
+- SHA256: 4f8752f6f61038759135b495d74abeedef364c6182df9c92083cb7e7d2e6a652
+
+The boundary consumes completed 1S.44 controlled exact signed transaction submission evidence plus an injected acquireTransactionReceipt capability.
+
+Before receipt acquisition it requires:
+- controlledExactSignedTransactionSubmissionReady === true
+- signerAuthorized === true
+- signingAuthorized === true
+- broadcastAuthorized === true
+- liveExecutionAuthorized === true
+- a non-empty preserved signedTransactionHash
+- a submissionResponse object
+- submissionResponse.hash exactly equals signedTransactionHash
+
+Receipt acquisition is exactly:
+- await acquireTransactionReceipt(signedTransactionHash)
+
+The acquisition capability receives only the exact signed transaction hash.
+
+It does not receive:
+- signed raw transaction bytes
+- transaction envelope
+- signer capability
+- submission capability
+- nonce controls
+- fee controls
+- gas-limit controls
+
+The acquired receipt must:
+- be an object
+- have receipt.transactionHash exactly equal to signedTransactionHash
+- have receipt.status === 1
+- have a positive safe-integer blockNumber
+- have ethers BigNumber gasUsed greater than zero
+
+Successful output preserves:
+- exact 1S.44 evidence identity
+- exact transactionEnvelope identity
+- exact signedRawTransaction
+- exact signedTransactionHash
+- exact submissionResponse identity
+- exact receipt identity
+- gasUsed directly from receipt.gasUsed
+
+Successful output sets:
+- controlledTransactionReceiptReady === true
+- signerAuthorized === true
+- signingAuthorized === true
+- broadcastAuthorized === true
+- liveExecutionAuthorized === true
+
+The output is frozen.
+
+### Safety boundary
+1S.45 does not:
+- submit or resubmit a transaction
+- retry submission
+- sign or re-sign
+- reconstruct the transaction
+- repair nonce
+- refresh fees
+- modify gas limit
+- infer profitability
+- create or promote a gas margin, multiplier, or fixed buffer
+- directly promote receipt gas into the protected gas experiments
+
+The production module contains no direct provider, signer, signing, send, broadcast, fee-refresh, gas-estimation, or receipt-waiting primitive beyond the injected narrow receipt-acquisition callback.
+
+1S.45 trusts the completed immediate 1S.44 boundary and binds the acquired receipt to the exact already-established signed transaction hash. It does not duplicate deep 1S.39 cryptographic signing validation or 1S.44 submission logic.
+
+### Validation
+Focused 1S.45:
+- 11/11 passed
+
+Immediate 1S.44 -> 1S.45 regression:
+- 25/25 passed
+- exit code 0
+
+Explicit 1S.30 -> 1S.45 regression:
+- 246/246 passed
+- exit code 0
+
+Maintained canonical suite:
+- Node: 907/907 passed
+- configured Hardhat: 29/29 passed
+- total: 936/936 passed
+- exit code 0
+
+The unrestricted legacy Hardhat test surface was not used. The previously known unrelated test/Lock.js toolbox/dependency issue remains outside this milestone.
+
+### Test artifact
+Test file:
+- test/polygonV4ControlledTransactionReceiptEvidence.test.js
+- 407 lines
+- SHA256: c2e66e55027efc18d31072fd6fc1e8dda7e2b287e185f52e14113cb0d5075d7d
+
+The synthetic BigNumber gasUsed fixture used by the tests is test data only. It is not empirical ProfitBot gas evidence and must not be promoted into execution policy.
+
+### Protected gas experiments
+The three protected untracked gas experiments remain outside the 1S.45 commit and were not modified, staged, committed, promoted, or executed.
+
+Verified SHA256:
+- test/polygonV4GasStateSensitivityProbe.test.js
+  5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7
+- test/polygonV4PairedGasMeasurementIntegration.test.js
+  5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139
+- test/polygonV4PairedGasStateSensitivityIntegration.test.js
+  3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77
+
+### Live-state distinction
+No live transaction was broadcast as part of developing or testing 1S.45.
+
+No real live transaction receipt has yet been acquired through this milestone.
+
+No empirical live ProfitBot gasUsed value has yet been established.
+
+A successful 1S.45 test proves the receipt-evidence software boundary behaves as designed. It does not prove arbitrage profitability and does not itself create live gas evidence.
+
+### Next controlled objective
+The intended evidence flow remains:
+
+1S.44 exact signed transaction submission
+-> 1S.45 exact successful receipt validation
+-> empirical live receipt gasUsed
+-> separate controlled gas-evidence handoff
+-> deliberate evaluation of the three protected gas experiments
+-> only then an evidence-based gas-policy decision.
+
+Any actual live measurement requires separate explicit review and intent. Before a live transaction, current chain state, nonce, transaction parameters, authorization state, and immediate pre-submission validation must remain fail-closed according to the established lineage.
+
+Do not fabricate or promote a gas value from fork evidence, simulation evidence, historical constants, or the synthetic 1S.45 test fixture.
+
+## 1S.46 — Executor Deployment Identity Evidence
+
+Status: code complete and locally committed; checkpoint/push verification pending.
+
+### Objective
+
+Strengthen executor deployment provenance without fabricating provenance for closed historical evidence.
+
+Current/new fork-receipt gas evidence now preserves the exact executor address whose runtime bytecode is measured. Current-state execution preflight binds that measured executor address to the deployment executor address when address-bound gas evidence is present.
+
+This milestone does not change gas measurement semantics, qualification policy, routing, signing, authorization, transaction submission, receipt acquisition, or live execution.
+
+### Part 1 — Preserve measured executor address
+
+Commit:
+
+`034bd382d401111fc9e2aedf0c6a8a350ff4b907 Preserve executor address in current fork gas evidence`
+
+Changed:
+
+- `scripts/utils/polygonV4ForkReceiptGasEvidenceProducer.js`
+- `scripts/utils/polygonV4ForkReceiptGasEvidence.js`
+- `test/polygonV4ForkReceiptGasEvidenceProducer.test.js`
+- `test/polygonV4ForkReceiptGasEvidence.test.js`
+
+The producer now preserves the exact `executor.address` used for `provider.getCode(executor.address)` as `executorContext.executorAddress`.
+
+The generic gas-evidence validator conditionally validates and preserves `executorAddress` when supplied. It does not require the field universally because closed historical evidence predating this provenance field must not be retroactively assigned an unproven executor address.
+
+Part 1 relevant regression evidence:
+
+- direct plus historical gas-evidence tests: 26/26 passing
+- downstream relevant Node tests before Part 2: 56/56 passing
+- canonical before Part 2: 936/936 maintained tests passing
+
+The controlled Hardhat fork integration test was invoked without `USE_1S8_FORK_RECEIPT=true`; it remained skipped/pending and did not execute the controlled fork receipt measurement.
+
+### Part 2 — Bind deployment address to measured gas evidence
+
+Commit:
+
+`97be0c7997736a50bd0c9abe61bb0a1b80d42d08 Bind current-state executor address to gas evidence`
+
+Changed:
+
+- `scripts/utils/polygonV4CurrentStateExecutionPreflightEvidence.js`
+- `test/polygonV4CurrentStateExecutionPreflightEvidence.test.js`
+
+When `readiness.gasEvidence.executorContext.executorAddress` is present, current-state execution preflight now:
+
+1. validates the measured executor address as a valid nonzero address;
+2. compares it case-insensitively with `currentStateEvidence.deploymentEvidence.executorAddress`;
+3. fails closed with `Executor deployment address identity mismatch` if they differ.
+
+Legacy gas evidence without `executorContext.executorAddress` remains compatible. Absence of the field is not interpreted as proof of executor-address identity.
+
+### RED -> GREEN evidence
+
+A focused address-bound fixture was added while preserving the existing legacy/address-less fixture behavior.
+
+Before the production binding was added, the new test failed with:
+
+`AssertionError [ERR_ASSERTION]: Missing expected exception.`
+
+This demonstrated that current-state preflight accepted a measured executor address and a different deployment executor address when their runtime code hashes matched.
+
+After the production binding was added:
+
+- focused current-state preflight tests: 23/23 passing
+- downstream relevant regression: 57/57 passing
+
+### Canonical regression
+
+After Part 2:
+
+- Node tests: 908/908 passing
+- configured Hardhat tests: 29/29 passing
+- maintained canonical total: 937/937 passing
+
+Hardhat-generated tracked `artifacts/` and `cache/` churn was restored after canonical testing.
+
+### Safety and compatibility boundaries
+
+1S.46 does not:
+
+- sign or re-sign a transaction;
+- authorize signing, broadcast, or live execution;
+- submit or broadcast a transaction;
+- acquire a live transaction receipt;
+- contact Polygon for live execution;
+- modify nonce, fee, or gas-limit policy;
+- promote fork gas into live empirical gas;
+- add a gas margin, multiplier, or fixed buffer;
+- change route construction or qualification semantics;
+- fabricate an executor address for historical evidence.
+
+The three protected gas experiments were not executed, modified, staged, committed, or promoted:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+They remain untracked and protected.
+
+### Result
+
+For current/new producer-generated fork gas evidence, executor provenance now carries both:
+
+- the exact measured executor address; and
+- the measured executor runtime code hash.
+
+Current-state execution preflight can therefore reject deployment-address substitution even when two deployments have identical runtime bytecode.
+
+This strengthens the provenance path toward a future controlled live measurement flashloan. It does not itself establish live receipt gas evidence or production gas-limit policy.
+
+### Next architectural work
+
+Before controlled live measurement, continue closing upstream acquisition/composition provenance deliberately rather than constructing current-state evidence from test fixtures.
+
+Known areas requiring deliberate ownership include account-identity acquisition and current-state constituent acquisition/composition. Existing balance/allowance semantics must not be reinterpreted as requiring pre-existing flashloan principal or external allowances contrary to the executor's actual flashloan/callback behavior.
+
+After trustworthy live execution prerequisites are complete, the intended sequence remains:
+
+controlled live measurement -> successful transaction receipt -> empirical `gasUsed` evidence -> controlled gas-evidence handoff -> evaluation of the three protected gas experiments -> evidence-based gas policy.
+
+## 1S.47 — Deployed Account Identity Acquisition Evidence
+
+Status: CODE COMPLETE / TESTED / CHECKPOINT PENDING PUSH
+
+Code commit:
+- `5ecb521` — `Add deployed account identity acquisition evidence`
+
+Production:
+- `scripts/utils/polygonV4DeployedAccountIdentityAcquisitionEvidence.js`
+
+Tests:
+- `test/polygonV4DeployedAccountIdentityAcquisitionEvidence.test.js`
+
+### Purpose
+
+1S.47 introduces a narrow deployed-account identity acquisition boundary before the existing account/caller identity validation boundary.
+
+It derives the executor address only from:
+
+`currentStatePreflightEvidence.currentStateEvidence.deploymentEvidence.executorAddress`
+
+It then independently acquires:
+
+- caller address through injected `getCallerAddress`
+- deployed executor owner through injected `getExecutorOwner(executorAddress)`
+
+The exact acquired facts are preserved as frozen:
+
+`accountIdentityEvidence = { callerAddress, ownerAddress, executorAddress }`
+
+### Responsibility separation
+
+1S.47 deliberately does NOT assert caller == owner.
+
+That equality remains owned by the existing
+`buildAccountCallerIdentityEvidence()` boundary.
+
+1S.47 also does not establish signer capability. Later signer identity and capability-binding boundaries remain independently responsible for proving the actual signer/capability corresponds to the transaction caller.
+
+No signing, signer authorization, live execution authorization, transaction submission, broadcast, gas-policy selection, or protected gas-test promotion was added.
+
+### Fail-closed behavior
+
+Verified that:
+
+- non-ready current-state preflight fails before acquisition
+- upstream authorization contamination fails before acquisition
+- invalid deployed executor fails before either callback
+- invalid acquired caller fails before owner acquisition
+- invalid acquired executor owner fails after exactly one caller acquisition and one exact executor-owner lookup
+- successful acquisition calls each injected acquisition capability exactly once
+- the exact preflight-derived executor is supplied to owner acquisition
+
+### Composition
+
+Verified that acquired `accountIdentityEvidence` feeds directly into the existing account/caller identity boundary without reconstruction.
+
+A deliberately acquired caller/owner mismatch is accepted as factual acquisition by 1S.47 and then rejected by the existing account/caller identity validator, preserving boundary ownership.
+
+### Validation
+
+- focused 1S.47: 8/8 passing
+- narrow downstream acquisition/account-caller/unsigned-intent: 49/49 passing
+- canonical regression: GREEN
+- protected gas experiment files were not directly executed, modified, staged, or committed
+
+### Protected untracked gas experiments
+
+Remain outside this milestone:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+### Remaining architecture
+
+1S.47 closes the missing deployed-account identity acquisition boundary, but it does not by itself create a monolithic production orchestrator or manufacture the remaining current-state constituents.
+
+Continue read-only provenance/acquisition analysis before any controlled live measurement.
+
+Do not manufacture balance/allowance requirements that conflict with the deployed executor's flashloan semantics.
+
+A controlled live transaction remains a separate explicit future action.
+
+## Post-1S.48 — Current Chain Identity Acquisition Evidence
+
+Code commit:
+- `1c8325d` — `Add current chain identity acquisition evidence`
+
+Production:
+- `scripts/utils/polygonV4CurrentChainIdentityAcquisitionEvidence.js`
+
+Tests:
+- `test/polygonV4CurrentChainIdentityAcquisitionEvidence.test.js`
+- composition coverage added to `test/polygonV4CurrentStateExecutionPreflightEvidence.test.js`
+
+### Purpose
+
+1S.48 introduces a narrow current-chain identity acquisition boundary.
+
+It validates an injected provider and its `getNetwork` capability before acquisition, calls `provider.getNetwork()` exactly once, and requires the acquired network to identify Polygon exactly:
+
+`chainId === 137`
+
+Successful acquisition produces frozen:
+
+`chainEvidence = { chainId: 137 }`
+
+with:
+
+`currentChainIdentityAcquisitionReady: true`
+
+### Responsibility separation
+
+1S.48 owns only current chain identity acquisition.
+
+It does NOT acquire or manufacture:
+
+- deployment identity
+- route/amount evidence
+- economics evidence
+- freshness evidence
+- balance/allowance evidence
+- authoritative preflight evidence
+- account or signer identity
+- transaction parameters
+- gas policy
+- authorization
+- signing
+- submission
+- broadcast
+
+It does not accept an existing current-state preflight as input, avoiding circular current-state provenance.
+
+### Fail-closed behavior
+
+Verified that:
+
+- invalid provider fails before acquisition
+- missing `getNetwork` capability fails before acquisition
+- malformed network evidence fails after exactly one acquisition
+- non-Polygon chain identity fails after exactly one acquisition
+- successful Polygon acquisition calls `getNetwork()` exactly once
+
+### Composition
+
+The existing current-state preflight fixture was extended with an optional chain-evidence override while preserving its historical default behavior.
+
+Verified that the exact `chainEvidence` object produced by 1S.48 can be composed into `currentStateEvidence` and survives the existing current-state execution preflight by object identity.
+
+This composition does not imply that 1S.48 constructs the other current-state constituents.
+
+### Validation
+
+- focused 1S.48 acquisition tests: 5/5 passing
+- focused acquisition + current-state preflight compatibility: 29/29 passing
+- canonical Node regression: 923/923 passing
+- configured Hardhat regression: 29/29 passing
+- canonical maintained total: 952/952 passing
+- `git diff --check`: clean before code commit
+- protected gas experiment files were not directly executed, modified, staged, or committed
+
+### Protected untracked gas experiments
+
+Remain outside this milestone:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+### Remaining architecture
+
+1S.48 establishes the first narrow production acquisition primitive for the previously test-assembled `currentStateEvidence`, but it does not make the full current-state object independently trustworthy.
+
+Remaining current-state work includes deliberate provenance/acquisition or composition decisions for:
+
+- deployment identity
+- freshness/current timestamp
+- route/amount evidence
+- economics evidence
+- balance/allowance semantics
+- orchestration of independently established evidence
+
+`preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state.
+
+Do not manufacture pre-existing flashloan principal or external DEX/Aave allowance requirements from the current `{ checked, sufficient }` fixture semantics.
+
+Continue with narrow provenance-first current-state work before any controlled live measurement.
+
+A controlled live transaction remains a separate explicit future action.
+
+## 1S.49 — Verified Deployment Address Evidence
+
+Status: code complete and locally committed; checkpoint/push verification pending at time of this entry.
+
+Code commit:
+- `f77eb10` — `Add verified deployment address evidence`
+
+Production:
+- `scripts/utils/polygonV4VerifiedDeploymentAddressEvidence.js`
+
+Test:
+- `test/polygonV4VerifiedDeploymentAddressEvidence.test.js`
+
+Purpose:
+- Establish a narrow verified deployment-address evidence boundary from independently established historical deployment provenance.
+- This stage normalizes and validates deployment provenance; it does not claim current RPC/runtime-code identity.
+
+Required deployment provenance:
+- `executorAddress`
+- `deploymentTransactionHash`
+- `deploymentBlock`
+- `receiptStatus`
+
+Validation:
+- deployment provenance must be an object.
+- executor address must be a valid nonzero address.
+- deployment transaction hash must be a bytes32 hash.
+- deployment block must be a positive safe integer.
+- receipt status must be exactly `1`.
+
+Successful output:
+- constructs a new frozen `deploymentAddressEvidence` containing exactly:
+  - `executorAddress`
+  - `deploymentTransactionHash`
+  - `deploymentBlock`
+  - `receiptStatus`
+- returns a frozen result with:
+  - `deploymentAddressEvidence`
+  - `verifiedDeploymentAddressReady: true`
+- unrelated mutable provenance fields are not copied into the evidence object.
+
+Explicit exclusions:
+- no hard-coded live ProfitBot address.
+- no `.env` dependency.
+- no RPC/provider acquisition.
+- no transaction-receipt acquisition.
+- no `getCode`.
+- no runtime bytecode or code-hash claim.
+- no owner/configuration inspection.
+- no gas-evidence or account-evidence authority.
+- no signing, authorization, submission, broadcast, or live execution.
+- no protected gas-policy promotion.
+
+Verification:
+- focused `node:test`: 7/7 passing.
+- maintained Node regression: 930/930 passing after canonical discovery correction.
+- configured Hardhat regression was green in the immediately preceding canonical run.
+- canonical Node discovery now includes the 1S.49 test via `node:test`.
+- generated Hardhat `artifacts/` and `cache/` churn was inspected and restored to `HEAD`; it was not included in the 1S.49 commit.
+- protected gas experiments were not staged or committed.
+
+Protected untracked gas experiments remain outside this lineage:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Architectural boundary:
+- 1S.49 establishes verified historical deployment-address provenance.
+- It does not establish that current Polygon runtime bytecode still exists at that address.
+- gas evidence is corroboration, not deployment-address authority.
+- account identity evidence is downstream of deployment evidence and cannot establish deployment-address provenance without circularity.
+
+Next exact step — 1S.50 Current Deployment Code Identity Acquisition Evidence:
+- consume the exact verified deployment address evidence plus an injected provider.
+- validate provider and `getCode` capability before acquisition.
+- call `getCode(executorAddress)` exactly once for the exact verified address.
+- reject empty or invalid runtime bytecode.
+- compute `ethers.utils.keccak256(runtimeBytecode)`.
+- produce frozen current `deploymentEvidence` containing:
+  - `executorAddress`
+  - `executorCodeHash`
+- do not discover or hard-code an address.
+- do not acquire owner/account/gas evidence.
+- do not authorize signing, submission, broadcast, or live execution.
+
+## 1S.50 — Current Deployment Code Identity Acquisition Evidence
+
+Status: code complete and locally committed; checkpoint/push verification pending at time of this entry.
+
+Code commit:
+- `72ed902` — `Add current deployment code identity acquisition evidence`
+
+Production:
+- `scripts/utils/polygonV4CurrentDeploymentCodeIdentityAcquisitionEvidence.js`
+
+Test:
+- `test/polygonV4CurrentDeploymentCodeIdentityAcquisitionEvidence.test.js`
+
+Purpose:
+- Establish current runtime-code identity at the independently verified deployment address produced by 1S.49.
+- This stage verifies code at an already-established address; it does not discover or independently establish the deployment address.
+
+Input boundary:
+- exact `deploymentAddressEvidence` from the 1S.49 lineage.
+- injected provider with callable `getCode`.
+
+Acquisition and validation:
+- require deployment-address evidence object.
+- require valid nonzero `executorAddress`.
+- validate provider and `provider.getCode` before acquisition.
+- call `provider.getCode(executorAddress)` exactly once with the exact established executor address.
+- require returned runtime bytecode to be a hex string and not `"0x"`.
+- derive `executorCodeHash` using `ethers.utils.keccak256(runtimeBytecode)`, matching the repository's existing runtime-code hashing convention.
+
+Successful output:
+- constructs a new frozen `deploymentEvidence` containing exactly:
+  - `executorAddress`
+  - `executorCodeHash`
+- returns a frozen result with:
+  - `deploymentEvidence`
+  - `currentDeploymentCodeIdentityAcquisitionReady: true`
+- historical deployment transaction/block/receipt fields are not copied into current deployment identity evidence.
+
+Provenance composition:
+- the test suite directly composes the actual 1S.49 `buildVerifiedDeploymentAddressEvidence()` output into 1S.50.
+- the exact 1S.49 executor address is used for the single `getCode` acquisition and preserved in current `deploymentEvidence`.
+- 1S.49 remains authority for verified historical deployment-address provenance.
+- 1S.50 establishes current runtime-code identity at that established address.
+
+Explicit exclusions:
+- no hard-coded ProfitBot address.
+- no `.env` dependency.
+- no address discovery.
+- no chain/network acquisition.
+- no historical receipt reacquisition.
+- no owner/configuration inspection.
+- no gas-evidence or account-evidence authority.
+- no signing, authorization, submission, broadcast, or live execution.
+- no protected gas-policy promotion.
+
+Verification:
+- focused 1S.50 suite: 8/8 passing.
+- includes direct 1S.49 -> 1S.50 production composition proof.
+- canonical Node regression: 938/938 passing, 0 failures.
+- canonical Node runner explicitly discovered the 1S.50 suite.
+- `git diff --check` clean.
+- production and test syntax checks clean.
+- Hardhat was not rerun for this Node-only acquisition boundary, avoiding unrelated generated artifact/cache churn.
+
+Protected gas experiments:
+- were not executed, modified, staged, or committed.
+- hashes reverified unchanged:
+  - `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7` — `test/polygonV4GasStateSensitivityProbe.test.js`
+  - `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139` — `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  - `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77` — `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Resulting deployment provenance chain:
+- independently established historical deployment provenance
+- -> 1S.49 verified `deploymentAddressEvidence`
+- -> 1S.50 exact current `getCode(executorAddress)`
+- -> current runtime bytecode keccak256
+- -> current `deploymentEvidence { executorAddress, executorCodeHash }`
+- -> existing current-state execution preflight boundary.
+
+Remaining work:
+- 1S.50 does not by itself establish full current executable readiness.
+- Continue provenance-first current-state acquisition/composition for remaining unresolved current-state constituents before any controlled live measurement.
+- A controlled live transaction remains a separate explicit future action.
+
+## 1S.51 — Current Chain Timestamp Acquisition Evidence
+
+Status:
+- code complete and locally committed
+- code commit: `8b71289`
+- checkpoint/push pending
+
+Production:
+- `scripts/utils/polygonV4CurrentChainTimestampAcquisitionEvidence.js`
+
+Test:
+- `test/polygonV4CurrentChainTimestampAcquisitionEvidence.test.js`
+
+Purpose:
+- independently acquire a current Polygon block timestamp for current-state freshness evidence
+- preserve block provenance by recording both `currentBlock` and `currentTimestamp`
+
+Acquisition semantics:
+- injected provider only
+- `getBlockNumber()` exactly once
+- current block must be a positive safe integer
+- `getBlock(currentBlock)` exactly once using the exact acquired block number
+- returned block must be available
+- if returned `block.number` is present, it must exactly equal `currentBlock`
+- block timestamp must be a positive safe integer
+
+Successful evidence:
+- frozen `currentChainTimestampEvidence { currentBlock, currentTimestamp }`
+- frozen result with `currentChainTimestampAcquisitionReady: true`
+
+Policy ownership:
+- 1S.51 does not construct or alter the execution deadline
+- existing current-state execution preflight remains responsible for `currentTimestamp < prepared.deadline`
+- qualification deadline remains anchored to the exact qualification policy-block timestamp
+
+Explicit exclusions:
+- no chain-ID reacquisition
+- no `Date.now()` wall-clock authority
+- no route/amount or economics acquisition
+- no balance/allowance interpretation
+- no signing, authorization, submission, broadcast, or live execution
+- no gas-policy promotion
+- no protected gas-experiment execution or modification
+
+Verification:
+- RED established solely by missing production module
+- focused final: 8/8 pass
+- canonical Node: 946/946 pass, 0 fail
+- canonical discovery explicitly included the 1S.51 suite
+- production and test syntax checks clean
+- `git diff --check` clean
+- Hardhat not rerun because this is an isolated Node utility/test boundary with no contract or Hardhat integration change
+
+Protected gas experiments remained untracked and unchanged:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+  SHA-256 `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  SHA-256 `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+  SHA-256 `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+Current-state provenance now independently establishes:
+- chain identity via 1S.48
+- verified deployment address via 1S.49
+- current deployment code identity via 1S.50
+- current chain timestamp via 1S.51
+
+Remaining work:
+- 1S.51 does not establish full current executable readiness
+- continue provenance-first decisions for route/amount evidence, economics evidence, balance/allowance semantics, and orchestration of independently established current-state evidence
+- `preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state
+- controlled live execution remains a separate explicit future action
+
+## 1S.52 — Current Route/Amount Evidence Composition
+
+Status:
+- code complete and locally committed
+- code commit: `4491de0`
+- checkpoint/push pending
+
+Production:
+- `scripts/utils/polygonV4CurrentRouteAmountEvidenceComposition.js`
+
+Test:
+- `test/polygonV4CurrentRouteAmountEvidenceComposition.test.js`
+
+Purpose:
+- compose current route/amount evidence from the already-established prepared execution context
+- preserve exact upstream route and amount identities without reacquisition or reinterpretation
+
+Input authority:
+- `preparedExecutionContext`
+- prepared candidate is the route/amount candidate authority
+- prepared execution legs are preserved by exact identity
+- prepared execution plan is preserved by exact identity
+- `amountIn` is derived only from the exact `preparedExecutionContext.candidate.amountIn`
+
+Successful evidence:
+- frozen `routeAmountEvidence`
+- exact fields:
+  - `candidate`
+  - `executionLegs`
+  - `executionPlan`
+  - `amountIn`
+- frozen result with `currentRouteAmountEvidenceCompositionReady: true`
+
+Identity semantics:
+- candidate is not cloned
+- execution legs are not cloned
+- execution plan is not reconstructed
+- amount is not independently supplied
+- opaque upstream `amountIn` semantics are preserved
+- unrelated prepared-context fields are not copied
+
+Policy ownership:
+- 1S.52 does not independently consult `qualifiedContext`
+- current-state execution preflight remains responsible for cross-lineage candidate and execution-leg identity checks
+- current-state execution preflight remains responsible for execution-plan identity against established readiness evidence
+- upstream preparation/qualification remains responsible for deeper route, leg, plan, deadline, and economic validation
+
+Explicit exclusions:
+- no RPC or chain acquisition
+- no route discovery or reconstruction
+- no quote or price refresh
+- no route optimization
+- no independent amount selection
+- no economics or gas-policy calculation
+- no qualification or preflight duplication
+- no signing, authorization, submission, broadcast, or live execution
+- no protected gas-experiment execution or modification
+
+Verification:
+- RED established solely by missing production module
+- initial GREEN: 1/1
+- hardened focused suite: 7/7 pass
+- canonical Node: 953/953 pass, 0 fail
+- canonical discovery explicitly included the 1S.52 suite
+- production and test syntax checks clean
+- `git diff --check` clean
+- Hardhat not rerun because this is an isolated Node utility/test boundary with no contract or Hardhat integration change
+
+Protected gas experiments remained untracked and unchanged:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+  SHA-256 `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  SHA-256 `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+  SHA-256 `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+Current-state provenance/composition now independently establishes:
+- chain identity via 1S.48
+- verified deployment address via 1S.49
+- current deployment code identity via 1S.50
+- current chain timestamp via 1S.51
+- current route/amount evidence composition via 1S.52
+
+Remaining work:
+- 1S.52 does not establish full current executable readiness
+- economics evidence remains to be handled without recalculating or reinterpreting established qualification economics
+- balance/allowance semantics remain unresolved and must not be manufactured from fixture semantics
+- orchestration of independently established current-state evidence remains future work
+- `preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state
+- controlled live execution remains a separate explicit future action
+
+## 1S.53 — Current Economics Evidence Composition
+
+Status:
+- code complete and locally committed
+- code commit: `a07b9b8` (`Add current economics evidence composition`)
+- checkpoint commit and push pending
+
+Production:
+- `scripts/utils/polygonV4CurrentEconomicsEvidenceComposition.js`
+
+Test:
+- `test/polygonV4CurrentEconomicsEvidenceComposition.test.js`
+
+Purpose:
+- compose current economics evidence exclusively from already-established execution-readiness economics identities
+- preserve the exact `gasEvidence` and `qualificationPolicySnapshot` identities exposed by execution readiness
+- avoid reacquiring, recalculating, refreshing, or reinterpreting established qualification economics
+
+API:
+- `buildCurrentEconomicsEvidenceComposition({ readinessEvidence })`
+
+Required input:
+- `readinessEvidence` must be an object
+- `readinessEvidence.executionEvidenceReady` must be exactly `true`
+- `readinessEvidence.gasEvidence` must be an object
+- `readinessEvidence.qualificationPolicySnapshot` must be an object
+
+Successful evidence:
+- new frozen `economicsEvidence` containing exactly:
+  - `gasEvidence`
+  - `qualificationPolicySnapshot`
+- both fields preserve exact object identity from `readinessEvidence`
+- frozen result:
+  - `economicsEvidence`
+  - `currentEconomicsEvidenceCompositionReady: true`
+
+Authority / lineage:
+- `polygonV4ExecutionReadinessEvidence.js` already requires lifecycle `gasEvidence` and `qualificationPolicySnapshot`
+- execution readiness already enforces:
+  - `qualifiedContext.gasEvidence === gasEvidence`
+  - `qualifiedContext.policySnapshot === qualificationPolicySnapshot`
+- execution readiness then exposes those same identities on its frozen readiness result
+- `polygonV4CurrentStateExecutionPreflightEvidence.js` requires:
+  - `current.economicsEvidence.gasEvidence === readiness.gasEvidence`
+  - `current.economicsEvidence.qualificationPolicySnapshot === readiness.qualificationPolicySnapshot`
+- therefore 1S.53 treats execution readiness as the immediate economics identity authority and does not recursively duplicate deeper economic validation
+
+Explicit exclusions:
+- no RPC or chain acquisition
+- no gas estimation or gas measurement
+- no gas-price acquisition or refresh
+- no profitability or net-economics recalculation
+- no qualification-policy reconstruction or reinterpretation
+- no route, amount, quote, price, or optimization work
+- no lifecycle or qualified-context reconstruction
+- no signing, authorization, submission, broadcast, or live execution
+- no gas margin, multiplier, or fixed-buffer promotion
+- no protected gas-experiment execution or modification
+- no claim that fork/simulation gas is live empirical gas
+
+Verification:
+- RED established solely by missing production module
+- initial GREEN: 1/1
+- hardened focused suite: 6/6 pass
+- Codespace/terminal restart occurred after the focused implementation was safely committed
+- project environment was re-established from `.nvmrc`
+- post-restart Node: `v18.20.8`
+- post-restart npm: `10.8.2`
+- post-restart focused suite: 6/6 pass
+- production and test syntax checks clean
+- commit `a07b9b8` contains exactly the production utility and its test
+- canonical Node exit: 0
+- canonical Node: 959/959 pass, 0 fail
+- canonical discovery explicitly included:
+  - `# Subtest: Polygon V4 current economics evidence composition`
+  - `ok 247 - Polygon V4 current economics evidence composition`
+- `git diff --check` clean after canonical validation
+- Hardhat not rerun because this is an isolated Node composition boundary with no contract or Hardhat integration change
+
+Protected gas experiments remained untracked and unchanged:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+  SHA-256 `5c2f95dcce48b1a2346a6ec8c29b61c372d6e2271fa79d9892aa23cb972df6d7`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  SHA-256 `5b99cc2bf6ddb753960829a94f8928e91f765475187caed0dcf5b337b9e2f139`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+  SHA-256 `3155abbaef3d0438e85daf7b79c2f2e200649e3b994d01428e5d765d79190d77`
+
+Current-state provenance/composition now independently establishes:
+- chain identity via 1S.48
+- verified deployment address via 1S.49
+- current deployment code identity via 1S.50
+- current chain timestamp via 1S.51
+- current route/amount evidence composition via 1S.52
+- current economics evidence composition via 1S.53
+
+Remaining work:
+- 1S.53 does not establish full current executable readiness
+- balance/allowance semantics remain unresolved and must not be manufactured from fixture semantics
+- orchestration of independently established current-state evidence remains future work
+- `preflightEvidence` remains authoritative qualification-lineage identity and should not be independently reacquired merely to populate current state
+- controlled live execution remains a separate explicit future action
+
+## 1S.54 — Unsupported Balance/Allowance Gate Correction
+
+Status: CODE COMPLETE / TESTED / CHECKPOINT PENDING COMMIT/PUSH
+
+### Architectural finding
+
+The prior current-state execution preflight required:
+
+- `balanceAllowanceEvidence.checked === true`
+- `balanceAllowanceEvidence.sufficient === true`
+
+Repository and contract inspection established that this was an unresolved fixture-level placeholder rather than a production acquisition invariant.
+
+The deployed `ProfitBot.sol` execution semantics do not require pre-existing flashloan principal or pre-existing external DEX/Aave allowances:
+
+- `initiateFlashloan()` obtains the principal from Aave.
+- callback accounting excludes the borrowed principal from the pre-existing asset balance.
+- QuickSwap V2 and SushiSwap V2 approvals are established during execution with `forceApprove`.
+- Uniswap V3 approval is established during execution with `forceApprove`.
+- Balancer V2 approval is established during execution with `forceApprove`.
+- Aave repayment approval is established during the callback with `forceApprove(address(POOL), totalDebt)`.
+
+Git history confirmed the generic `{ checked, sufficient }` gate, its fixture, and its negative test were introduced together in `0df15e0` without concrete token, account, spender, amount, block, RPC, or acquisition semantics.
+
+Earlier checkpoints explicitly required that these fixture semantics not be reinterpreted as requiring pre-existing flashloan principal or external allowances.
+
+### 1S.54 correction
+
+Modified:
+
+- `scripts/utils/polygonV4CurrentStateExecutionPreflightEvidence.js`
+- `test/polygonV4CurrentStateExecutionPreflightEvidence.test.js`
+
+Production removes only the unsupported generic balance/allowance boolean gate.
+
+No replacement boolean or fabricated acquisition primitive was introduced.
+
+The regression test now proves that current-state execution preflight can succeed without `balanceAllowanceEvidence` while preserving the exact injected `currentStateEvidence` identity and all other established preflight requirements.
+
+Unchanged safety ownership includes:
+
+- Polygon chain identity
+- deployment executor address/code identity
+- route/amount identity
+- economics identity
+- freshness/deadline checks
+- authoritative qualification/preflight identity
+- upstream authorization remaining false
+
+1S.54 does not establish signer native-POL transaction funding. Any future signer-funding requirement must be modeled separately and precisely rather than folded into ProfitBot ERC-20 allowance semantics.
+
+### Validation
+
+Focused current-state preflight test:
+
+- 24 tests
+- 24 pass
+- 0 fail
+
+Canonical Node validation:
+
+- exit 0
+- 959 tests
+- 5 suites
+- 959 pass
+- 0 fail
+- 0 cancelled
+- 0 skipped
+- 0 todo
+
+The new regression test was explicitly discovered by the canonical runner.
+
+`git diff --check` is clean.
+
+The three protected gas experiments remain untracked and unchanged:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+No protected gas experiment was modified, staged, committed, promoted, or executed.
+
+### Remaining architecture
+
+1S.54 corrects an unsupported current-state prerequisite; it does not itself assemble full current-state evidence.
+
+Remaining work includes deliberate orchestration of independently established current-state constituents.
+
+`preflightEvidence` remains authoritative qualification-lineage identity and must not be independently reacquired merely to populate current state.
+
+Signer transaction funding, if required as a separate current-state prerequisite, remains a distinct future design question.
+
+Controlled live execution remains a separate explicit future action.
+
+The intended gas-evidence sequence remains:
+
+controlled live measurement -> successful transaction receipt -> empirical `gasUsed` evidence -> controlled gas-evidence handoff -> evaluation of the three protected gas experiments -> evidence-based gas policy.
+
+## 1S.55 — Current Freshness Evidence Composition
+
+Status: CODE COMPLETE / TESTED / CHECKPOINT PENDING COMMIT/PUSH
+
+### Production boundary
+
+Added:
+- `scripts/utils/polygonV4CurrentFreshnessEvidenceComposition.js`
+- `test/polygonV4CurrentFreshnessEvidenceComposition.test.js`
+
+`buildCurrentFreshnessEvidenceComposition({
+  preparedExecutionContext,
+  currentChainTimestampEvidence
+})` composes the freshness shape required by current-state execution preflight.
+
+It:
+- requires both inputs to be non-array objects;
+- takes the authoritative `deadline` from `preparedExecutionContext`;
+- takes the independently acquired `currentTimestamp` from `currentChainTimestampEvidence`;
+- requires both values to be positive safe integers;
+- returns frozen `freshnessEvidence` containing exactly:
+  - `deadline`
+  - `currentTimestamp`
+- returns `currentFreshnessEvidenceCompositionReady: true`.
+
+### Authority separation
+
+1S.55 does NOT:
+- call RPC;
+- reacquire a block or timestamp;
+- use `Date.now()`;
+- calculate or refresh a deadline;
+- inspect deadline duration;
+- determine whether freshness is expired;
+- perform qualification or authorization;
+- perform signing, submission, broadcast, or live execution;
+- establish or modify gas policy.
+
+Expiry remains owned by
+`polygonV4CurrentStateExecutionPreflightEvidence.js`, which rejects
+`currentTimestamp >= deadline`.
+
+A regression test deliberately proves that 1S.55 will compose evidence
+where `currentTimestamp === deadline`; composition establishes provenance
+and shape, while current-state preflight decides executability.
+
+### Validation
+
+Focused:
+- 5 tests
+- 5 pass
+- 0 fail
+
+Canonical Node:
+- exit 0
+- 964 tests
+- 964 pass
+- 0 fail
+- 7 suites
+
+Baseline before 1S.55 was 959 tests, so the +5 tests are fully accounted for.
+
+Hardhat was not rerun because this is isolated Node composition logic with
+no Solidity change.
+
+### Protected gas experiments
+
+The three protected untracked gas experiments remain outside 1S.55 and
+were not executed, staged, modified, promoted, or committed.
+
+### Remaining architecture
+
+Current-state constituents now have explicit production boundaries for:
+- chain identity;
+- deployment code identity;
+- route/amount;
+- economics;
+- freshness.
+
+There is still no production orchestrator calling
+`buildCurrentStateExecutionPreflightEvidence`.
+
+Future orchestration must preserve independently established constituent
+evidence and existing qualification-lineage identities rather than
+reacquiring, reconstructing, or manufacturing them.
+
+Signer native POL transaction funding remains a distinct concern and must
+not be conflated with the removed unsupported ProfitBot ERC20
+balance/allowance gate.
+
+Controlled live execution and empirical receipt gas remain separate future
+actions. No gas margin, multiplier, or fixed buffer has been promoted.
+
+## 1S.56 — Current-State Evidence Composition
+
+Status: COMPLETE / VALIDATED; pending commit and push.
+
+Objective:
+- Add a narrow current-state evidence composition boundary before any broader orchestration.
+- Assemble only independently established current-state evidence identities.
+- Preserve qualification-lineage preflight identity from readiness evidence.
+- Do not call current-state execution preflight from this composition boundary.
+
+Production:
+- `scripts/utils/polygonV4CurrentStateEvidenceComposition.js`
+
+Test:
+- `test/polygonV4CurrentStateEvidenceComposition.test.js`
+
+Production API:
+- `buildCurrentStateEvidenceComposition({...})`
+
+Inputs:
+- `readinessEvidence`
+- `currentChainIdentityAcquisitionEvidence`
+- `currentDeploymentCodeIdentityAcquisitionEvidence`
+- `currentRouteAmountEvidenceComposition`
+- `currentEconomicsEvidenceComposition`
+- `currentFreshnessEvidenceComposition`
+
+Provenance requirements:
+- `readinessEvidence.executionEvidenceReady === true`
+- Each constituent boundary wrapper must be an object.
+- Each constituent boundary ready flag must be exactly `true`.
+- Each constituent inner evidence value must be an object.
+- `readinessEvidence.qualifiedContext.qualificationResult.preflight`
+  must be an object and is the authoritative preflight identity.
+
+Output:
+- Frozen result:
+  - `currentStateEvidence`
+  - `currentStateEvidenceCompositionReady: true`
+- Frozen `currentStateEvidence` has exactly:
+  - `chainEvidence`
+  - `deploymentEvidence`
+  - `routeAmountEvidence`
+  - `economicsEvidence`
+  - `freshnessEvidence`
+  - `preflightEvidence`
+
+Identity/ownership:
+- All six evidence objects are preserved by exact identity.
+- `preflightEvidence` comes from
+  `readinessEvidence.qualifiedContext.qualificationResult.preflight`.
+- No unrelated input fields are copied.
+- No `balanceAllowanceEvidence` is introduced or copied.
+- Inner chain/deployment/route/economics/freshness semantics are not
+  revalidated here; their established boundaries own those semantics.
+- Qualification/execution admissibility and current freshness expiration
+  remain owned by current-state execution preflight.
+- This boundary does not duplicate live/signer/broadcast authorization
+  checks.
+
+Explicit non-goals:
+- No RPC acquisition.
+- No route discovery or reconstruction.
+- No quote/economics/gas recalculation.
+- No deadline calculation or freshness decision.
+- No balance/allowance placeholder.
+- No signing, authorization, submission, broadcast, or live execution.
+- No gas-policy promotion.
+- No protected gas-experiment execution.
+- No full current-state orchestration.
+
+Validation:
+- Initial RED: `MODULE_NOT_FOUND` before production existed.
+- Initial GREEN: 1/1.
+- Readiness provenance gate added after confirming precedent in
+  current-state preflight and current economics composition.
+- Hardened focused suite: 7/7 pass.
+- Syntax checks: clean.
+- `git diff --check`: clean.
+- Canonical `npm run test:node`: 971/971 pass, 0 fail.
+- Canonical suite explicitly discovered
+  `Polygon V4 current-state evidence composition` as suite 251.
+- Hardhat not rerun because 1S.56 is an isolated Node composition boundary.
+- Protected gas experiment files remained untracked and were not executed,
+  modified, staged, or promoted.
+
+Protected gas experiments remain outside 1S.56:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Commit and push 1S.56 after exact staging review.
+- After 1S.56 is durably closed, reassess whether the next boundary should
+  be broader current-state orchestration; do not automatically build one
+  without first reviewing ownership and remaining evidence gaps.
+
+## 1S.57 — Current-State Preflight Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.56 current-state evidence composition into the already-established current-state execution preflight boundary without reacquiring, reconstructing, or duplicating current-state semantics.
+
+### Production
+- `scripts/utils/polygonV4CurrentStatePreflightCompositionEvidence.js`
+- API:
+  `buildCurrentStatePreflightCompositionEvidence({ readinessEvidence, currentStateEvidenceComposition })`
+
+### Test
+- `test/polygonV4CurrentStatePreflightCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `readinessEvidence` to be an object.
+- Requires `currentStateEvidenceComposition` to be an object.
+- Requires `currentStateEvidenceComposition.currentStateEvidenceCompositionReady === true`.
+- Requires the composed `currentStateEvidence` to be an object.
+- Passes the exact readiness evidence and exact composed current-state evidence into the established `buildCurrentStateExecutionPreflightEvidence(...)` boundary.
+- Preserves the exact 1S.56 composition wrapper identity.
+- Preserves the established returned current-state preflight evidence rather than reconstructing it.
+- Returns a frozen wrapper with exactly:
+  - `currentStateEvidenceComposition`
+  - `currentStatePreflightEvidence`
+  - `currentStatePreflightCompositionReady: true`
+
+### Ownership
+The existing current-state execution preflight remains authoritative for:
+- execution-readiness provenance;
+- authorization remaining false;
+- Polygon chain identity;
+- deployment executor/code identity correspondence;
+- route/amount identity;
+- economics identity;
+- freshness and expiry;
+- qualification state;
+- authoritative qualification-preflight identity.
+
+1S.57 does not duplicate those validations.
+
+### Authorization boundary
+1S.57 does not introduce `liveExecutionAuthorized`, `signerAuthorized`, or `broadcastAuthorized` fields on its wrapper.
+The underlying established current-state preflight remains explicitly:
+- `liveExecutionAuthorized: false`
+- `signerAuthorized: false`
+- `broadcastAuthorized: false`
+
+1S.57 therefore does not authorize signing, broadcast, submission, or live execution.
+
+### Non-goals
+No RPC acquisition, chain/code/timestamp reacquisition, route discovery, amount selection, economics recalculation, gas calculation or policy, balance/allowance placeholder, signing, submission, broadcast, live execution, or protected gas-experiment integration.
+
+### Validation
+- Initial RED: 1/1 failed solely with expected `MODULE_NOT_FOUND`.
+- Initial minimal implementation GREEN: 1/1.
+- Hardened focused suite: 5/5 passed.
+- Production and test syntax checks passed.
+- `git diff --check` clean before canonical.
+- Protected gas experiment tracked diff empty.
+- Canonical `npm run test:node`: RC 0.
+- 1S.57 explicitly discovered as top-level suite `ok 276`.
+- Canonical totals: 976 tests, 9 suites, 976 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 971 tests; the five 1S.57 tests account exactly for the increase to 976.
+- Hardhat was not rerun because 1S.57 is an isolated Node composition boundary.
+- Protected gas experiments were not promoted or executed as part of 1S.57.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.57 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.57 durably closed.
+
+## 1S.58 — Deployed-Account Identity Acquisition Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.57 current-state preflight composition into the established 1S.47 deployed-account identity acquisition boundary without duplicating account acquisition, identity validation, or authorization semantics.
+
+### Production
+- `scripts/utils/polygonV4DeployedAccountIdentityAcquisitionCompositionEvidence.js`
+- API:
+  `buildDeployedAccountIdentityAcquisitionCompositionEvidence({ currentStatePreflightCompositionEvidence, getCallerAddress, getExecutorOwner })`
+
+### Test
+- `test/polygonV4DeployedAccountIdentityAcquisitionCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `currentStatePreflightCompositionEvidence` to be an object.
+- Requires `currentStatePreflightCompositionEvidence.currentStatePreflightCompositionReady === true`.
+- Requires its composed `currentStatePreflightEvidence` to be an object.
+- Passes the exact composed current-state preflight evidence into the established `acquireDeployedAccountIdentityEvidence(...)` boundary.
+- Passes `getCallerAddress` and `getExecutorOwner` through to that established acquisition boundary.
+- Preserves the exact 1S.57 composition wrapper identity.
+- Preserves the returned deployed-account acquisition evidence rather than reconstructing it.
+- Returns a frozen wrapper containing:
+  - `currentStatePreflightCompositionEvidence`
+  - `deployedAccountIdentityAcquisitionEvidence`
+  - `deployedAccountIdentityAcquisitionCompositionReady: true`
+
+### Ownership
+The established 1S.47 deployed-account acquisition remains authoritative for:
+- deriving the executor address from current-state deployment evidence;
+- invoking `getCallerAddress()` exactly once;
+- invoking `getExecutorOwner(executorAddress)` exactly once with the derived executor;
+- validating acquired addresses as nonzero addresses;
+- constructing frozen account identity evidence;
+- keeping live, signer, and broadcast authorization false.
+
+The subsequent account/caller identity boundary remains authoritative for:
+- caller identity matching deployed ProfitBot owner;
+- account executor identity matching deployed executor identity.
+
+1S.58 deliberately does not perform either correspondence decision.
+
+### Authorization boundary
+The 1S.58 wrapper does not introduce:
+- `liveExecutionAuthorized`
+- `signerAuthorized`
+- `broadcastAuthorized`
+
+The delegated deployed-account acquisition evidence remains explicitly:
+- `liveExecutionAuthorized: false`
+- `signerAuthorized: false`
+- `broadcastAuthorized: false`
+
+1S.58 therefore does not authorize signing, broadcast, submission, or live execution.
+
+### Non-goals
+No hard-coded caller/owner/executor identity, direct RPC acquisition, deployment discovery, caller/owner correspondence decision, prospective-signer validation, unsigned transaction construction, gas calculation or policy, signing, submission, broadcast, live execution, or protected gas-experiment integration.
+
+### Validation
+- Initial existence probe passed only by asserting expected `MODULE_NOT_FOUND`.
+- Behavioral RED: 0/1 passed; failed solely with expected `MODULE_NOT_FOUND` for the new production module.
+- Minimal production implementation GREEN: 1/1.
+- Hardened focused suite: 5/5 passed.
+- Production and test syntax checks passed.
+- `git diff --check` clean before and after canonical.
+- Protected gas experiment tracked diff empty.
+- Canonical `npm run test:node`: RC 0.
+- Five 1S.58 tests explicitly discovered as top-level tests `ok 383` through `ok 387`.
+- Canonical totals: 981 tests, 9 suites, 981 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 976 tests; the five 1S.58 tests account exactly for the increase to 981.
+- Hardhat was not rerun because 1S.58 is an isolated Node composition boundary.
+- Protected gas experiments were not promoted or executed as part of 1S.58.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.58 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.58 durably closed.
+
+## 1S.59 — Account/Caller Identity Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.58 deployed-account identity acquisition composition into the established account/caller identity validation boundary without duplicating identity correspondence or authorization semantics.
+
+### Production
+- `scripts/utils/polygonV4AccountCallerIdentityCompositionEvidence.js`
+- API:
+  `buildAccountCallerIdentityCompositionEvidence({ deployedAccountIdentityAcquisitionCompositionEvidence })`
+
+### Test
+- `test/polygonV4AccountCallerIdentityCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `deployedAccountIdentityAcquisitionCompositionEvidence` to be an object.
+- Requires `deployedAccountIdentityAcquisitionCompositionReady === true`.
+- Requires the contained deployed-account acquisition evidence to be an object.
+- Requires `deployedAccountIdentityAcquisitionReady === true`.
+- Extracts the exact `currentStatePreflightEvidence` and exact `accountIdentityEvidence` from the established acquisition evidence.
+- Passes those exact objects into the established `buildAccountCallerIdentityEvidence(...)` validator.
+- Preserves the exact 1S.58 composition wrapper identity.
+- Preserves the returned account/caller identity evidence rather than reconstructing it.
+- Returns a frozen wrapper containing:
+  - `deployedAccountIdentityAcquisitionCompositionEvidence`
+  - `accountCallerIdentityEvidence`
+  - `accountCallerIdentityCompositionReady: true`
+
+### Validation ownership
+The established account/caller identity validator remains authoritative for:
+- validating caller, owner, and executor addresses;
+- requiring caller identity to match the deployed ProfitBot owner;
+- requiring acquired account executor identity to match the deployed executor identity;
+- preserving current-state preflight and account identity evidence;
+- keeping live, signer, and broadcast authorization false.
+
+1S.59 does not duplicate those correspondence decisions.
+
+### Authorization boundary
+The 1S.59 wrapper does not introduce:
+- `liveExecutionAuthorized`
+- `signerAuthorized`
+- `broadcastAuthorized`
+
+The delegated account/caller identity evidence remains explicitly:
+- `liveExecutionAuthorized: false`
+- `signerAuthorized: false`
+- `broadcastAuthorized: false`
+
+1S.59 therefore does not authorize signing, broadcast, submission, or live execution.
+
+### Non-goals
+No account acquisition, RPC access, hard-coded wallet or executor identity, duplicated caller/owner comparison, duplicated executor/deployment comparison, prospective-signer validation, unsigned transaction construction, gas calculation or policy, signing, submission, broadcast, live execution, or protected gas-experiment integration.
+
+### Validation
+- Behavioral RED: 0/1 passed; failed solely with expected `MODULE_NOT_FOUND` for the new production module.
+- Minimal production implementation GREEN: 1/1.
+- Hardened focused suite: 7/7 passed.
+- Hardened tests prove caller/owner mismatch rejection is propagated from the established validator.
+- Hardened tests prove executor/deployment mismatch rejection is propagated from the established validator.
+- Production and test syntax checks passed.
+- `git diff --check` clean before canonical.
+- Protected gas experiment tracked diff empty.
+- Canonical `npm run test:node`: RC 0.
+- Seven 1S.59 tests explicitly discovered as top-level tests `ok 139` through `ok 145`.
+- Canonical totals: 988 tests, 9 suites, 988 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 981 tests; the seven 1S.59 tests account exactly for the increase to 988.
+- A subsequent accidental second canonical invocation was interrupted with Ctrl+C; the already-completed successful canonical result above remains authoritative.
+- Post-interrupt `git diff --check` remained clean and repository status remained unchanged.
+- Hardhat was not rerun because 1S.59 is an isolated Node composition boundary.
+- Protected gas experiments were not promoted or executed as part of 1S.59.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.59 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.59 durably closed.
+
+## 1S.60 — Unsigned Exact Transaction Intent Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.59 account/caller identity composition into the established unsigned exact transaction intent boundary without duplicating transaction-intent construction or validation semantics.
+
+### Production
+- `scripts/utils/polygonV4UnsignedExactTransactionIntentCompositionEvidence.js`
+- API:
+  `buildUnsignedExactTransactionIntentCompositionEvidence({ accountCallerIdentityCompositionEvidence })`
+
+### Test
+- `test/polygonV4UnsignedExactTransactionIntentCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `accountCallerIdentityCompositionEvidence` to be an object.
+- Requires `accountCallerIdentityCompositionReady === true`.
+- Requires the contained `accountCallerIdentityEvidence` to be an object.
+- Requires `accountCallerIdentityReady === true`.
+- Passes the exact established `accountCallerIdentityEvidence` into `buildUnsignedExactTransactionIntentEvidence(...)`.
+- Preserves the exact 1S.59 composition wrapper identity.
+- Preserves the established unsigned transaction intent evidence rather than reconstructing it.
+- Returns a frozen wrapper containing:
+  - `accountCallerIdentityCompositionEvidence`
+  - `unsignedTransactionIntentEvidence`
+  - `unsignedExactTransactionIntentCompositionReady: true`
+
+### Validation ownership
+The established unsigned exact transaction intent builder remains authoritative for:
+- current-state preflight readiness and authorization state;
+- candidate, execution-leg, and execution-plan identity correspondence;
+- exactly-three-leg route validation;
+- route token validity, continuity, and closure;
+- positive flashloan amount;
+- flashloan-token derivation from the preserved route;
+- caller/owner identity correspondence;
+- account executor/deployed executor correspondence;
+- `initiateFlashloan(...)` calldata encoding;
+- construction of the unsigned transaction intent `{ from, to, data, value }`.
+
+1S.60 does not duplicate or reinterpret those decisions.
+
+### Authorization boundary
+The 1S.60 wrapper introduces no live, signer, or broadcast authorization fields.
+The delegated unsigned transaction intent evidence remains explicitly unauthorized for live execution, signing, and broadcast.
+
+### Non-goals
+No RPC acquisition, route discovery, quote refresh, amount selection, calldata reconstruction, signer identity acquisition, nonce or fee acquisition, gas estimation, gas-limit selection, signing, submission, broadcast, live execution, gas policy, or protected gas-experiment integration.
+
+### Validation
+- Behavioral RED: 0/1, failing solely with expected `MODULE_NOT_FOUND` for the new production module.
+- Minimal production implementation GREEN: 1/1.
+- Hardened focused suite: 7/7 passed.
+- Hardened tests prove invalid preserved route rejection is propagated from the established unsigned-intent builder.
+- Hardened tests prove caller/owner rejection is propagated from the established unsigned-intent builder.
+- Production and test syntax checks passed.
+- `git diff --check` clean.
+- Protected gas experiment tracked diff empty.
+- Canonical `npm run test:node`: RC 0.
+- Six uniquely named 1S.60 tests explicitly discovered as top-level tests `ok 914` through `ok 919`; the authorization test is included in the canonical total.
+- Canonical totals: 995 tests, 9 suites, 995 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 988 tests; seven 1S.60 tests account exactly for the increase to 995.
+- Hardhat was not rerun.
+- Protected gas experiments were not staged, promoted, or executed.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.60 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.60 durably closed.
+
+## 1S.61 — Current Transaction Parameter Acquisition Composition Evidence
+
+Status: COMPLETE / VALIDATED; pending exact staging, commit, push, and synchronization.
+
+### Objective
+Bridge the completed 1S.60 unsigned exact transaction intent composition into the established current transaction parameter acquisition boundary without duplicating RPC acquisition, nonce validation, fee validation, or transaction-intent correspondence checks.
+
+### Production
+- `scripts/utils/polygonV4CurrentTransactionParameterAcquisitionCompositionEvidence.js`
+- API:
+  `buildCurrentTransactionParameterAcquisitionCompositionEvidence({ unsignedExactTransactionIntentCompositionEvidence, provider })`
+
+### Test
+- `test/polygonV4CurrentTransactionParameterAcquisitionCompositionEvidence.test.js`
+
+### Provenance and behavior
+- Requires `unsignedExactTransactionIntentCompositionEvidence` to be an object.
+- Requires `unsignedExactTransactionIntentCompositionReady === true`.
+- Requires the contained `unsignedTransactionIntentEvidence` to be an object.
+- Requires `unsignedTransactionIntentReady === true`.
+- Passes the exact established unsigned transaction intent evidence and injected provider into `acquireCurrentTransactionParameterEvidence(...)`.
+- Preserves the exact 1S.60 composition wrapper identity.
+- Preserves the exact acquired current transaction parameter evidence.
+- Returns a frozen wrapper containing:
+  - `unsignedExactTransactionIntentCompositionEvidence`
+  - `currentTransactionParameterEvidence`
+  - `currentTransactionParameterAcquisitionCompositionReady: true`
+
+### Acquisition and validation ownership
+The established current transaction parameter acquisition remains authoritative for:
+- preserved account/caller and current-state preflight readiness;
+- upstream authorization remaining false;
+- candidate, execution-leg, and execution-plan identity correspondence;
+- transaction `from` correspondence with the preserved caller;
+- transaction `to` correspondence with the preserved executor;
+- transaction intent data and zero-value validation;
+- provider capability validation;
+- fresh `getNetwork()` acquisition and exact Polygon chain ID 137 validation;
+- exact pending nonce acquisition via `getTransactionCount(transactionIntent.from, "pending")`;
+- current `getFeeData()` acquisition;
+- positive EIP-1559 `maxFeePerGas` and `maxPriorityFeePerGas`;
+- `maxFeePerGas >= maxPriorityFeePerGas`.
+
+The 1S.61 wrapper makes no RPC calls itself and introduces no nonce or fee policy.
+
+### Authorization boundary
+The 1S.61 wrapper introduces no live, signer, or broadcast authorization fields.
+The delegated current transaction parameter evidence remains explicitly unauthorized for live execution, signing, and broadcast.
+
+### Non-goals
+No historical nonce or fee reuse, fee multiplier, fee buffer, gas estimation, gas-limit selection, signer acquisition, signing, submission, broadcast, live execution, gas policy, or protected gas-experiment integration.
+
+Synthetic nonce `7` and fee values `100` / `10` used by focused tests are test fixtures only and are not current Polygon transaction parameters or production fee policy.
+
+### Validation
+- Behavioral RED: 0/1, failing solely with expected `MODULE_NOT_FOUND` for the new production module.
+- Minimal production implementation GREEN: 1/1.
+- Hardened focused suite: 7/7 passed.
+- Wrong-chain rejection is propagated from the established parameter acquisition and stops before nonce/fee acquisition.
+- Invalid pending nonce rejection is propagated and stops before fee acquisition.
+- Successful focused acquisition calls `getNetwork`, `getTransactionCount`, and `getFeeData` exactly once each through the established acquisition boundary.
+- Production and test syntax checks passed.
+- `git diff --check` clean.
+- Production audit confirms no direct RPC methods, fee arithmetic, nonce manipulation, signing, submission, or authorization advancement in the 1S.61 wrapper.
+- Canonical `npm run test:node`: RC 0.
+- Seven 1S.61 tests explicitly discovered as top-level tests `ok 345` through `ok 351`.
+- Canonical totals: 1002 tests, 9 suites, 1002 pass, 0 fail, 0 cancelled, 0 skipped, 0 todo.
+- Previous canonical baseline was 995 tests; seven 1S.61 tests account exactly for the increase to 1002.
+- Protected gas experiment names did not appear in canonical output.
+- Hardhat was not rerun.
+- Protected gas experiments were not staged, promoted, or executed.
+
+### Next
+Normalize/check the checkpoint, exact-stage only the checkpoint plus the two 1S.61 files, verify protected experiments remain unstaged, then commit/push/synchronize before declaring 1S.61 durably closed.
+
+## 1S.62 — Current Transaction Gas Estimation Acquisition Composition Evidence
+
+Status: COMPLETE / canonical green; pending commit and push.
+
+Added:
+- `scripts/utils/polygonV4CurrentTransactionGasEstimationAcquisitionCompositionEvidence.js`
+- `test/polygonV4CurrentTransactionGasEstimationAcquisitionCompositionEvidence.test.js`
+
+Purpose:
+- Bridge the exact completed 1S.61 current transaction parameter acquisition composition into the established current transaction gas estimation acquisition boundary.
+- Preserve immediate composition provenance without duplicating gas-estimation semantics.
+
+Production behavior:
+- Requires the 1S.61 composition evidence object.
+- Requires `currentTransactionParameterAcquisitionCompositionReady === true`.
+- Requires the contained `currentTransactionParameterEvidence` object.
+- Requires `currentTransactionParametersReady === true`.
+- Delegates the exact parameter evidence and injected provider to `acquireCurrentTransactionGasEstimationEvidence`.
+- Returns a frozen composition wrapper with `currentTransactionGasEstimationAcquisitionCompositionReady === true`.
+- Does not directly call `estimateGas`.
+- Does not introduce a gas multiplier, buffer, gas-limit policy, signing, submission, broadcast, or authorization advancement.
+
+Evidence semantics:
+- `estimatedGasUnits` remains current transaction gas-estimation evidence only.
+- It is not empirical transaction `gasUsed`.
+- Synthetic `653000` used by tests is not a live Polygon gas measurement and is not production gas policy.
+- No protected gas experiment was promoted or executed.
+
+Validation:
+- Behavioral RED: 0/1 solely because the new production module did not yet exist.
+- Minimal GREEN: 1/1.
+- Hardened focused suite: 7/7.
+- Canonical Node baseline: 1002.
+- Canonical Node after 1S.62: 1009/1009, 9 suites, 0 failures/cancelled/skipped/todo, RC 0.
+- Six uniquely named 1S.62 tests explicitly discovered as top-level tests 302-307; seventh authorization test accounts for the exact +7 total.
+- Protected gas experiment names absent from canonical output.
+- `git diff --check` clean.
+- Hardhat not rerun because this change is Node utility composition/test evidence only.
+
+Protected gas experiments remain untracked and untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Verify checkpoint tail/diff.
+- Stage only the checkpoint and the two 1S.62 files.
+- Verify protected files remain unstaged.
+- Commit and push 1S.62.
+
+## 1S.63 — Current Transaction Gas Limit Selection Composition Evidence
+
+Status: COMPLETE / canonical green; pending commit and push.
+
+Added:
+- `scripts/utils/polygonV4CurrentTransactionGasLimitSelectionCompositionEvidence.js`
+- `test/polygonV4CurrentTransactionGasLimitSelectionCompositionEvidence.test.js`
+
+Purpose:
+- Bridge the exact completed 1S.62 gas estimation acquisition composition into the established current transaction gas-limit selection boundary.
+- Preserve immediate composition provenance without introducing new gas policy.
+
+Production behavior:
+- Requires the 1S.62 composition evidence object.
+- Requires `currentTransactionGasEstimationAcquisitionCompositionReady === true`.
+- Requires the contained `currentTransactionGasEstimationEvidence` object.
+- Requires `currentTransactionGasEstimationReady === true`.
+- Delegates the exact estimation evidence to `selectCurrentTransactionGasLimitEvidence`.
+- Returns a frozen composition wrapper with `currentTransactionGasLimitSelectionCompositionReady === true`.
+- Does not perform gas arithmetic, estimation, signing, submission, broadcast, or authorization advancement.
+
+Gas semantics:
+- Established selector uses the exact `estimatedGasUnits` BigNumber as `selectedGasLimit`.
+- No percentage margin or fixed buffer is added.
+- No qualification-policy, historical receipt, archived experimental, or empirical receipt gas is substituted.
+- Synthetic `900123` is test data only and is not a production Polygon gas limit.
+- Gas estimation/selection remains distinct from empirical live transaction `gasUsed`.
+
+Validation:
+- Behavioral RED: 0/1 solely because the new production module did not yet exist.
+- Minimal GREEN: 1/1.
+- Hardened focused suite: 7/7.
+- Canonical baseline: 1009 tests.
+- Canonical after 1S.63: 1016/1016, 9 suites, 0 failures/cancelled/skipped/todo, RC 0.
+- Six uniquely named 1S.63 tests explicitly discovered as top-level tests 337-342; seventh authorization test accounts for the exact +7 total.
+- Protected gas experiment names absent from canonical output.
+- Production gas-policy/execution token audit clean.
+- `git diff --check` clean.
+- Hardhat not rerun.
+
+Protected gas experiments remain untracked, unstaged, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Verify checkpoint tail and diff.
+- Stage only the checkpoint and two 1S.63 files.
+- Verify protected experiments remain unstaged.
+- Commit, push, and verify synchronization before declaring 1S.63 durably closed.
+
+## 1S.64 — Current Transaction Envelope Composition Evidence
+
+Status: COMPLETE / canonical green; pending commit and push.
+
+Added:
+- `scripts/utils/polygonV4CurrentTransactionEnvelopeCompositionEvidence.js`
+- `test/polygonV4CurrentTransactionEnvelopeCompositionEvidence.test.js`
+
+Purpose:
+- Bridge the exact completed 1S.63 gas-limit selection composition into the established 1S.33 current transaction envelope boundary.
+- Preserve immediate composition provenance without rebuilding or reacquiring transaction fields.
+
+Production behavior:
+- Requires the 1S.63 composition evidence object.
+- Requires `currentTransactionGasLimitSelectionCompositionReady === true`.
+- Requires the contained `currentTransactionGasLimitSelectionEvidence` object.
+- Requires `currentTransactionGasLimitSelectionReady === true`.
+- Delegates the exact selection evidence to `buildCurrentTransactionEnvelopeEvidence`.
+- Returns a frozen composition wrapper with `currentTransactionEnvelopeCompositionReady === true`.
+- Does not perform RPC, nonce/fee/gas reacquisition, gas arithmetic, signing, submission, broadcast, or authorization advancement.
+
+Envelope semantics:
+- Established 1S.33 builder owns deterministic envelope construction from upstream evidence.
+- Exact selected gas-limit BigNumber identity is preserved as `transactionEnvelope.gasLimit`.
+- No gas margin, fixed buffer, historical receipt gas, protected experimental gas, or empirical `gasUsed` is substituted.
+- Synthetic `827233` is test data only and is not a production Polygon gas limit.
+- Gas selection/envelope composition remains distinct from empirical live transaction `gasUsed`.
+
+Validation:
+- Behavioral RED: 0/1 solely because the new production module did not yet exist.
+- Minimal GREEN: 1/1.
+- Hardened focused suite: 7/7.
+- Canonical baseline: 1016 tests.
+- Canonical after 1S.64: 1023/1023, 9 suites, 0 failures/cancelled/skipped/todo, RC 0.
+- Six uniquely named 1S.64 tests explicitly discovered as top-level tests 284-289; seventh authorization test accounts for the exact +7 total.
+- Protected gas experiment names absent from canonical output.
+- Production execution/reacquisition audit clean.
+- Hardhat not rerun.
+
+Protected gas experiments remain untracked, unstaged, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Verify checkpoint tail and `git diff --check`.
+- Stage only the checkpoint and two 1S.64 files.
+- Verify protected experiments remain unstaged.
+- Commit, push, and verify synchronization before declaring 1S.64 durably closed.
+
+## 1S.65 — Current Transaction Pre-Send Simulation Acquisition Composition Evidence
+
+Status: implementation, focused tests, and canonical validation complete; commit/push pending.
+
+Added:
+- `scripts/utils/polygonV4CurrentTransactionPreSendSimulationAcquisitionCompositionEvidence.js`
+- `test/polygonV4CurrentTransactionPreSendSimulationAcquisitionCompositionEvidence.test.js`
+
+Boundary:
+- consumes the completed 1S.64 current transaction envelope composition evidence
+- requires the outer composition and contained envelope evidence to be ready
+- preserves the exact established envelope evidence
+- delegates to the established `acquireCurrentTransactionPreSendSimulationEvidence`
+- does not duplicate the seven-field `provider.call` projection
+- established acquisition owns the single read-only simulation call and upstream correspondence validation
+- no signing, signer authorization, live-execution authorization, submission, or broadcast is introduced
+
+Focused validation:
+- initial RED was solely `MODULE_NOT_FOUND`
+- minimal implementation GREEN 1/1
+- hardened focused suite GREEN 7/7
+- exact seven-field simulation projection verified through delegation
+- provider simulation failure propagates without authorization advancement
+- `git diff --check` clean
+
+Evidence limits:
+- test simulation results are synthetic fixtures only
+- no live Polygon simulation result is claimed
+- current estimate/selected gas/envelope gas limit remains distinct from empirical receipt `gasUsed`
+- no gas multiplier, buffer, or gas policy is introduced
+
+Protected gas experiments remain untracked, unstaged, unmodified, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Canonical validation:
+- `npm run test:node` RC 0
+- 1030 tests / 1030 pass
+- 9 suites
+- 0 fail / 0 cancelled / 0 skipped / 0 todo
+- exact +7 tests from the 1023 baseline
+- all seven 1S.65 focused cases explicitly discovered
+- protected gas experiment names absent from canonical discovery
+- Hardhat was not rerun
+
+Next:
+- stage only the exact 1S.65 production file, test file, and checkpoint
+- verify protected gas experiments remain unstaged
+- commit and push only after staged-diff verification
+
+## 1S.66 — Prospective Signer Identity Acquisition Composition Evidence
+
+Status: implementation, focused tests, and canonical validation complete; commit/push pending.
+
+Added:
+- `scripts/utils/polygonV4ProspectiveSignerIdentityAcquisitionCompositionEvidence.js`
+- `test/polygonV4ProspectiveSignerIdentityAcquisitionCompositionEvidence.test.js`
+
+Boundary:
+- consumes completed 1S.65 pre-send simulation acquisition composition evidence
+- requires the outer composition and contained pre-send simulation evidence to be ready
+- preserves the exact established pre-send simulation evidence
+- passes injected `getSignerAddress` through to the established `acquireProspectiveSignerIdentityEvidence`
+- established 1S.35 acquisition owns signer-address normalization and exact comparison with transaction envelope `from`
+- signer address mismatch fails closed
+- no independent address comparison is duplicated in the composition wrapper
+- no signer authorization, signing, submission, broadcast, or live-execution authorization is introduced
+
+Focused validation:
+- initial RED was solely `MODULE_NOT_FOUND`
+- minimal implementation GREEN 1/1
+- hardened focused suite GREEN 7/7
+- signer-address mismatch propagates after exactly one acquisition
+- not-ready composition/simulation fails before signer acquisition
+- successful evidence retains live/signer/broadcast authorization false
+- composition wrapper exposes no authorization flags of its own
+- `git diff --check` clean
+
+Evidence limits:
+- injected signer callback in tests is synthetic
+- no wallet secrets, private keys, seed phrases, or signing capability are acquired
+- signer identity evidence is not signer authorization
+- no transaction is signed, submitted, or broadcast
+
+Protected gas experiments remain untracked, unstaged, unmodified, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Canonical validation:
+- `npm run test:node` RC 0
+- 1037 tests / 1037 pass
+- 9 suites
+- 0 fail / 0 cancelled / 0 skipped / 0 todo
+- exact +7 tests from the 1030 baseline
+- all seven 1S.66 focused cases explicitly discovered
+- protected gas experiment names absent from canonical discovery
+- Hardhat was not rerun
+
+Next:
+- stage only the exact 1S.66 production file, test file, and checkpoint
+- verify protected gas experiments remain unstaged
+- commit and push only after staged-diff verification
+
+## 1S.67 — Signer Authorization Composition Evidence
+
+Status: implementation, focused tests, and canonical validation complete; commit/push pending.
+
+Added:
+- `scripts/utils/polygonV4SignerAuthorizationCompositionEvidence.js`
+- `test/polygonV4SignerAuthorizationCompositionEvidence.test.js`
+
+Boundary:
+- consumes completed 1S.66 prospective signer identity acquisition composition evidence
+- requires the outer composition and contained prospective signer identity evidence to be ready
+- preserves the exact established prospective signer identity evidence
+- passes injected `authorizeSignerIdentity` through to established `acquireSignerAuthorizationEvidence`
+- established 1S.36 owns signer/envelope identity comparison and exact-true authorization semantics
+- successful authorization advances `signerAuthorized` to true
+- `liveExecutionAuthorized` and `broadcastAuthorized` remain false
+- no `signingAuthorized` field is introduced
+- no signer/envelope comparison is duplicated in the composition wrapper
+- no transaction signing, submission, broadcast, or live-execution authorization is performed
+
+Focused validation:
+- initial RED was solely `MODULE_NOT_FOUND`
+- minimal implementation GREEN 1/1
+- hardened focused suite GREEN 7/7
+- outer composition/object readiness fails closed
+- contained prospective signer identity/object readiness fails closed
+- explicit authorization denial propagates after exactly one callback
+- upstream authorization contamination fails before callback
+- successful evidence preserves the distinction between signer authorization and signing authorization
+- `git diff --check` clean
+
+Evidence limits:
+- authorization callback in tests is synthetic
+- signer authorization is not transaction-signing authorization
+- no wallet secret, private key, seed phrase, or signing capability is acquired
+- no transaction is signed, submitted, or broadcast
+
+Protected gas experiments remain untracked, unstaged, unmodified, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Canonical validation:
+- `npm run test:node` RC 0
+- 1044 tests / 1044 pass
+- 9 suites
+- 0 fail / 0 cancelled / 0 skipped / 0 todo
+- exact +7 tests from the 1037 baseline
+- all seven 1S.67 focused cases explicitly discovered
+- protected gas experiment names absent from canonical discovery
+- Hardhat was not rerun
+
+Next:
+- stage only the exact 1S.67 production file, test file, and checkpoint
+- verify protected gas experiments remain unstaged
+- commit and push only after staged-diff verification
+
+## 1S.68 — Signing Authorization Composition Evidence
+
+Status: implementation, focused tests, and canonical validation complete; commit/push pending.
+
+Added:
+- `scripts/utils/polygonV4SigningAuthorizationCompositionEvidence.js`
+- `test/polygonV4SigningAuthorizationCompositionEvidence.test.js`
+
+Boundary:
+- consumes completed 1S.67 signer authorization composition evidence
+- requires the outer composition and contained signer authorization evidence to be ready
+- preserves the exact established signer authorization evidence
+- passes injected `authorizeTransactionSigning` through to established `acquireSigningAuthorizationEvidence`
+- established 1S.37 owns signer/envelope identity comparison and exact-true signing-authorization semantics
+- successful authorization advances `signingAuthorized` to true
+- `signerAuthorized` remains true
+- `liveExecutionAuthorized` and `broadcastAuthorized` remain false
+- no signer capability is acquired or bound
+- no transaction signing, raw signed transaction creation, submission, broadcast, or live-execution authorization is performed
+
+Focused validation:
+- initial RED was solely `MODULE_NOT_FOUND`
+- minimal implementation GREEN 1/1
+- hardened focused suite GREEN 7/7
+- outer composition/object readiness fails closed
+- contained signer authorization/object readiness fails closed
+- explicit signing-authorization denial propagates after exactly one callback
+- upstream signing-authorization contamination fails before callback
+- successful evidence preserves the distinction between signing authorization and actual signing
+- `git diff --check` clean
+
+Evidence limits:
+- authorization callback in tests is synthetic
+- `signingAuthorized: true` is authorization to perform a later signing operation, not proof that signing occurred
+- no signer capability, wallet secret, private key, seed phrase, or raw signed transaction is acquired
+- no transaction is signed, submitted, or broadcast
+
+Protected gas experiments remain untracked, unstaged, unmodified, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Canonical validation:
+- `npm run test:node` RC 0
+- 1051 tests / 1051 pass
+- 9 suites
+- 0 fail / 0 cancelled / 0 skipped / 0 todo
+- exact +7 tests from the 1044 baseline
+- all seven 1S.68 focused cases explicitly discovered
+- protected gas experiment names absent from canonical discovery
+- Hardhat was not rerun
+
+Next:
+- stage only the exact 1S.68 production file, test file, and checkpoint
+- verify protected gas experiments remain unstaged
+- commit and push only after staged-diff verification
+
+## 1S.69 — Signer Capability Binding Composition Evidence
+
+Status: implementation, focused tests, and canonical validation complete; commit/push pending.
+
+Added:
+- `scripts/utils/polygonV4SignerCapabilityBindingCompositionEvidence.js`
+- `test/polygonV4SignerCapabilityBindingCompositionEvidence.test.js`
+
+Boundary:
+- consumes completed 1S.68 signing authorization composition evidence
+- requires the outer composition and contained signing authorization evidence to be ready
+- preserves the exact established signing authorization evidence
+- passes injected `getSignerCapabilityAddress` through to established `acquireSignerCapabilityBindingEvidence`
+- established 1S.38 owns signer/envelope identity validation, capability-address acquisition, normalization, and exact identity matching
+- capability-address callback is invoked with no arguments
+- successful evidence advances `signerCapabilityBindingReady` to true
+- `signerAuthorized` and `signingAuthorized` remain true
+- `liveExecutionAuthorized` and `broadcastAuthorized` remain false
+- no signer object, key material, or wallet secret is acquired
+- no transaction signing, raw signed transaction creation, submission, broadcast, or live-execution authorization is performed
+
+Focused validation:
+- initial RED was solely `MODULE_NOT_FOUND`
+- minimal implementation GREEN 1/1
+- hardened focused suite GREEN 7/7
+- outer composition/object readiness fails closed
+- contained signing authorization/object readiness fails closed
+- signer-capability identity mismatch propagates after exactly one capability-address acquisition
+- upstream capability-binding contamination fails before capability acquisition
+- successful evidence preserves exact upstream signing-authorization and transaction-envelope identities
+- production boundary audit found no direct signing, secret, RPC, submission, or broadcast ownership
+- `git diff --check` clean
+
+Evidence limits:
+- capability-address callback in tests is synthetic
+- `signerCapabilityBindingReady: true` proves only that the acquired capability address matches the already-authorized signer identity
+- capability binding is not transaction signing and does not prove that a signature or raw signed transaction exists
+- no private key, seed phrase, mnemonic, wallet secret, or raw signed transaction is acquired
+- no transaction is signed, submitted, or broadcast
+
+Protected gas experiments remain untracked, unstaged, unmodified, and unexecuted:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Canonical validation:
+- `npm run test:node` RC 0
+- 1058 tests / 1058 pass
+- 9 suites
+- 0 fail / 0 cancelled / 0 skipped / 0 todo
+- exact +7 tests from the 1051 baseline
+- all seven 1S.69 focused cases explicitly discovered
+- protected gas experiment names absent from canonical discovery
+- Hardhat was not rerun
+
+Next:
+- stage only the exact 1S.69 production file, test file, and checkpoint
+- verify protected gas experiments remain unstaged
+- commit and push only after staged-diff verification
+
+## 1S.70 — Exact Transaction Signing Composition Evidence
+
+Status: COMPLETE / TESTED — pending commit/push.
+
+### Objective
+Bridge the established 1S.69 signer capability binding composition into the established 1S.39 exact transaction signing evidence boundary without acquiring wallet/key material and without granting or performing submission, broadcast, or live execution.
+
+### Production
+Added:
+- `scripts/utils/polygonV4ExactTransactionSigningCompositionEvidence.js`
+
+API:
+- `buildExactTransactionSigningCompositionEvidence({ signerCapabilityBindingCompositionEvidence, signTransaction })`
+
+Behavior:
+- Requires the 1S.69 composition object.
+- Requires `signerCapabilityBindingCompositionReady === true`.
+- Requires contained `signerCapabilityBindingEvidence`.
+- Requires `signerCapabilityBindingReady === true`.
+- Delegates the exact contained capability-binding evidence and injected `signTransaction` callback to established `acquireExactTransactionSigningEvidence`.
+- Preserves the exact 1S.69 composition identity.
+- Returns frozen composition evidence with `exactTransactionSigningCompositionReady === true`.
+- Does not acquire a wallet, private key, mnemonic, seed, provider, or network state.
+- Does not submit or broadcast a transaction.
+- Does not grant live-execution or broadcast authorization.
+
+### Security boundary
+1S.70 is the first composition boundary in this lineage that performs actual cryptographic transaction signing through an injected signing capability.
+
+The established 1S.39 primitive owns:
+- exact EIP-1559 type-2 signing projection;
+- exactly one signing invocation on the successful path;
+- raw signed transaction validation;
+- transaction type, chain ID, nonce, recovered signer, recipient, calldata, value, gas limit, fee fields, and empty access-list validation;
+- signed transaction hash derivation and raw-byte binding.
+
+Successful signing does NOT mean submission, broadcast, receipt success, or live execution.
+
+No real wallet credentials or secrets are embedded in production or tests. Tests use isolated synthetic/local wallet capability only.
+
+### Tests
+Added:
+- `test/polygonV4ExactTransactionSigningCompositionEvidence.test.js`
+
+Focused hardened result:
+- tests: 7
+- pass: 7
+- fail: 0
+- RC: 0
+
+Coverage includes:
+- exact 1S.69 -> 1S.39 bridge;
+- outer composition object validation;
+- outer readiness validation;
+- contained evidence object validation;
+- contained readiness validation;
+- signing rejection propagation after exactly one callback;
+- upstream signing-evidence contamination rejected before signing callback.
+
+### Canonical validation
+`npm run test:node`:
+- tests: 1065
+- suites: 9
+- pass: 1065
+- fail: 0
+- cancelled: 0
+- skipped: 0
+- todo: 0
+- RC: 0
+
+Baseline before 1S.70: 1058.
+Exact increase: +7.
+
+All seven 1S.70 tests were explicitly discovered.
+Protected gas experiment names were absent from canonical discovery.
+`git diff --check` was clean.
+Hardhat was not rerun for 1S.70.
+
+### Protected gas experiments
+The following remain untracked and must not be staged, committed, modified, promoted, deleted, or executed:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+### Next
+Inspect checkpoint diff and 1S.70 diff, then stage exactly:
+- `APOLLO_CHECKPOINT.md`
+- `scripts/utils/polygonV4ExactTransactionSigningCompositionEvidence.js`
+- `test/polygonV4ExactTransactionSigningCompositionEvidence.test.js`
+
+Do not stage the protected gas experiments.
+
+## 1S.71 — Final Signed Transaction Current-State Validation Composition Evidence
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Objective:
+- Compose the established 1S.70 exact transaction signing evidence into the established 1S.40 final signed transaction current-state validator.
+- Preserve the exact already-signed transaction evidence while reacquiring current chain/nonce/final-call state through the established validator.
+- Do not re-sign, submit, broadcast, or grant live execution authorization.
+
+Production:
+- `scripts/utils/polygonV4FinalSignedTransactionCurrentStateValidationCompositionEvidence.js`
+- API:
+  `buildFinalSignedTransactionCurrentStateValidationCompositionEvidence({ exactTransactionSigningCompositionEvidence, provider })`
+- Requires the 1S.70 composition object and `exactTransactionSigningCompositionReady === true`.
+- Requires contained `exactTransactionSigningEvidence` and `transactionSigningReady === true`.
+- Delegates the exact signing evidence and provider to:
+  `validateFinalSignedTransactionCurrentStateEvidence`.
+- Returns a frozen composition wrapper containing the exact upstream composition, established final current-state evidence, and:
+  `finalSignedTransactionCurrentStateValidationCompositionReady: true`.
+- The wrapper performs no direct provider calls and owns no signing, submission, broadcast, or live-execution capability.
+
+Established 1S.40 behavior preserved:
+- Reacquires current network and requires Polygon chain ID 137.
+- Reacquires exact pending nonce and rejects nonce drift.
+- Performs the final seven-field `provider.call` projection.
+- Preserves exact transaction envelope, signed raw transaction, and signed transaction hash.
+- Returns `finalSignedTransactionCurrentStateReady: true`.
+- Preserves `signerAuthorized: true` and `signingAuthorized: true`.
+- Keeps `liveExecutionAuthorized: false` and `broadcastAuthorized: false`.
+
+Tests:
+- `test/polygonV4FinalSignedTransactionCurrentStateValidationCompositionEvidence.test.js`
+- RED: 1 test / 0 pass / 1 fail / RC 1 solely because the production composition module was absent (`MODULE_NOT_FOUND`).
+- Minimal GREEN: 1/1, RC 0.
+- Hardened focused: 7/7, RC 0.
+- Composition tests cover:
+  - successful exact bridge without authorization escalation,
+  - outer composition object requirement,
+  - outer composition readiness,
+  - contained signing evidence object requirement,
+  - contained signing evidence readiness,
+  - delegated wrong-chain fail-closed ordering,
+  - delegated pending-nonce-drift fail-closed ordering.
+- Synthetic/local wallet signing is used only to construct legitimate upstream test evidence; no real credentials or network submission are used.
+
+Canonical:
+- `npm run test:node`
+- Baseline before 1S.71: 1065 tests.
+- Result: 1072 tests / 1072 pass / 0 fail / 9 suites / RC 0.
+- Exact delta: +7.
+- Protected gas experiment names absent from canonical discovery.
+- Hardhat not rerun because this boundary changes only JavaScript composition around the already-tested 1S.40 validator and makes no Solidity change.
+
+Security boundary:
+- 1S.71 does not sign or re-sign.
+- 1S.71 does not submit or broadcast.
+- 1S.71 does not authorize live execution.
+- Successful final current-state validation is not transaction submission or on-chain success.
+- No gas policy or empirical gas evidence is introduced.
+
+Protected untracked gas experiments remain untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Inspect and stage only this checkpoint plus the two 1S.71 files.
+- Do not stage or execute the protected gas experiments.
+- After commit/push/sync, perform read-only discovery before defining the next composition boundary.
+
+## 1S.72 — Controlled Broadcast Authorization Composition Evidence
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Objective:
+- Compose established 1S.71 final signed transaction current-state validation evidence into established 1S.41 controlled broadcast authorization.
+- Grant only explicit controlled broadcast authorization.
+- Do not submit or broadcast the signed transaction.
+- Do not grant live execution authorization.
+
+Production:
+- `scripts/utils/polygonV4ControlledBroadcastAuthorizationCompositionEvidence.js`
+- API:
+  `buildControlledBroadcastAuthorizationCompositionEvidence({ finalSignedTransactionCurrentStateValidationCompositionEvidence, authorizeControlledBroadcast })`
+- Requires the 1S.71 composition object and `finalSignedTransactionCurrentStateValidationCompositionReady === true`.
+- Requires contained `finalSignedTransactionCurrentStateEvidence` and `finalSignedTransactionCurrentStateReady === true`.
+- Delegates the exact final current-state evidence and authorization callback to:
+  `acquireControlledBroadcastAuthorizationEvidence`.
+- Returns a frozen composition wrapper containing the exact upstream composition, established controlled broadcast authorization evidence, and:
+  `controlledBroadcastAuthorizationCompositionReady: true`.
+- The wrapper owns no provider/RPC, signing, submission, receipt, or live-execution capability.
+
+Established 1S.41 behavior preserved:
+- Requires final signed transaction current-state evidence ready.
+- Requires signer and signing authorization to remain true.
+- Requires upstream live execution and broadcast authorization to remain false.
+- Revalidates exact transaction signing lineage.
+- Invokes `authorizeControlledBroadcast` exactly through the established primitive.
+- Authorization callback receives only:
+  `transactionEnvelope` and `signedTransactionHash`.
+- The callback does not receive `signedRawTransaction`.
+- Authorization must return exactly `true`.
+- Successful evidence sets:
+  `controlledBroadcastAuthorizationReady: true`,
+  `broadcastAuthorized: true`,
+  `liveExecutionAuthorized: false`.
+- Broadcast authorization is permission only; no transaction is submitted.
+
+Tests:
+- `test/polygonV4ControlledBroadcastAuthorizationCompositionEvidence.test.js`
+- RED: 1 test / 0 pass / 1 fail / RC 1 solely because the production composition module was absent (`MODULE_NOT_FOUND`).
+- Minimal GREEN: 1/1, RC 0.
+- Hardened focused: 7/7, RC 0.
+- Composition tests cover:
+  - successful exact bridge without submission or live execution,
+  - outer composition object requirement,
+  - outer composition readiness,
+  - contained final-state evidence object requirement,
+  - contained final-state readiness,
+  - rejection when authorization does not return exactly true,
+  - propagation of authorization callback failure after exactly one invocation.
+- Successful-path test proves the authorization callback receives exactly the transaction envelope and signed transaction hash, not the raw signed transaction.
+
+Canonical:
+- `npm run test:node`
+- Baseline before 1S.72: 1072 tests.
+- Result: 1079 tests / 1079 pass / 0 fail / 9 suites / RC 0.
+- Exact increase: +7.
+- All seven 1S.72 tests explicitly discovered.
+- Protected gas experiment names absent from canonical discovery.
+- `git diff --check` clean.
+- Hardhat not rerun because this boundary changes only JavaScript composition/authorization and makes no Solidity change.
+
+Security boundary:
+- `broadcastAuthorized: true` does not mean broadcast occurred.
+- No raw signed transaction is exposed to the authorization callback.
+- No provider/RPC call is owned by the 1S.72 composition wrapper.
+- No `sendTransaction`, raw transaction submission, receipt acquisition, or waiting occurs.
+- `liveExecutionAuthorized` remains false.
+- No gas policy or empirical gas evidence is introduced.
+
+Protected untracked gas experiments remain untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Inspect and stage only this checkpoint plus the two 1S.72 files.
+- Do not stage or execute the protected gas experiments.
+- After commit/push/sync, perform read-only discovery before defining the next composition boundary.
+
+## 1S.73 — Controlled Live Execution Authorization Composition Evidence
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Objective:
+- Compose established 1S.72 controlled broadcast authorization evidence into established 1S.42 controlled live execution authorization.
+- Grant explicit controlled live execution authorization only after controlled broadcast authorization.
+- Do not submit or broadcast the signed transaction.
+
+Production:
+- `scripts/utils/polygonV4ControlledLiveExecutionAuthorizationCompositionEvidence.js`
+- API:
+  `buildControlledLiveExecutionAuthorizationCompositionEvidence({ controlledBroadcastAuthorizationCompositionEvidence, authorizeControlledLiveExecution })`
+- Requires the 1S.72 composition object and `controlledBroadcastAuthorizationCompositionReady === true`.
+- Requires contained `controlledBroadcastAuthorizationEvidence` and `controlledBroadcastAuthorizationReady === true`.
+- Delegates the exact controlled broadcast authorization evidence and authorization callback to:
+  `acquireControlledLiveExecutionAuthorizationEvidence`.
+- Returns a frozen composition wrapper containing the exact upstream composition, established controlled live execution authorization evidence, and:
+  `controlledLiveExecutionAuthorizationCompositionReady: true`.
+- The wrapper owns no provider/RPC, signing, transaction submission, receipt, or waiting capability.
+
+Established 1S.42 behavior preserved:
+- Requires controlled broadcast authorization evidence ready.
+- Requires signer, signing, and broadcast authorization true.
+- Requires live execution authorization to remain false before authorization.
+- Revalidates preserved final signed transaction current-state lineage.
+- Invokes `authorizeControlledLiveExecution` through the established primitive.
+- Authorization callback receives only:
+  `transactionEnvelope` and `signedTransactionHash`.
+- The callback does not receive `signedRawTransaction`.
+- Authorization must return exactly `true`.
+- Successful evidence sets:
+  `controlledLiveExecutionAuthorizationReady: true`,
+  `signerAuthorized: true`,
+  `signingAuthorized: true`,
+  `broadcastAuthorized: true`,
+  `liveExecutionAuthorized: true`.
+- These flags represent authorization state only; no transaction is submitted.
+
+Tests:
+- `test/polygonV4ControlledLiveExecutionAuthorizationCompositionEvidence.test.js`
+- RED: 1 test / 0 pass / 1 fail / RC 1 solely because the production composition module was absent (`MODULE_NOT_FOUND`).
+- Minimal GREEN: 1/1, RC 0.
+- Hardened focused: 7/7, RC 0.
+- Composition tests cover:
+  - successful exact bridge without transaction submission,
+  - outer composition object requirement,
+  - outer composition readiness,
+  - contained controlled broadcast authorization evidence object requirement,
+  - contained controlled broadcast authorization readiness,
+  - rejection when live execution authorization does not return exactly true,
+  - propagation of authorization callback failure after exactly one invocation.
+- Successful-path test proves the live-execution authorization callback receives exactly the transaction envelope and signed transaction hash, not the raw signed transaction.
+
+Canonical:
+- `npm run test:node`
+- Baseline before 1S.73: 1079 tests.
+- Result: 1086 tests / 1086 pass / 0 fail / 9 suites / RC 0.
+- Exact increase: +7.
+- All seven 1S.73 tests explicitly discovered.
+- Protected gas experiment names absent from canonical discovery.
+- `git diff --check` clean.
+- Hardhat not rerun because this boundary changes only JavaScript authorization composition and makes no Solidity change.
+
+Security boundary:
+- `broadcastAuthorized: true` and `liveExecutionAuthorized: true` mean authorization has been granted; they do not mean execution occurred.
+- No raw signed transaction is exposed to the authorization callback.
+- No provider/RPC call is owned by the 1S.73 composition wrapper.
+- No transaction submission, receipt acquisition, or waiting occurs.
+- Immediate pre-submission validation remains a separate downstream boundary.
+- No gas policy or empirical gas evidence is introduced.
+
+Protected untracked gas experiments remain untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Inspect and stage only this checkpoint plus the two 1S.73 files.
+- Do not stage or execute the protected gas experiments.
+- After commit/push/sync, perform read-only discovery before defining the next composition boundary.
+
+## 1S.74 — Immediate Pre-Submission Validation Composition Evidence
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Objective:
+- Compose established 1S.73 controlled live execution authorization composition evidence into established 1S.43 immediate pre-submission validation.
+- Preserve exact authorized transaction lineage while performing immediate current-state validation.
+- Do not submit or broadcast the signed transaction.
+
+Production:
+- `scripts/utils/polygonV4ImmediatePreSubmissionValidationCompositionEvidence.js`
+- API:
+  `buildImmediatePreSubmissionValidationCompositionEvidence({ controlledLiveExecutionAuthorizationCompositionEvidence, provider })`
+- Requires the 1S.73 composition object and `controlledLiveExecutionAuthorizationCompositionReady === true`.
+- Requires contained `controlledLiveExecutionAuthorizationEvidence` and `controlledLiveExecutionAuthorizationReady === true`.
+- Delegates the exact contained live-execution authorization evidence and provider to:
+  `validateImmediatePreSubmissionEvidence`.
+- Returns a frozen composition wrapper containing:
+  - exact upstream 1S.73 composition,
+  - established immediate pre-submission validation evidence,
+  - `immediatePreSubmissionValidationCompositionReady: true`.
+- The wrapper itself implements no provider/RPC or transaction-submission primitive.
+
+Established 1S.43 behavior preserved:
+- Requires controlled live execution authorization readiness.
+- Requires signer, signing, broadcast, and live-execution authorization true.
+- Preserves exact transaction envelope, signed raw transaction, and signed transaction hash lineage.
+- Reacquires current network and requires Polygon chain ID 137.
+- Reacquires exact pending nonce and requires it to match the signed transaction nonce.
+- Repeats the established seven-field `provider.call` projection.
+- Returns `immediatePreSubmissionValidationReady: true` only after successful current-state validation.
+- Performs validation only; it does not submit or broadcast the transaction and does not acquire a receipt.
+
+Tests:
+- `test/polygonV4ImmediatePreSubmissionValidationCompositionEvidence.test.js`
+- RED: 1 test / 0 pass / 1 fail / RC 1 solely because the production composition module was absent (`MODULE_NOT_FOUND`).
+- Minimal GREEN: 1/1, RC 0.
+- Hardened focused: 7/7, RC 0.
+- Composition tests cover:
+  - successful exact bridge without transaction submission,
+  - outer composition object requirement,
+  - outer composition readiness,
+  - contained live-execution authorization evidence object requirement,
+  - contained live-execution authorization readiness,
+  - delegation of provider validation failure to established 1S.43,
+  - propagation of established provider failure without submission.
+- Deeper chain, nonce, transaction-artifact, and simulation invariants remain owned by established 1S.43 and are not duplicated in the composition wrapper.
+
+Canonical:
+- `npm run test:node`
+- Baseline before 1S.74: 1086 tests.
+- Result: 1093 tests / 1093 pass / 0 fail / 9 suites / RC 0.
+- Exact increase: +7.
+- All seven 1S.74 tests explicitly discovered.
+- Protected gas experiment names absent from canonical discovery.
+- Wrapper submission audit empty.
+- `git diff --check` clean.
+- Hardhat not rerun because this change is JavaScript composition only and makes no Solidity change.
+
+Security boundary:
+- Immediate pre-submission validation performs current-state RPC validation through established 1S.43.
+- The 1S.74 wrapper passes the provider through but does not implement RPC operations itself.
+- Successful validation does not mean the transaction was submitted, broadcast, mined, or executed.
+- No transaction submission, receipt acquisition, or waiting capability is introduced.
+- No gas policy or empirical gas evidence is introduced.
+
+Protected untracked gas experiments remain untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Inspect and stage only this checkpoint plus the two 1S.74 files.
+- Do not stage or execute the protected gas experiments.
+- After commit/push/sync, perform read-only discovery before defining the next composition boundary.
+
+## 1S.75 — Controlled Exact Signed Transaction Submission Composition Evidence
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Objective:
+- Compose established 1S.74 immediate pre-submission validation evidence into established 1S.44 controlled exact signed transaction submission.
+- Preserve the exact validated signed transaction lineage.
+- Delegate the actual submission capability exclusively to established 1S.44.
+- Do not introduce signing, transaction reconstruction, nonce repair, fee refresh, retry, provider/RPC, or receipt-waiting behavior.
+
+Production:
+- `scripts/utils/polygonV4ControlledExactSignedTransactionSubmissionCompositionEvidence.js`
+- API:
+  `buildControlledExactSignedTransactionSubmissionCompositionEvidence({ immediatePreSubmissionValidationCompositionEvidence, submitSignedTransaction })`
+- Requires the 1S.74 composition object and `immediatePreSubmissionValidationCompositionReady === true`.
+- Requires contained `immediatePreSubmissionValidationEvidence` and `immediatePreSubmissionValidationReady === true`.
+- Delegates the contained evidence and injected submission callback to:
+  `submitControlledExactSignedTransaction`.
+- Returns a frozen composition wrapper containing:
+  - exact upstream 1S.74 composition,
+  - established 1S.44 submission evidence,
+  - `controlledExactSignedTransactionSubmissionCompositionReady: true`.
+- The wrapper owns no provider/RPC, signing, transaction reconstruction, receipt, or independent submission primitive.
+
+Established 1S.44 behavior preserved:
+- Requires immediate pre-submission validation readiness.
+- Submits only the exact already-validated `signedRawTransaction`.
+- Requires a submission response object.
+- Requires a non-empty response hash.
+- Requires response hash to exactly equal `signedTransactionHash`.
+- Preserves transaction envelope, signed raw transaction, signed transaction hash, and submission response.
+- Sets `controlledExactSignedTransactionSubmissionReady: true`.
+- No receipt acquisition or waiting occurs.
+
+Tests:
+- `test/polygonV4ControlledExactSignedTransactionSubmissionCompositionEvidence.test.js`
+- RED: 1 test / 0 pass / 1 fail / RC 1 solely because the production composition module was absent (`MODULE_NOT_FOUND`).
+- Minimal GREEN: 1/1, RC 0.
+- Hardened focused: 7/7, RC 0.
+- Canonical: 1100/1100 pass / 0 fail / 9 suites / RC 0.
+- Exact increase: +7.
+- All seven 1S.75 tests explicitly discovered.
+- Tests use only a synthetic in-memory submission callback; no live Polygon submission occurred.
+- Hardened tests cover outer/contained readiness, submission hash mismatch, and submission callback failure after exactly one invocation.
+
+Security boundary:
+- 1S.75 is the first composition boundary that can invoke the established real submission primitive when a real callback is supplied.
+- The composition wrapper itself does not implement network submission.
+- No live provider/RPC submission was used during testing.
+- No signer or private credential is introduced.
+- No transaction mutation, retry, or receipt waiting is introduced.
+- Protected gas experiments remain untouched.
+
+Protected untracked gas experiments:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Commit and push only the checkpoint plus the two 1S.75 files.
+- Verify local and remote HEAD equality.
+- Do not stage or execute the protected gas experiments.
+
+## Post-submission receipt composition boundary — verified regression
+
+Status: COMPLETE / TESTED / NOT YET COMMITTED
+
+Discovery:
+- Followed the 1S.72–1S.75 handoff instruction to discover the existing post-submission primitive before naming a new milestone.
+- Established 1S.44 owns controlled exact signed transaction submission.
+- Established 1S.45 owns controlled transaction receipt acquisition and validation.
+- The new composition boundary bridges existing 1S.75 submission composition evidence into established 1S.45 receipt evidence.
+- No new numbered milestone is assigned by this checkpoint.
+
+Production:
+- `scripts/utils/polygonV4ControlledTransactionReceiptCompositionEvidence.js`
+- API:
+  `buildControlledTransactionReceiptCompositionEvidence({ controlledExactSignedTransactionSubmissionCompositionEvidence, acquireTransactionReceipt })`
+- Requires the exact upstream submission composition object.
+- Requires `controlledExactSignedTransactionSubmissionCompositionReady === true`.
+- Requires contained `controlledExactSignedTransactionSubmissionEvidence`.
+- Requires `controlledExactSignedTransactionSubmissionReady === true`.
+- Delegates the contained submission evidence and injected receipt-acquisition callback to established `produceControlledTransactionReceiptEvidence`.
+- Returns a frozen wrapper preserving the exact upstream composition, validated receipt evidence, and `controlledTransactionReceiptCompositionReady: true`.
+- Does not call the submission composition builder or resubmit a transaction.
+
+Established 1S.45 validation retained:
+- Requires submission readiness and established authorization evidence.
+- Requires receipt acquisition capability.
+- Acquires the receipt once using the exact signed transaction hash.
+- Requires a receipt with matching transaction hash, successful status, valid block number, and positive BigNumber gasUsed.
+- Preserves exact receipt and gasUsed identities.
+- Does not establish realized profit, confirmation depth, or finality.
+
+Tests:
+- `test/polygonV4ControlledTransactionReceiptCompositionEvidence.test.js`
+- RED: expected MODULE_NOT_FOUND / RC 1 before production module existed.
+- Minimal GREEN: 1/1 pass / RC 0.
+- Hardened focused: 10/10 pass / RC 0.
+- Tests cover successful exact composition, missing or non-ready outer and inner evidence, missing receipt callback, callback rejection after exactly one invocation, mismatched receipt hash, reverted receipt, and exact receipt/gasUsed identity.
+- Tests use synthetic in-memory receipt evidence only; no live Polygon submission or on-chain receipt acquisition occurred.
+
+Full regression:
+- Node: 1110 tests / 1110 pass / 0 fail / 9 suites / RC 0.
+- Previous Node baseline: 1100 tests; exact increase: +10.
+- Hardhat: 29 tests / 29 pass / 0 fail / RC 0.
+- Combined: 1139 tests / 1139 pass / 0 fail.
+- FULL_REGRESSION_RC=0.
+- Three protected gas experiments explicitly excluded from Node discovery.
+- Generated Hardhat artifacts churn restored after regression.
+- Tracked working-tree diff clean before checkpoint append.
+- Production and test JavaScript syntax checks passed.
+
+Security boundary:
+- No new signing, authorization, submission, broadcast, transaction reconstruction, nonce repair, fee refresh, retry, provider ownership, or receipt polling.
+- Existing 1S.45 owns receipt validation.
+- A successful synthetic test is not a live Polygon measurement.
+- No genuine Polygon live transaction receipt or empirical on-chain gasUsed has yet been acquired.
+- Receipt success alone does not establish realized profit or transaction finality.
+- Live signing and submission still require separate explicit authorization and current-state safety validation.
+- LIVE_READY, economics, gas, slippage, reserve, and freshness gates remain unchanged.
+
+Protected untracked gas experiments remain untouched:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Repository note:
+- Previous 1S.75 checkpoint text says NOT YET COMMITTED, but Git HEAD
+  `75ed3e0` confirms the 1S.72–1S.75 checkpoint and handoff were committed.
+- Do not interpret that historical status line as the current Git state.
+
+Next:
+- Review checkpoint diff.
+- Stage only this checkpoint and the two new receipt-composition files.
+- Verify staged paths and staged content before commit.
+- Commit and push only after the staged review.
+- Keep the protected gas experiments untracked, unexecuted, and unstaged.
+- Do not assume a numbered next boundary without further discovery.
+
+## 2026-10-09 — Read-only Polygon V4 receipt observation recovery anchor
+
+Status: COMMITTED / PUSHED / REMOTE-VERIFIED
+
+Repository:
+- Branch: `repair/simulation-safety`.
+- Verified local and GitHub remote HEAD:
+  `2003a0c599641fdb5a2f4ed0ce3ecd6c97a28a3f`.
+- Commit: `Add read-only Polygon V4 receipt observation and isolate fork tests`.
+- The commit contains exactly four reviewed files.
+- No tracked production execution-pipeline files were changed.
+- No new numbered milestone is assigned.
+
+Read-only receipt observer:
+- Production:
+  `scripts/utils/polygonV4ReadOnlyTransactionReceiptObservationEvidence.js`.
+- Tests:
+  `test/polygonV4ReadOnlyTransactionReceiptObservationEvidence.test.js`.
+- API:
+  `observeReadOnlyTransactionReceiptEvidence({ provider, signedTransactionHash, minimumConfirmations })`.
+- Requires explicit positive safe-integer confirmation policy.
+- Requires Polygon chain ID 137.
+- Acquires one transaction receipt using the supplied signed transaction hash.
+- Requires matching transaction-hash bytes, successful receipt status,
+  positive receipt block number, and positive BigNumber gasUsed.
+- Verifies receipt block number and hash against the provider-returned block.
+- Reads the observed chain head and checks confirmation depth.
+- Returns a shallow-frozen evidence wrapper preserving the receipt and gasUsed.
+- No signing, transaction submission, broadcast, retry, polling, or
+  transaction reconstruction.
+- Uses an injected provider; synthetic tests use no live RPC.
+
+Historical Hardhat fork-test isolation:
+- `test/polygonV4ExecutionProbeFork.test.js`:
+  checks explicit fork configuration and resets the local Hardhat fork
+  to historical block 94709817 before execution.
+- `test/polygonV4ObservedCandidateFork.test.js`:
+  resets the local Hardhat fork to historical block 94709817 before each test.
+- These changes address verified test-order dependence.
+- The corrections are test-only and do not alter the 1A-1S pipeline.
+- Historical fork transactions are local simulations, not live Polygon broadcasts.
+
+Verified regression:
+- Focused observer tests: 18 passed / 0 failed.
+- Full Node selection: 130 test files, 1128 passed / 0 failed / RC 0.
+- Historical Hardhat fork selection: 7 passed / 0 failed / RC 0.
+- Three optional Hardhat integration tests intentionally pending.
+- Hardhat regression preceded the final observer-only hash-casing fix.
+- Combined passing test count across these runs: 1135.
+- Staged diff integrity and exact four-file commit scope verified.
+- GitHub remote commit hash independently verified after push.
+
+Security and evidence limitations:
+- No genuine Polygon mainnet receipt gasUsed was acquired in this work.
+- Historical fork gasUsed is not live Polygon gasUsed.
+- A receipt matching the observed block and confirmation count does not
+  establish irreversible finality or realized net profitability.
+- The evidence wrapper is shallow-frozen; nested receipt data is not frozen.
+- The observer does not authorize live signing or submission.
+- Existing LIVE_READY, authorization, slippage, economics, reserve,
+  freshness, and gas safety gates remain unchanged.
+- No MetaMask ownership or credential changes.
+- No live flashloan, deployment, signing, or transaction broadcast.
+
+Protected untracked experiments — DO NOT stage, execute, edit, or delete:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Review this checkpoint-only diff.
+- Stage only `APOLLO_CHECKPOINT.md` after explicit approval.
+- Commit, inspect, push, and verify the remote hash in separate steps.
+- Continue evidence-first review before any real Polygon receipt observation.
+- Require separate explicit authorization for any live signing or submission.
+- Do not infer a new milestone number or modify the existing pipeline.
+
+## 2026-10-09 — Polygon V4 live-receipt gas measurement evidence recovery anchor
+
+Status: COMMITTED / PUSHED / REMOTE-VERIFIED
+
+Repository:
+- Branch: `repair/simulation-safety`.
+- Verified local and GitHub remote HEAD:
+  `50f5c9496400e898760eb4db8a264463caf02daa`.
+- Parent commit:
+  `9338f355847e40c23dfc6a592be72f1bf8aa29ad`.
+- Commit: `Add read-only Polygon V4 live receipt gas measurement evidence`.
+- Exactly two new files committed; no existing tracked files changed.
+- No new numbered milestone assigned.
+
+New standalone read-only measurement component:
+- `scripts/utils/polygonV4LiveReceiptGasMeasurementEvidence.js`.
+- Export:
+  `buildLiveReceiptGasMeasurementEvidence({
+    transactionSigningEvidence,
+    unsignedTransactionIntentEvidence,
+    receiptObservationEvidence
+  })`.
+- Uses existing signed-transaction, unsigned-intent, deployment,
+  execution-context, and read-only receipt-observation evidence.
+- Does not acquire a receipt itself or make provider/RPC calls.
+- Requires Polygon chain ID 137 and successful receipt evidence.
+- Validates signed raw transaction hash, decoded type-2 transaction,
+  envelope fields, transaction intent, signer identity, and preserved
+  authorization and preflight evidence-reference lineage.
+- Validates the exact initiateFlashloan calldata, flashloan token,
+  amount, and ABI-encoded execution plan against upstream evidence.
+- Checks candidate, execution-leg, and execution-plan reference identity.
+- Checks executor address and upstream deployment code-hash evidence.
+- Requires matching receipt transaction/block identities, positive gasUsed,
+  and explicit safe confirmation-depth evidence.
+- Returns shallow-frozen evidence with executionPlanHash, gasUsed,
+  executorAddress, executorCodeHash, receipt block/head details, and
+  provenance method `LIVE_POLYGON_RECEIPT`.
+- Executor code hash is labeled `UPSTREAM_DEPLOYMENT_EVIDENCE`;
+  `historicalExecutorCodeVerified` remains false.
+- Output explicitly sets live execution, signer, and broadcast
+  authorization flags to false.
+
+New synthetic tests:
+- `test/polygonV4LiveReceiptGasMeasurementEvidence.test.js`.
+- 20 focused tests passed, including rejection of mismatched signing,
+  transaction, receipt, confirmation, authorization, and deployment evidence.
+- Positive fixture uses the existing V4 execution-plan encoder with
+  three cyclic legs, rather than placeholder execution-plan bytes.
+- Synthetic tests do not use live Polygon RPC or broadcast transactions.
+
+Verified regression:
+- Full selected Node regression after the final fixture improvement:
+  130 existing Node test files plus the new test file.
+- 1148 passed / 0 failed / 0 skipped.
+- Historical Hardhat fork regression: 7 passed / 0 failed;
+  3 optional integration tests intentionally pending.
+- Combined passing count across the separate Node and Hardhat runs:
+  1155; not a single unified test invocation.
+- New-file SHA-256 hashes were verified before staging and committing.
+- Exact two-file commit scope and GitHub remote hash independently verified.
+
+Security and integration boundaries:
+- No real Polygon mainnet transaction was signed, submitted, or broadcast.
+- No real Polygon mainnet receipt gasUsed has been acquired.
+- `LIVE_POLYGON_RECEIPT` is the output provenance schema for validated
+  future evidence, not a claim that live evidence currently exists.
+- Historical fork gasUsed is not a live Polygon gas measurement.
+- Receipt observation is point-in-time evidence, not irreversible finality
+  or proof of realized net profitability.
+- Existing 1A-1S pipeline, fork-only gas qualification validator,
+  historical fork gas evidence, conservative 700000 gas-unit qualification
+  policy, and current transaction gas-limit selection remain unchanged.
+- No new signing, authorization, submission, retry, polling, nonce repair,
+  fee refresh, owner change, or credential handling.
+- The new component has not been integrated into a live execution path.
+- Separate explicit authorization remains required for live signing
+  or transaction submission.
+
+Protected untracked experiments — DO NOT stage, run, edit, or delete:
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Next:
+- Review this checkpoint-only diff before staging.
+- Stage, inspect, commit, push, and verify the checkpoint in separate steps.
+- Continue evidence-first analysis of the controlled live-measurement
+  prerequisites and safety boundaries.
+- Do not promote live gas provenance into fork-only qualification policy
+  without a separately approved design and validated evidence.
+- Do not assume a new numbered milestone or modify existing pipeline paths.
+
+## 2026-10-10 — Vendored Balancer dependency security assessment (Steps 175X–176F)
+
+Approved security assessment: `docs/security/POLYGON_V4_BALANCER_DEPENDENCY_ASSESSMENT.md`.
+This is distinct from the historical Dependabot PR triage in
+`docs/dependency-pr-review.md`. See the assessment for the five reviewed
+critical alerts, Balancer Yarn workspace findings, Polygon V4 static
+reachability limits, and unresolved supply-chain questions. No dependency
+remediation, live execution, commit, or push is authorized by this entry.
+
+## Step 177X-O15 — Verified security remediation milestone
+
+### Repository and verified GitHub state
+
+- Repository: `Cliveybhoy37/profitbot_project`
+- Branch: `repair/simulation-safety`
+- Verified local and remote commit: `fe38067b153ee70465e84fcf1e5cbdaa26362c01`
+- Commit message: `fix(security): patch three transitive npm dependencies`
+- Commit changes only `package.json` and `package-lock.json`.
+- GitHub Actions workflow: `ProfitBot CI`
+- GitHub Actions run ID: `38061285338`
+- Run URL: https://github.com/Cliveybhoy37/profitbot_project/actions/runs/38061285338
+- Workflow event: `push`; status: `completed`; conclusion: `success`.
+- Step 177X-O13 confirmed the remote branch points to the intended commit.
+- Step 177X-O14 confirmed the CI result and unchanged local repository snapshot.
+
+### Security remediation
+
+The following transitive npm dependencies were patched using root npm
+overrides and corresponding lockfile changes:
+
+| Package | Previous version | Patched version |
+| --- | --- | --- |
+| `brace-expansion` | `2.0.2` | `2.1.7` |
+| `immutable` | `4.3.7` | `4.3.9` |
+| `js-yaml` | `4.1.0` | `4.3.2` |
+
+Existing `ws` overrides were preserved. The lockfile review confirmed
+exactly three dependency entries changed, with no unrelated package-path
+or lockfile metadata changes.
+
+The root npm audit changed as follows:
+
+| Severity | Before | After |
+| --- | ---: | ---: |
+| Critical | 0 | 0 |
+| High | 15 | 12 |
+| Moderate | 2 | 2 |
+| Low | 18 | 18 |
+| Total | 35 | 32 |
+
+The remaining 32 root npm audit findings are **not resolved**.
+The 12 high findings include `@fastify/busboy`, `adm-zip`, `braces`,
+`chokidar`, `hardhat`, `lodash`, `minimatch`, `mocha`, `picomatch`,
+`serialize-javascript`, `tmp`, and `undici`.
+
+These npm audit figures are distinct from repository-wide GitHub
+Dependabot alerts, which may include vendored dependency trees.
+
+### Verified tests and compatibility
+
+- `npm ci --ignore-scripts --legacy-peer-deps --no-audit --no-fund --no-update-notifier`
+  completed successfully during Step 177X-O8.
+- Node regression suite: **1,268 / 1,268 passed** in Step 177X-O9A.
+- Hardhat regression suite: **29 / 29 passed** in Step 177X-O9B.
+- Hardhat testing successfully compiled **35 Solidity files**.
+- GitHub Actions `ProfitBot CI` passed for the pushed commit.
+- Root tooling remained on Hardhat `2.24.3` and Ethers `5.8.0`.
+- No Hardhat 3 or Ethers 6 migration was authorized.
+- Generated tracked Hardhat build outputs were restored in the
+  separately authorized Step 177X-O9B-R4.
+
+### Protected project state
+
+The following three gas experiments are untracked and must not be
+edited, executed, staged, or committed without separate approval:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+The following legacy files remain protected from unapproved edits:
+
+- `contracts/ProfitBot.sol`
+- `scripts/utils/polygonExecutionRoute.js`
+- `scripts/utils/polygonExecutionCandidate.js`
+- `scripts/scanAndExecute.js`
+
+The V4 executor `contracts/PolygonV4CandidateExecutor.sol` was
+hash-verified unchanged throughout the security patch workflow.
+
+No live deployment, signing, flashloan execution, transaction
+broadcasting, or verified live profit occurred in these steps.
+
+### Next steps and authorization boundaries
+
+1. Review this checkpoint update before separately authorizing any commit.
+2. Commit and push the checkpoint only with separate explicit approvals.
+3. Investigate the remaining npm audit findings with read-only
+   dependency-path and compatibility analysis before considering edits.
+4. Plan any major Hardhat/Ethers upgrade separately, with regression
+   testing and protected-file safeguards.
+5. Continue Polygon V4 simulation/gas research only through separately
+   approved steps; preserve the three untracked experiments.
+
+For recovery after a session reset, inspect `git status`,
+`git log --oneline -5`, the current checkpoint, and relevant project
+files. Never include private keys, seed phrases, passwords, RPC secrets,
+or other credentials in checkpoints or chat.
+
+## Security patch verification — Step 177X-O30
+
+### Repository identity and scope
+
+- Repository: `/workspaces/profitbot_project`
+- Branch: `repair/simulation-safety`
+- Baseline HEAD: `83b1536f277df6dba41a2e590c5be25d5a8faf66`
+- Security-patch working-tree files: `package.json` and `package-lock.json`.
+- This checkpoint update is documentation only. No deployment, signing, broadcasting, live flashloan, or public-network transaction is authorized.
+
+### Dependency security changes
+
+Six npm overrides were added to `package.json`:
+
+- `minimatch`: `5.1.9`
+- `diff`: `5.2.2`
+- `picomatch@^2`: `2.3.2`
+- `picomatch@^4`: `4.0.4`
+- `bn.js@^4`: `4.12.5`
+- `bn.js@^5`: `5.2.5`
+
+`package-lock.json` was regenerated with `npm install --package-lock-only --ignore-scripts --legacy-peer-deps --no-audit --no-fund --no-update-notifier`.
+
+Dependencies were installed with `npm ci --ignore-scripts --legacy-peer-deps --no-audit --no-fund --no-update-notifier`.
+
+The installed dependency tree was inspected and the targeted versions verified.
+
+### Security audit evidence
+
+- Full npm audit before patch: 32 findings (0 critical, 12 high, 2 moderate, 18 low).
+- Full npm audit after patch: 28 findings (0 critical, 10 high, 1 moderate, 17 low).
+- Reduction: 4 findings, comprising 2 high, 1 moderate, and 1 low.
+- Targeted advisory package names `minimatch`, `picomatch`, `diff`, and `bn.js` were no longer reported by the post-patch audit.
+- Production-only audit (`npm audit --omit=dev`): 14 low, 0 moderate, 0 high, 0 critical.
+- Remaining full-tree findings require separate assessment, particularly legacy Hardhat 2 / Ethers 5 dependency chains.
+- Do not run `npm audit fix --force` or undertake major dependency migrations without separate approval.
+
+### Regression verification
+
+- Step 177X-O28R: official Node.js regression suite passed, 1,268 tests, 0 failures, 139 selected test files.
+- Step 177X-O29: official Hardhat suite passed, 29 tests, 0 failures, using the local `hardhat` network.
+- Solidity compilation: 35 files compiled successfully, EVM target `paris`.
+- Total confirmed regression tests: 1,297 passed, 0 failed.
+- Hardhat compilation emitted SPDX warnings for third-party Uniswap interface files; tests still passed.
+- Seven Hardhat-oriented `.test.js` files were excluded from the official Node.js suite. An earlier overbroad Node test-discovery run produced seven failures; the corrected official suite passed.
+- The three protected experimental Polygon V4 test files were not executed.
+
+### Hardhat-generated artifact recovery
+
+- Step 177X-O29 regenerated Git-tracked compilation artifacts and cache data during otherwise successful Hardhat testing.
+- Step 177X-O29R confirmed exactly 31 tracked changes under `artifacts/` and one tracked change to `cache/solidity-files-cache.json`; no unexpected changes or staged files.
+- Step 177X-O29S restored precisely those 32 generated files from HEAD with strict guards.
+- Post-restoration Git status contained only the two intentional dependency changes and the three protected untracked experimental tests.
+- Restoration did not remove ignored/untracked compiler outputs.
+
+### Protected experimental work
+
+These three files remain untracked and must not be modified, staged, executed, committed, or deleted without separate explicit approval:
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+Preserve existing contract and execution code, including:
+
+- `contracts/PolygonV4CandidateExecutor.sol`
+- `contracts/ProfitBot.sol`
+- `scripts/utils/polygonExecutionRoute.js`
+- `scripts/utils/polygonExecutionCandidate.js`
+- `scripts/scanAndExecute.js`
+
+### Next approved-work boundary
+
+1. Verify this checkpoint append and its new SHA-256 digest.
+2. Seek separate approval before staging or committing anything.
+3. If approved, stage only `package.json`, `package-lock.json`, and `APOLLO_CHECKPOINT.md`; explicitly exclude the three protected untracked tests and generated artifacts.
+4. Verify staged diffs before any commit.
+5. Seek separate approval before committing or pushing.
+6. Keep unresolved audit findings visible; do not describe the dependency tree as vulnerability-free.
+
+### Operational continuity
+
+Git-tracked files and committed history persist independently of chat context. Uncommitted changes require care. GitHub Codespaces can stop independently of this conversation. Before stepping away, save files, commit and push approved work when appropriate, and record any transient terminal state. Never place private keys, seed phrases, passwords, or API secrets in this checkpoint.
+
+## Apollo recovery checkpoint — Step 177X-O64
+
+### Current objective
+
+Maintain a safe, reproducible ProfitBot development and regression-testing
+environment while preserving the existing simulation-safety repair branch,
+protected experimental tests, and original generated artifacts.
+
+All future changes require explicit approval, one guarded step at a time.
+
+### Repository state before this checkpoint update
+
+- Repository: `/workspaces/profitbot_project`
+- Branch: `repair/simulation-safety`
+- HEAD: `eae000d223b1efa73241fec5a9922f6e14109daa`
+- Existing modified file: `package-lock.json`
+- Existing untracked protected experimental tests:
+  - `test/polygonV4GasStateSensitivityProbe.test.js`
+  - `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  - `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+- This O64 operation intentionally modifies only `APOLLO_CHECKPOINT.md`.
+- No staging, commit, or push is authorized by O64.
+
+### Verified dependency and regression position
+
+- Node.js: 18.20.8
+- npm: 10.8.2
+- Hardhat: 2.24.3
+- Ethers: 5.8.0
+- Lodash: 4.18.1
+- Lockfile-only Lodash security update retained.
+- Official Node regression: 1,268/1,268 passed across 139 tracked
+  Node test files, as established in Step O49.
+- Official Hardhat regression: 29/29 passed in Step 177X-O62.
+- Solidity compilation: 35 files compiled successfully, EVM target Paris.
+- The three protected experimental tests were excluded and remain unexecuted.
+- These results do not establish live profitability or production readiness.
+
+### Dependency security findings
+
+Earlier dependency audit results:
+
+- Full dependency tree: 27 affected findings:
+  0 critical, 9 high, 1 moderate, 17 low.
+- Production dependency tree: 14 affected findings:
+  0 critical, 0 high, 0 moderate, 14 low.
+- Lodash security patch completed.
+- No automatic audit fix or major-version migration authorized.
+- Avoid unapproved Hardhat 3 or Ethers 6 upgrades.
+
+### Isolated Hardhat workspace: O53–O63
+
+- Workspace: `/tmp/apollo-o53-hardhat-8t8nfl5t`
+- Private dependency installation:
+  `/tmp/apollo-o57-private-hardhat/node_modules`
+- Private Hardhat compiler cache:
+  `/tmp/apollo-o57-private-hardhat/home/.cache/hardhat-nodejs/compilers-v2`
+- Workspace contains 24 verified source/config/test files:
+  8 tracked Solidity contracts, 3 official Hardhat tests,
+  3 configuration/package files, and 10 Balancer Solidity interfaces.
+- The workspace's `node_modules` symlink points to the private dependency
+  copy, not the original repository's dependencies.
+- The 10 Balancer interfaces are tracked original files copied with
+  SHA-256 verification. The full 755-file Balancer library was not copied.
+- O59 initially failed because `IVault.sol` was missing from the workspace.
+- O60 identified the complete 10-file local Solidity import closure.
+- O61 copied and verified exactly those 10 interfaces.
+- O62 compiled 35 Solidity files and passed all 29 official Hardhat tests.
+- O63 independently audited the generated outputs and original repository.
+- Isolated generated outputs: 125 artifact files and 1 cache file.
+- Original tracked generated outputs: 53 artifact files and 124 cache files.
+- O63 verified 0 hash mismatches across those 177 original tracked files.
+- Original Git status and protected experimental file hashes remained
+  unchanged through O63.
+
+### Official Hardhat test selection
+
+Only these three official tests were executed:
+
+- `test/ProfitBot.js`
+- `test/execution.js`
+- `test/threeLegExecution.js`
+
+Execution used the local Hardhat network with forking disabled and a
+sanitized environment that passed no RPC credentials.
+
+Do not run the three protected experimental tests without separate approval.
+
+### Safety boundaries
+
+- Do not edit, stage, delete, or execute protected experimental tests
+  without explicit separate approval.
+- Do not modify protected Solidity contracts, routing scripts, or scanner
+  implementation without explicit approval.
+- Do not execute live blockchain transactions or deployments without
+  explicit approval.
+- Do not run Hardhat in the original repository without a specific plan
+  to protect tracked generated artifacts and cache.
+- Do not automatically run `npm audit fix`, upgrade Hardhat/Ethers, or
+  modify dependencies.
+- Never place private keys, seed phrases, passwords, or API credentials
+  in the checkpoint or chat.
+
+### Recovery after Codespaces restart or chat reset
+
+1. Inspect `git status --short`, `git branch --show-current`,
+   `git rev-parse HEAD`, and recent `git log --oneline`.
+2. Read this checkpoint and inspect current source files before acting.
+3. Verify the protected experimental tests and existing modified files.
+4. Check whether the `/tmp/apollo-o53-hardhat-8t8nfl5t` workspace and
+   `/tmp/apollo-o57-private-hardhat` dependency/compiler copies still exist.
+5. If temporary directories disappeared, reconstruct the isolated
+   workspace from tracked repository sources and dependencies under
+   separately approved guarded steps.
+6. Never assume an open Codespace, terminal process, or `/tmp` directory
+   will survive a timeout, rebuild, or restart.
+
+### Exact next steps
+
+1. Verify this O64 checkpoint-only edit and inspect its Git diff.
+2. Decide whether to preserve the checkpoint in Git under a separately
+   approved staging/commit operation.
+3. Resume the simulation-safety development plan only after reviewing
+   the latest repository state and obtaining explicit approval for
+   the next specific action.
+
+### Last verified milestone
+
+Step 177X-O63 passed: isolated Hardhat regression 29/29 green,
+35 Solidity files compiled, original tracked artifact/cache hash
+mismatches 0/177, protected experimental tests unchanged.
+
+## Step 177X-O169J — Focused Economics and Cache Audit Checkpoint
+
+### Repository baseline
+
+- Branch: `repair/simulation-safety`
+- HEAD: `d4546a4d8abf57630f72295d54b9ea3c0bd2b729`
+- Audits O169E–O169I: read-only, with successful repository-integrity checks.
+- Before this checkpoint update: no tracked or staged changes; exactly three protected untracked gas experiment files.
+- This checkpoint update is intentionally uncommitted. Push remains separately approval-gated.
+
+### Verified source findings
+
+- O169E: Reviewed the V4 economics observer and its research/sweep/qualification callers. The observer validates V4 pool currencies against `zeroForOne` before quoting.
+- O169F–O169G: Reviewed economics job construction, direction mapping, venue selection and general research-runner integration. The forward/reverse token mapping is consistent with the observer's direction guard.
+- Job construction excludes identity external legs, requires conclusive structural evidence and successful outer quote venues, and rejects classification PoolId mismatches.
+- O169H: Reviewed pinned-block propagation, quote failure classification and V3 cache behavior. Source and existing test assertions support pinned-block V3/V4 calls and non-caching of V3 factory RPC failures.
+- O169I: Confirmed V3 cache key is `blockTag:sortedToken0:sortedToken1:fee`.
+- The amount-surface runner creates a fresh V3 cache within one surface acquisition, using one supplied provider and pinned block.
+- The inspected general research, targeted sweep, fine sweep and live qualification runners do not pass a shared persistent V3 cache.
+- The three-leg economics observer accepts an optional cache and forwards it to both outer quote legs.
+
+### Limits and unresolved considerations
+
+- The V3 cache key does not include chain ID, provider identity, factory address or venue identity. A future caller reusing one cache across those contexts could create contamination. No such unsafe reuse was demonstrated in the inspected runners.
+- These audit steps inspected implementation and existing test assertions; they did not rerun tests or perform live RPC verification.
+- Historical fork gas measurements are simulations, not genuine Polygon mainnet transaction receipt gas.
+- No new implementation defect was established by O169E–O169I. Do not make speculative repairs without new evidence.
+
+### Protected files — do not modify, stage or delete without separate approval
+
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+
+### Next action
+
+- Review this checkpoint update and choose the next concrete engineering or validation objective.
+- Require explicit approval before any tests, edits, commits, pushes, RPC interactions, deployment or transaction.
+- Preserve the current branch and protected experiments.
+- Never place private keys, seed phrases, passwords, API secrets or full RPC URLs in this checkpoint.
+
+
+## WPOL Preflight Safety Regression — 2026-10-13
+
+- Branch: `repair/simulation-safety`
+- Scope: `scripts/utils/polygonV4CandidatePreflight.js` and `test/polygonV4CandidatePreflight.test.js`
+- WPOL-only closed route, candidate continuity, valid token addresses, and execution/candidate token matching enforced.
+- Three-leg array length checks verified before WPOL route validation.
+- Official Node regression: **1,279 passed, 0 failed**.
+- Official Hardhat regression: **29 passed, 0 failed**; 35 Solidity files compiled in an isolated `/tmp` workspace with forking disabled.
+- Combined official regression: **1,308 passed, 0 failed**.
+- `git diff --check` passed for both patch files.
+- Original tracked artifacts/cache status remained at 7 deleted and 25 modified after isolated Hardhat testing.
+- Fork-gated Mocha tests not verified in this round.
+- Remaining review note: `candidate.legs[2].amountOut` can throw a raw TypeError if the third leg is null; no change authorized.
+- No deployment, signing, broadcasting, or live trading performed.
+- Do not modify or execute the three protected gas experiments without separate approval.
+- Next: review remaining profitability assumptions and fork-test requirements before considering live execution.
+
+---
+
+## Apollo recovery checkpoint — 2026-10-13
+
+### Repository and branch
+- Repository: `/workspaces/profitbot_project`
+- Branch: `repair/simulation-safety`
+- Latest verified commit: `daff30f`
+- Commit message: `fix: round V4 flashloan premium estimates upward`
+- Push confirmed: `origin/repair/simulation-safety` synchronized with local HEAD.
+- Previous safety commit: `64a6353` — WPOL-denominated V4 preflight route enforcement.
+
+### Completed work
+- Updated `scripts/utils/polygonV4AmountSurface.js` to round modeled flashloan premiums upward.
+- Updated `scripts/utils/polygonV4CandidatePreflight.js` to round expected premiums upward.
+- Added non-divisible-premium regression tests in:
+  - `test/polygonV4AmountSurface.test.js`
+  - `test/polygonV4CandidatePreflight.test.js`
+- Exactly those four files were committed in `daff30f`.
+- No smart-contract deployment, transaction broadcast, or live fork execution was performed.
+
+### Verified regression results
+- Node tests: 1,281 passed, 0 failed.
+- Hardhat tests: 29 passed, 0 failed.
+- Total: 1,310 passed, 0 failed.
+- Hardhat compiled 35 Solidity files successfully.
+- Hardhat tests used an isolated temporary configuration, with no Polygon fork.
+- Generated `artifacts/` and `cache/` were verified clean against HEAD before committing.
+- Final production change after the tests was indentation-only; no arithmetic was changed.
+
+### Important technical distinction
+- The rounding adjustment conservatively models flashloan premium costs.
+- Passing local tests does not establish live arbitrage profitability.
+- Do not assume this rounding exactly reproduces every Aave V3 on-chain fee calculation without separate verification.
+
+### Protected ongoing work — do not overwrite, restore, stage, or commit accidentally
+- `test/polygonV4PreparedExecutionLifecycleIntegration.test.js`
+- `.apollo-backups/`
+- `=`
+- `APOLLO_CHECKPOINT_V4_FIVE_BLOCK_PAIRED_GAS.md`
+- `scripts/utils/polygonV4UnsignedDeploymentPreparationEvidence.js`
+- `test/polygonV4GasStateSensitivityProbe.test.js`
+- `test/polygonV4PairedGasMeasurementIntegration.test.js`
+- `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+- `test/polygonV4PreparedExecutionLifecycleIntegration.test.test.js.apollo-permit2-backup`
+- `test/polygonV4UnsignedDeploymentPreparationEvidence.test.js`
+
+Additional protected project files:
+- `contracts/ProfitBot.sol`
+- `scripts/utils/polygonExecutionRoute.js`
+- `scripts/utils/polygonExecutionCandidate.js`
+- `scripts/scanAndExecute.js`
+
+### Outstanding items
+- Investigate GitHub's reported 228 dependency vulnerability alerts separately and carefully; do not blindly run `npm audit fix`.
+- Decide the next V4 development or simulation objective before modifying code.
+- Do not run RPC/fork tests, deploy, sign, or broadcast without explicit approval.
+- Keep unrelated experimental files isolated from future commits.
+
+### Recovery instructions
+1. Read this checkpoint and any earlier checkpoint sections.
+2. Inspect `git status -sb` and `git log -5 --oneline`.
+3. Inspect relevant diffs before making changes.
+4. Confirm the active objective and preserve unrelated work.
+5. Use one copy-pastable terminal command per step.
+
+### Environment persistence
+- Git commits and saved repository files persist independently of the chat.
+- Unsaved editor buffers, running processes, terminal state, and chat context may not persist.
+- GitHub Codespaces may stop or time out independently.
+- Never store private keys, seed phrases, passwords, or API credentials in checkpoints.
+
+---
+
+## Apollo Step 53 — Standalone Polygon V4 Pre-Signer Safety
+
+### Scope and status
+
+- Branch: `repair/simulation-safety`.
+- Milestone: four standalone safety modules and four dedicated Node test files.
+- Status: IMPLEMENTED / FOCUSED TESTS PASSING / NOT INTEGRATED.
+- No live execution, signer authorization, broadcast authorization, or deployment is granted by this milestone.
+
+### Safety implementation
+
+1. `scripts/utils/polygonV4FinalTransactionEconomicsEvidence.js`
+   - Validates the preserved transaction-envelope and qualification evidence.
+   - Uses exact `gasLimit * maxFeePerGas` maximum gas exposure.
+   - Enforces rounded flashloan premium, safety reserve, minimum profit, and WPOL route requirements.
+
+2. `scripts/utils/polygonV4NativeGasAffordabilityEvidence.js`
+   - Requires native POL balance to cover maximum gas exposure plus transaction value.
+
+3. `scripts/utils/polygonV4NativeGasBalanceAcquisitionEvidence.js`
+   - Checks Polygon chain ID 137.
+   - Acquires the sender's pending native POL balance through an injected provider.
+
+4. `scripts/utils/polygonV4PreSignerSafetyCompositionEvidence.js`
+   - Composes final economics and native affordability checks before prospective signer authorization.
+   - Does not authorize signing or broadcasting.
+
+### Dedicated tests
+
+- `test/polygonV4FinalTransactionEconomicsEvidence.test.js`
+- `test/polygonV4NativeGasAffordabilityEvidence.test.js`
+- `test/polygonV4NativeGasBalanceAcquisitionEvidence.test.js`
+- `test/polygonV4PreSignerSafetyCompositionEvidence.test.js`
+
+### Step 53 verified results
+
+- Focused Node tests: 52 passed, 0 failed, 0 skipped.
+- No Hardhat compilation or RPC interaction was performed in Step 53.
+- Protected `contracts/ProfitBot.sol`, signer authorization composition, `artifacts/`, and `cache/` remained unchanged.
+- Git index contained no staged changes.
+
+### Integration limitations
+
+- These eight files remain standalone and are not yet connected to an operational Polygon V4 execution runner.
+- Existing 1S.65–1S.75 execution composition interfaces have not been modified by this milestone.
+- The older transaction scripts remain disabled.
+- Passing offline tests does not establish live profitability, gas sufficiency under future network conditions, or transaction execution readiness.
+
+### Protected unrelated work
+
+Preserve all unrelated modified and untracked files, including the prepared execution lifecycle test, protected gas experiments, backup files, unsigned deployment preparation work, and the file named `=`.
+
+Do not modify protected Solidity, routing, signer, or scanner files without separate approval.
+
+### Next actions
+
+1. Review this checkpoint's exact Git diff.
+2. Obtain separate approval before staging the eight safety files and this checkpoint.
+3. Verify the exact staged file list and staged diff before any commit.
+4. Obtain separate approval before committing or pushing.
+5. Continue the September 23–October 12 historical architecture review before execution-path integration.
+6. Design and test a fail-closed orchestration boundary before considering signer authorization.
+
+No RPC, deployment, signing, broadcasting, staging, commit, or push is authorized by this checkpoint.
+
+---
+
+## Apollo Step 98 — Verified Canonical Regression Baseline
+
+Date: 2026-10-13
+Branch: repair/simulation-safety
+Commit: 62f310525cd8949c82145e98e30e29c6aeb43207
+Node.js: v18.20.8
+
+### Verified regression results
+
+**Step 96 — Canonical Node.js**
+
+- Command: `npm run test:node`
+- Selected test files: 146
+- Tests: 1,363
+- Passed: 1,363
+- Failed: 0
+- Cancelled: 0
+- Skipped: 0
+- Todo: 0
+- Duration: approximately 32.9 seconds
+- Captured log: `/tmp/apollo-step96-node.bqJBtwnA.log` (temporary; not durable across environment resets)
+
+**Step 92 — Canonical Hardhat/Mocha**
+
+- Command: `npm run test:hardhat`
+- Selected files: `test/ProfitBot.js`, `test/execution.js`, `test/threeLegExecution.js`
+- Passed: 29
+- Failed: 0
+- Solidity files compiled: 35
+
+**Combined result across separate runs: 1,392 passed, 0 failed.**
+
+### Repository integrity
+
+- Step 94 restored 32 tracked Hardhat-generated changes under `artifacts/` and `cache/`.
+- Step 96 confirmed generated state remained unchanged.
+- Protected production Solidity, routing, scanner and signer-authorization composition files remained unchanged.
+- Existing modification to `test/polygonV4PreparedExecutionLifecycleIntegration.test.js` was preserved.
+- Three protected untracked gas experiments remained excluded and untouched:
+  - `test/polygonV4GasStateSensitivityProbe.test.js`
+  - `test/polygonV4PairedGasMeasurementIntegration.test.js`
+  - `test/polygonV4PairedGasStateSensitivityIntegration.test.js`
+- Git staging remained empty.
+- No commit, push, deployment or broadcast was performed.
+
+### Scope and limitations
+
+- Canonical Node and Hardhat suites were executed separately.
+- Historical fork tests and protected gas experiments were not part of these runs.
+- Passing offline/local regression tests does not establish live execution readiness.
+- Standalone safety-gate components are not yet proven to be enforced by the operational execution path.
+- Existing unrelated modified and untracked work must be preserved.
+
+### Next actions
+
+1. Review this checkpoint's exact Git diff.
+2. Keep staging and committing subject to separate explicit approval.
+3. Continue fail-closed safety-gate and signer-authorization integration analysis.
+4. Preserve historical fork-test isolation and protected gas experiments.
+5. Require separate authorization for RPC/fork execution, signing, deployment or broadcasting.
+
+No secrets, private keys, seed phrases or credentials are recorded here.
+
+
+## Apollo Step 104B - V4 signing authorization hardening verified
+
+Date: 2026-10-14
+Repository: /workspaces/profitbot_project
+Codespace: bookish cod
+Branch: repair/simulation-safety
+Earlier baseline commit: 50ab170
+
+### Verified results
+- New signing authorization adapter: 16/16 focused offline tests passed.
+- Original safety-gated signer and gate-to-signer integration: 19/19 tests passed.
+- Total across those two targeted runs: 35 passed, 0 failed.
+- Syntax checks passed for all three approved hardening files.
+- git diff --check passed.
+- Existing tracked lifecycle test change preserved: 26 inserted lines.
+
+### Approved hardening files
+- scripts/utils/polygonV4SafetyGatedSignerAuthorizationCompositionEvidence.js
+- scripts/utils/polygonV4SafetyGatedSigningAuthorizationCompositionEvidence.js
+- test/polygonV4SafetyGatedSigningAuthorizationCompositionEvidence.test.js
+
+The signing adapter reuses validateGate() at initial validation and
+before its signing authorization callback. Regression tests reject missing
+simulation evidence, missing or unready gas affordability evidence, and
+inconsistent economics-to-simulation lineage.
+
+### Protected work
+Do not modify, delete, stage or run these gas experiments without approval:
+- test/polygonV4GasStateSensitivityProbe.test.js
+- test/polygonV4PairedGasMeasurementIntegration.test.js
+- test/polygonV4PairedGasStateSensitivityIntegration.test.js
+
+Preserve all existing untracked work, backups, and checkpoint history.
+Do not remove intentional execution barriers.
+
+### Outstanding verification
+- The full regression suite has NOT been rerun for this hardening.
+- Earlier historical baseline: 1363 Node + 29 Hardhat = 1392 passing.
+- Inspect test commands and test discovery before a new full-suite run.
+- Investigate divergence/tracking between main and repair/simulation-safety.
+- Do not assume either branch can be merged or pushed safely.
+- Structural evidence tests do not establish live RPC freshness,
+  cryptographic evidence provenance or universal operational enforcement.
+
+### Operational restrictions
+No live execution, signing, broadcasting, deployment, staging,
+commit, push, merge, reset or force-push was performed in these steps.
+Keep live execution disabled pending separate verification and approval.

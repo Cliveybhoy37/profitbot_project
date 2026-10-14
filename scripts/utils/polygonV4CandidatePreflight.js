@@ -1,0 +1,463 @@
+"use strict";
+
+const { ethers } = require("ethers");
+
+const POLYGON_WPOL =
+  "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
+
+function requireTokenAddress(value, label) {
+  if (typeof value !== "string" || !ethers.utils.isAddress(value)) {
+    throw new Error(`${label} must be a valid token address`);
+  }
+
+  return ethers.utils.getAddress(value);
+}
+
+function validateWpolRoute(candidateLegs, executionLegs) {
+  const candidateTokens = candidateLegs.map((leg, index) => {
+    if (!leg || typeof leg !== "object") {
+      throw new Error(`Candidate leg ${index} must be an object`);
+    }
+
+    return {
+      tokenIn: requireTokenAddress(
+        leg.tokenIn,
+        `Candidate leg ${index} tokenIn`
+      ),
+      tokenOut: requireTokenAddress(
+        leg.tokenOut,
+        `Candidate leg ${index} tokenOut`
+      )
+    };
+  });
+
+  if (
+    candidateTokens[0].tokenIn.toLowerCase() !== POLYGON_WPOL.toLowerCase() ||
+    candidateTokens[2].tokenOut.toLowerCase() !== POLYGON_WPOL.toLowerCase()
+  ) {
+    throw new Error("Preflight requires WPOL-denominated closed route");
+  }
+
+  for (let i = 0; i < 2; i++) {
+    if (
+      candidateTokens[i].tokenOut.toLowerCase() !==
+      candidateTokens[i + 1].tokenIn.toLowerCase()
+    ) {
+      throw new Error("Candidate route token continuity mismatch");
+    }
+  }
+
+  for (let i = 0; i < 3; i++) {
+    const leg = executionLegs[i];
+
+    if (!leg || typeof leg !== "object") {
+      throw new Error(`Execution leg ${i} must be an object`);
+    }
+
+    const tokenIn = requireTokenAddress(
+      leg.tokenIn,
+      `Execution leg ${i} tokenIn`
+    );
+
+    const tokenOut = requireTokenAddress(
+      leg.tokenOut,
+      `Execution leg ${i} tokenOut`
+    );
+
+    if (
+      tokenIn.toLowerCase() !== candidateTokens[i].tokenIn.toLowerCase() ||
+      tokenOut.toLowerCase() !== candidateTokens[i].tokenOut.toLowerCase()
+    ) {
+      throw new Error(`Execution leg ${i} token mismatch with candidate`);
+    }
+  }
+}
+
+function requireBigNumber(value, label) {
+  if (!ethers.BigNumber.isBigNumber(value)) {
+    throw new Error(
+      `${label} must be a BigNumber`
+    );
+  }
+
+  return value;
+}
+
+function requireNonnegativeBigNumber(
+  value,
+  label
+) {
+  const amount =
+    requireBigNumber(value, label);
+
+  if (amount.lt(0)) {
+    throw new Error(
+      `${label} must be nonnegative`
+    );
+  }
+
+  return amount;
+}
+
+function requirePositiveBigNumber(
+  value,
+  label
+) {
+  const amount =
+    requireBigNumber(value, label);
+
+  if (amount.lte(0)) {
+    throw new Error(
+      `${label} must be positive`
+    );
+  }
+
+  return amount;
+}
+
+function requireNonnegativeInteger(
+  value,
+  label
+) {
+  if (
+    !Number.isSafeInteger(value) ||
+    value < 0
+  ) {
+    throw new Error(
+      `${label} must be a nonnegative safe integer`
+    );
+  }
+
+  return value;
+}
+
+function requirePositiveInteger(
+  value,
+  label
+) {
+  if (
+    !Number.isSafeInteger(value) ||
+    value <= 0
+  ) {
+    throw new Error(
+      `${label} must be a positive safe integer`
+    );
+  }
+
+  return value;
+}
+
+function preflightObservedV4Candidate({
+  candidate,
+  executionLegs,
+  requestedAmount,
+  currentBlock,
+  maxAgeBlocks,
+  slippageBps,
+  maxSlippageBps,
+  premiumBps,
+  estimatedGas,
+  gasPriceWei,
+  safetyReserveWei,
+  minimumNetProfitWei
+}) {
+  if (
+    !candidate ||
+    typeof candidate !== "object"
+  ) {
+    throw new Error(
+      "Preflight requires candidate"
+    );
+  }
+
+  const observationBlock =
+    requirePositiveInteger(
+      candidate.blockTag,
+      "Candidate blockTag"
+    );
+
+  const amountIn =
+    requirePositiveBigNumber(
+      candidate.amountIn,
+      "Candidate amountIn"
+    );
+
+  const requested =
+    requirePositiveBigNumber(
+      requestedAmount,
+      "Requested amount"
+    );
+
+  if (!amountIn.eq(requested)) {
+    throw new Error(
+      "Candidate amount does not match requested flashloan"
+    );
+  }
+
+  const head =
+    requirePositiveInteger(
+      currentBlock,
+      "Current block"
+    );
+
+  const maxAge =
+    requireNonnegativeInteger(
+      maxAgeBlocks,
+      "maxAgeBlocks"
+    );
+
+  if (observationBlock > head) {
+    throw new Error(
+      "Candidate observation block is in the future"
+    );
+  }
+
+  const ageBlocks =
+    head - observationBlock;
+
+  if (ageBlocks > maxAge) {
+    throw new Error(
+      "Candidate observation is stale"
+    );
+  }
+
+  const slippage =
+    requirePositiveInteger(
+      slippageBps,
+      "slippageBps"
+    );
+
+  const maxSlippage =
+    requirePositiveInteger(
+      maxSlippageBps,
+      "maxSlippageBps"
+    );
+
+  if (maxSlippage >= 10000) {
+    throw new Error(
+      "maxSlippageBps must be below 10000"
+    );
+  }
+
+  if (slippage > maxSlippage) {
+    throw new Error(
+      "Candidate slippage exceeds policy maximum"
+    );
+  }
+
+  const premium =
+    requireNonnegativeInteger(
+      premiumBps,
+      "premiumBps"
+    );
+
+  if (premium >= 10000) {
+    throw new Error(
+      "premiumBps must be below 10000"
+    );
+  }
+
+  const gas =
+    requirePositiveBigNumber(
+      estimatedGas,
+      "Estimated gas"
+    );
+
+  const gasPrice =
+    requirePositiveBigNumber(
+      gasPriceWei,
+      "Gas price"
+    );
+
+  const safetyReserve =
+    requireNonnegativeBigNumber(
+      safetyReserveWei,
+      "Safety reserve"
+    );
+
+  const minimumNetProfit =
+    requireNonnegativeBigNumber(
+      minimumNetProfitWei,
+      "Minimum net profit"
+    );
+
+  if (
+    !Array.isArray(candidate.legs) ||
+    candidate.legs.length !== 3
+  ) {
+    throw new Error(
+      "Preflight requires exactly three candidate legs"
+    );
+  }
+
+  const expectedFinalOutput =
+    requirePositiveBigNumber(
+      candidate.legs[2].amountOut,
+      "Expected final output"
+    );
+
+  if (
+    !Array.isArray(executionLegs) ||
+    executionLegs.length !== 3
+  ) {
+    throw new Error(
+      "Preflight requires exactly three execution legs"
+    );
+  }
+
+  validateWpolRoute(candidate.legs, executionLegs);
+
+  for (let i = 0; i < 3; i++) {
+    const candidateLeg =
+      candidate.legs[i];
+
+    const executionLeg =
+      executionLegs[i];
+
+    if (
+      !candidateLeg ||
+      !executionLeg ||
+      typeof candidateLeg !== "object" ||
+      typeof executionLeg !== "object"
+    ) {
+      throw new Error(
+        "Preflight requires valid candidate and execution legs"
+      );
+    }
+
+    if (
+      typeof candidateLeg.tokenIn === "string" &&
+      typeof executionLeg.tokenIn === "string" &&
+      candidateLeg.tokenIn.toLowerCase() !==
+        executionLeg.tokenIn.toLowerCase()
+    ) {
+      throw new Error(
+        "Execution leg tokenIn does not match candidate"
+      );
+    }
+
+    if (
+      typeof candidateLeg.tokenOut === "string" &&
+      typeof executionLeg.tokenOut === "string" &&
+      candidateLeg.tokenOut.toLowerCase() !==
+        executionLeg.tokenOut.toLowerCase()
+    ) {
+      throw new Error(
+        "Execution leg tokenOut does not match candidate"
+      );
+    }
+
+    const candidateAmountOut =
+      requirePositiveBigNumber(
+        candidateLeg.amountOut,
+        `Candidate leg ${i} amountOut`
+      );
+
+    const executionMinAmountOut =
+      requirePositiveBigNumber(
+        executionLeg.minAmountOut,
+        `Execution leg ${i} minAmountOut`
+      );
+
+    const expectedMinAmountOut =
+      candidateAmountOut
+        .mul(10000 - slippage)
+        .div(10000);
+
+    if (
+      !executionMinAmountOut.eq(
+        expectedMinAmountOut
+      )
+    ) {
+      throw new Error(
+        "Execution leg minAmountOut does not match accepted slippage policy"
+      );
+    }
+  }
+
+  const protectedFinalOutput =
+    executionLegs[2].minAmountOut;
+
+  const expectedPremium =
+    amountIn
+      .mul(premium)
+      .add(9999)
+      .div(10000);
+
+  const estimatedGasCost =
+    gas.mul(gasPrice);
+
+  const totalCost =
+    amountIn
+      .add(expectedPremium)
+      .add(estimatedGasCost)
+      .add(safetyReserve);
+
+  if (
+    expectedFinalOutput.lt(
+      totalCost
+    )
+  ) {
+    throw new Error(
+      "Candidate has negative expected net profit"
+    );
+  }
+
+  const expectedNetProfit =
+    expectedFinalOutput.sub(
+      totalCost
+    );
+
+  if (
+    expectedNetProfit.lt(
+      minimumNetProfit
+    )
+  ) {
+    throw new Error(
+      "Candidate expected net profit below minimum"
+    );
+  }
+
+  if (
+    protectedFinalOutput.lt(
+      totalCost
+    )
+  ) {
+    throw new Error(
+      "Candidate protected output does not cover modeled costs"
+    );
+  }
+
+  const worstCaseNetProfit =
+    protectedFinalOutput.sub(
+      totalCost
+    );
+
+  if (
+    worstCaseNetProfit.lt(
+      minimumNetProfit
+    )
+  ) {
+    throw new Error(
+      "Candidate worst-case net profit below minimum"
+    );
+  }
+
+  return {
+    observationBlock,
+    ageBlocks,
+    amountIn,
+    expectedFinalOutput,
+    protectedFinalOutput,
+    expectedPremium,
+    estimatedGasCost,
+    safetyReserve,
+    minimumNetProfit,
+    expectedNetProfit,
+    worstCaseNetProfit
+  };
+}
+
+module.exports = {
+  preflightObservedV4Candidate
+};

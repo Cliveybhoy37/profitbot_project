@@ -1,0 +1,458 @@
+const { ethers } = require('hardhat');
+const assert = require('node:assert/strict');
+
+describe('Three-leg venue execution', function () {
+  let loan, bridge, middle, pool, bot, v3, sushi, balancer;
+  const unit = ethers.utils.parseUnits('1', 18);
+  const feeData = ethers.utils.hexZeroPad(ethers.utils.hexlify(3000), 32);
+
+  beforeEach(async function () {
+    const Token = await ethers.getContractFactory('TestToken');
+    loan = await Token.deploy('Loan');
+    bridge = await Token.deploy('Bridge');
+    middle = await Token.deploy('Middle');
+
+    const Pool = await ethers.getContractFactory('TestPool');
+    pool = await Pool.deploy();
+
+    const Provider = await ethers.getContractFactory('TestProvider');
+    const provider = await Provider.deploy(pool.address);
+
+    const V3 = await ethers.getContractFactory('TestV3Router');
+    v3 = await V3.deploy(11000);
+
+    const V2 = await ethers.getContractFactory('TestRouter');
+    sushi = await V2.deploy(10000);
+
+    const Balancer = await ethers.getContractFactory('TestBalancerVault');
+    balancer = await Balancer.deploy(10000);
+
+    const Bot = await ethers.getContractFactory('ProfitBot');
+    bot = await Bot.deploy(
+      provider.address,
+      sushi.address,
+      sushi.address,
+      v3.address,
+      balancer.address
+    );
+
+    await loan.mint(pool.address, unit.mul(100));
+    await bridge.mint(v3.address, unit.mul(100));
+    await middle.mint(sushi.address, unit.mul(100));
+    await middle.mint(balancer.address, unit.mul(100));
+    await loan.mint(v3.address, unit.mul(100));
+  });
+
+  function params() {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    return ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, feeData],
+        [1, bridge.address, middle.address, unit.mul(105).div(100), ethers.constants.HashZero],
+        [2, middle.address, loan.address, unit.mul(115).div(100), feeData]
+      ]]
+    );
+  }
+
+  it('executes V3 -> Sushi V2 -> V3 using each actual output as the next input', async function () {
+    await bot.initiateFlashloan(loan.address, unit, params());
+
+    assert((await loan.balanceOf(bot.address)).gt(0));
+    assert((await loan.balanceOf(pool.address)).gt(unit.mul(100)));
+
+    assert.equal(
+      (await loan.allowance(bot.address, v3.address)).toString(),
+      '0'
+    );
+    assert.equal(
+      (await bridge.allowance(bot.address, sushi.address)).toString(),
+      '0'
+    );
+    assert.equal(
+      (await middle.allowance(bot.address, v3.address)).toString(),
+      '0'
+    );
+    assert.equal(
+      (await loan.allowance(bot.address, pool.address)).toString(),
+      '0'
+    );
+  });
+
+  it('preserves a pre-existing loan-asset balance and adds only incremental profit', async function () {
+    const existingBalance = unit.mul(5);
+    const expectedProfit = ethers.utils.parseUnits('0.2091', 18);
+
+    await loan.mint(bot.address, existingBalance);
+    await bot.initiateFlashloan(loan.address, unit, params());
+
+    assert.equal(
+      (await loan.balanceOf(bot.address)).toString(),
+      existingBalance.add(expectedProfit).toString()
+    );
+  });
+
+  it('rejects malformed route parameters atomically', async function () {
+    const poolBalanceBefore = await loan.balanceOf(pool.address);
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, '0x1234');
+    } catch (e) {
+      failed = true;
+    }
+
+    assert(failed);
+    assert((await loan.balanceOf(bot.address)).isZero());
+    assert.equal(
+      (await loan.balanceOf(pool.address)).toString(),
+      poolBalanceBefore.toString()
+    );
+  });
+
+  it('rejects an empty decoded route', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const emptyParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[]]
+    );
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, emptyParams);
+      assert.fail('expected revert');
+    } catch (e) {
+      assert.match(e.message, /Exactly three legs required/);
+    }
+  });
+
+  it('rejects routes that do not contain exactly three legs', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const twoLegParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, feeData],
+        [2, bridge.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, twoLegParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Exactly three legs required/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects a route that does not start with the loan asset', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, bridge.address, middle.address, unit, feeData],
+        [1, middle.address, bridge.address, unit, ethers.constants.HashZero],
+        [2, bridge.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Route must start with loan asset/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects a route that does not close back to the loan asset', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, feeData],
+        [1, bridge.address, middle.address, unit, ethers.constants.HashZero],
+        [2, middle.address, bridge.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Route not closed/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects a route whose adjacent legs are not contiguous', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, feeData],
+        [1, middle.address, bridge.address, unit, ethers.constants.HashZero],
+        [2, bridge.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Route not contiguous/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects unexpected venue data on a V2 leg', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, feeData],
+        [1, bridge.address, middle.address, unit, feeData],
+        [2, middle.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Unexpected V2 data/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects a V3 leg with a zero fee', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, ethers.constants.HashZero],
+        [1, bridge.address, middle.address, unit, ethers.constants.HashZero],
+        [2, middle.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Invalid V3 fee/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects a V3 leg with a fee above uint24 max', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+    const oversizedFeeData = ethers.utils.hexZeroPad(ethers.utils.hexlify(2 ** 24), 32);
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, oversizedFeeData],
+        [1, bridge.address, middle.address, unit, ethers.constants.HashZero],
+        [2, middle.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Invalid V3 fee/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects a Balancer leg with a zero pool id', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, feeData],
+        [3, bridge.address, middle.address, unit, ethers.constants.HashZero],
+        [2, middle.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Invalid Balancer pool/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects a leg that swaps a token to itself', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, feeData],
+        [1, bridge.address, bridge.address, unit, ethers.constants.HashZero],
+        [2, bridge.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Invalid self swap/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects a leg containing a zero token address', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const badParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, feeData],
+        [1, bridge.address, ethers.constants.AddressZero, unit, ethers.constants.HashZero],
+        [2, ethers.constants.AddressZero, loan.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(loan.address, unit, badParams);
+    } catch (e) {
+      failed = true;
+      assert.match(e.message, /Invalid leg token/);
+    }
+
+    assert(failed);
+  });
+
+
+  it('rejects a fee-on-transfer flashloan asset', async function () {
+    const FeeToken = await ethers.getContractFactory('TestFeeOnTransferToken');
+    const feeToken = await FeeToken.deploy();
+
+    await feeToken.mint(pool.address, unit.mul(100));
+
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const feeTokenParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, feeToken.address, bridge.address, unit, feeData],
+        [1, bridge.address, middle.address, unit, ethers.constants.HashZero],
+        [2, middle.address, feeToken.address, unit, feeData]
+      ]]
+    );
+
+    let failed = false;
+
+    try {
+      await bot.initiateFlashloan(
+        feeToken.address,
+        unit,
+        feeTokenParams
+      );
+    } catch (e) {
+      failed = true;
+    }
+
+    assert(failed);
+    assert((await feeToken.balanceOf(bot.address)).isZero());
+  });
+
+
+  it('executes V3 -> Balancer V2 -> V3', async function () {
+    const legType =
+      'tuple(uint8 venue,address tokenIn,address tokenOut,uint256 minAmountOut,bytes32 venueData)[]';
+
+    const poolId = ethers.utils.hexZeroPad(ethers.utils.hexlify(1), 32);
+
+    const balancerParams = ethers.utils.defaultAbiCoder.encode(
+      [legType],
+      [[
+        [2, loan.address, bridge.address, unit, feeData],
+        [3, bridge.address, middle.address, unit, poolId],
+        [2, middle.address, loan.address, unit, feeData]
+      ]]
+    );
+
+    await bot.initiateFlashloan(
+      loan.address,
+      unit,
+      balancerParams
+    );
+
+    assert((await loan.balanceOf(bot.address)).gt(0));
+    assert((await bridge.balanceOf(balancer.address)).gt(0));
+    assert.equal(
+      (await bridge.allowance(bot.address, balancer.address)).toString(),
+      '0'
+    );
+    assert((await loan.balanceOf(pool.address)).gt(unit.mul(100)));
+  });
+
+});

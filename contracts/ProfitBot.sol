@@ -3,20 +3,40 @@ pragma solidity ^0.8.20;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@aave/core-v3/contracts/flashloan/interfaces/IFlashLoanSimpleReceiver.sol";
 import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
 import "@aave/core-v3/contracts/interfaces/IPool.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import { IVault } from "../lib/balancer-v2/pkg/interfaces/contracts/vault/IVault.sol";
 import { IAsset } from "../lib/balancer-v2/pkg/interfaces/contracts/vault/IAsset.sol";
 
 contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
+    using SafeERC20 for IERC20;
+
+    enum Venue {
+        QUICKSWAP_V2,
+        SUSHISWAP_V2,
+        UNISWAP_V3,
+        BALANCER_V2
+    }
+
+    struct SwapLeg {
+        Venue venue;
+        address tokenIn;
+        address tokenOut;
+        uint256 minAmountOut;
+        bytes32 venueData;
+    }
+
     IPool public immutable POOL;
     IPoolAddressesProvider public immutable override ADDRESSES_PROVIDER;
 
-    IUniswapV2Router02 public immutable uniswapRouter;
+    IUniswapV2Router02 public immutable quickSwapRouter;
+    ISwapRouter public immutable uniswapV3Router;
     IUniswapV2Router02 public immutable sushiSwapRouter;
     IVault public immutable balancerVault;
 
@@ -26,18 +46,23 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
 
     constructor(
         address _provider,
-        address _uniswapRouter,
+        address _quickSwapRouter,
         address _sushiSwapRouter,
+        address _uniswapV3Router,
         address _balancerVault
     ) {
         require(_provider != address(0), "Invalid Aave provider");
-        require(_uniswapRouter != address(0), "Invalid Uniswap router");
+        require(_quickSwapRouter != address(0), "Invalid QuickSwap router");
+        require(_uniswapV3Router != address(0), "Invalid Uniswap V3 router");
         require(_sushiSwapRouter != address(0), "Invalid Sushi router");
         require(_balancerVault != address(0), "Invalid Balancer vault");
 
         ADDRESSES_PROVIDER = IPoolAddressesProvider(_provider);
-        POOL = IPool(ADDRESSES_PROVIDER.getPool());
-        uniswapRouter = IUniswapV2Router02(_uniswapRouter);
+        address pool = ADDRESSES_PROVIDER.getPool();
+        require(pool != address(0), "Invalid Aave pool");
+        POOL = IPool(pool);
+        quickSwapRouter = IUniswapV2Router02(_quickSwapRouter);
+        uniswapV3Router = ISwapRouter(_uniswapV3Router);
         sushiSwapRouter = IUniswapV2Router02(_sushiSwapRouter);
         balancerVault = IVault(_balancerVault);
     }
@@ -47,6 +72,8 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
         uint256 amount,
         bytes calldata params
     ) external onlyOwner {
+        require(token != address(0), "Invalid flashloan token");
+        require(amount > 0, "Invalid flashloan amount");
         POOL.flashLoanSimple(address(this), token, amount, params, 0);
     }
 
@@ -59,71 +86,126 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
     ) external override returns (bool) {
         emit DebugText("executeOperation() entered");
 
-        emit DebugText(string(abi.encodePacked("POOL address: ", Strings.toHexString(uint160(address(POOL)), 20))));
-        emit DebugText(string(abi.encodePacked("msg.sender: ", Strings.toHexString(uint160(msg.sender), 20))));
-        emit DebugText(string(abi.encodePacked("initiator: ", Strings.toHexString(uint160(initiator), 20))));
-
         require(msg.sender == address(POOL), "Only callable by Aave pool");
         require(initiator == address(this), "Only initiated internally");
 
-        try this.decodeBalancerParams(params) returns (
-            string memory route,
-            address tokenIn,
-            address tokenOut,
-            bytes32 poolId,
-            uint256 minOut1,
-            uint256 minOut2
-        ) {
-            if (keccak256(bytes(route)) == keccak256("balancer")) {
-                emit DebugText("Balancer route detected");
-                uint256 amountOut = _balancerSwapSingle(poolId, tokenIn, tokenOut, amount, minOut1);
-                emit SwapResult(amountOut);
+        SwapLeg[] memory legs = abi.decode(params, (SwapLeg[]));
+        require(legs.length == 3, "Exactly three legs required");
+        require(legs[0].tokenIn == asset, "Route must start with loan asset");
+        require(legs[2].tokenOut == asset, "Route not closed");
 
-                uint256 totalDebt = amount + premium;
-                uint256 finalAmount = IERC20(asset).balanceOf(address(this));
-                emit ProfitEvaluated(finalAmount, totalDebt);
-                IERC20(asset).approve(address(POOL), totalDebt);
-                return true;
+        for (uint256 i = 0; i < legs.length; i++) {
+            require(
+                legs[i].tokenIn != address(0) &&
+                legs[i].tokenOut != address(0),
+                "Invalid leg token"
+            );
+            require(legs[i].tokenIn != legs[i].tokenOut, "Invalid self swap");
+            require(legs[i].minAmountOut > 0, "Zero minimum output");
+
+            if (i > 0) {
+                require(
+                    legs[i - 1].tokenOut == legs[i].tokenIn,
+                    "Route not contiguous"
+                );
             }
-        } catch {
-            emit DebugText("Fallback to Uniswap/Sushi path");
 
-            (
-                address token,
-                uint256 loanAmount,
-                address[] memory path1,
-                address[] memory path2,
-                uint256 minOut1,
-                uint256 minOut2
-            ) = abi.decode(params, (address, uint256, address[], address[], uint256, uint256));
+            if (
+                legs[i].venue == Venue.QUICKSWAP_V2 ||
+                legs[i].venue == Venue.SUSHISWAP_V2
+            ) {
+                require(legs[i].venueData == bytes32(0), "Unexpected V2 data");
+            } else if (legs[i].venue == Venue.UNISWAP_V3) {
+                uint256 feeData = uint256(legs[i].venueData);
+                require(
+                    feeData > 0 && feeData <= type(uint24).max,
+                    "Invalid V3 fee"
+                );
+            } else if (legs[i].venue == Venue.BALANCER_V2) {
+                require(legs[i].venueData != bytes32(0), "Invalid Balancer pool");
+            } else {
+                revert("Unsupported venue");
+            }
+        }
 
-            emit DebugText("Swapping via Uniswap...");
-            IERC20(token).approve(address(uniswapRouter), loanAmount);
-            uint256 beforeIntermediate = IERC20(path1[path1.length - 1]).balanceOf(address(this));
+        uint256 startingAsset = IERC20(asset).balanceOf(address(this)) - amount;
+        uint256 currentAmount = amount;
 
-            uniswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                loanAmount, minOut1, path1, address(this), block.timestamp
+        for (uint256 i = 0; i < legs.length; i++) {
+            currentAmount = _executeLeg(legs[i], currentAmount);
+            require(
+                currentAmount >= legs[i].minAmountOut,
+                "Output below minimum"
+            );
+        }
+
+        uint256 totalDebt = amount + premium;
+        uint256 finalAmount = IERC20(asset).balanceOf(address(this));
+        require(
+            finalAmount > startingAsset + totalDebt,
+            "No incremental token profit"
+        );
+
+        emit ProfitEvaluated(finalAmount, totalDebt);
+        IERC20(asset).forceApprove(address(POOL), totalDebt);
+        return true;
+    }
+
+    function _executeLeg(
+        SwapLeg memory leg,
+        uint256 amountIn
+    ) internal returns (uint256 amountOut) {
+        if (
+            leg.venue == Venue.QUICKSWAP_V2 ||
+            leg.venue == Venue.SUSHISWAP_V2
+        ) {
+            IUniswapV2Router02 router = leg.venue == Venue.QUICKSWAP_V2
+                ? quickSwapRouter
+                : sushiSwapRouter;
+
+            IERC20(leg.tokenIn).forceApprove(address(router), amountIn);
+
+            address[] memory path = new address[](2);
+            path[0] = leg.tokenIn;
+            path[1] = leg.tokenOut;
+
+            uint256 beforeOut = IERC20(leg.tokenOut).balanceOf(address(this));
+
+            router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+                amountIn,
+                leg.minAmountOut,
+                path,
+                address(this),
+                block.timestamp
             );
 
-            uint256 afterIntermediate = IERC20(path1[path1.length - 1]).balanceOf(address(this));
-            uint256 interAmount = afterIntermediate - beforeIntermediate;
+            amountOut =
+                IERC20(leg.tokenOut).balanceOf(address(this)) - beforeOut;
+        } else if (leg.venue == Venue.UNISWAP_V3) {
+            IERC20(leg.tokenIn).forceApprove(address(uniswapV3Router), amountIn);
 
-            // ✅ NEW: Slippage check logs
-            emit DebugText(string(abi.encodePacked("Expected minOut1: ", Strings.toString(minOut1))));
-            emit DebugText(string(abi.encodePacked("Actual out: ", Strings.toString(interAmount))));
-
-            emit DebugText("Swapping via Sushi...");
-            IERC20(path1[path1.length - 1]).approve(address(sushiSwapRouter), interAmount);
-
-            sushiSwapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                interAmount, minOut2, path2, address(this), block.timestamp
+            amountOut = uniswapV3Router.exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: leg.tokenIn,
+                    tokenOut: leg.tokenOut,
+                    fee: uint24(uint256(leg.venueData)),
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: amountIn,
+                    amountOutMinimum: leg.minAmountOut,
+                    sqrtPriceLimitX96: 0
+                })
             );
-
-            uint256 totalDebt = amount + premium;
-            uint256 finalAmount = IERC20(asset).balanceOf(address(this));
-            emit ProfitEvaluated(finalAmount, totalDebt);
-            IERC20(asset).approve(address(POOL), totalDebt);
-            return true;
+        } else if (leg.venue == Venue.BALANCER_V2) {
+            amountOut = _balancerSwapSingle(
+                leg.venueData,
+                leg.tokenIn,
+                leg.tokenOut,
+                amountIn,
+                leg.minAmountOut
+            );
+        } else {
+            revert("Unsupported venue");
         }
     }
 
@@ -153,31 +235,20 @@ contract ProfitBot is Ownable, IFlashLoanSimpleReceiver {
         });
 
         emit DebugText("Approving tokenIn for Balancer Vault");
-        IERC20(tokenIn).approve(address(balancerVault), amountIn);
+        IERC20(tokenIn).forceApprove(address(balancerVault), amountIn);
 
         emit DebugText("Calling balancerVault.swap()");
         amountOut = balancerVault.swap(singleSwap, funds, minAmountOut, block.timestamp);
     }
 
-    function decodeBalancerParams(bytes calldata params) external pure returns (
-        string memory route,
-        address tokenIn,
-        address tokenOut,
-        bytes32 poolId,
-        uint256 minOut1,
-        uint256 minOut2
-    ) {
-        return abi.decode(params, (string, address, address, bytes32, uint256, uint256));
-    }
-
     function withdrawToken(address token) public onlyOwner {
         uint256 balance = IERC20(token).balanceOf(address(this));
         require(balance > 0, "No balance to withdraw");
-        IERC20(token).transfer(owner(), balance);
+        IERC20(token).safeTransfer(owner(), balance);
     }
 
     function withdrawEther() public onlyOwner {
-        payable(owner()).transfer(address(this).balance);
+        Address.sendValue(payable(owner()), address(this).balance);
     }
 
     function withdrawAll(address[] calldata tokens) external onlyOwner {

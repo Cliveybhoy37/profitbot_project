@@ -1,3 +1,4 @@
+throw new Error("Legacy transaction script disabled pending audited simulation and owner review");
 // scripts/deployProfitBot.js
 require("dotenv").config();
 const { ethers, network } = require("hardhat");

@@ -135,3 +135,10 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .env*
+
+# Generated Hardhat outputs (historically tracked files remain in Git)
+/artifacts/
+/cache/
+
+# Resumable local Polygon V4 research runtime state
+/research/runtime/

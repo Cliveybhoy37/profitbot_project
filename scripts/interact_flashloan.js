@@ -1,3 +1,4 @@
+throw new Error("Legacy transaction script disabled pending audited simulation and owner review");
 require("dotenv").config();
 const { ethers } = require("ethers");
 const fs = require("fs");

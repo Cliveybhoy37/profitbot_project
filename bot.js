@@ -1,3 +1,4 @@
+throw new Error("Legacy random-output bot disabled: results were fabricated and cannot identify opportunities.");
 // bot.js
 require("dotenv").config();
 const fs = require("fs");
