@@ -8482,3 +8482,53 @@ Node.js: v18.20.8
 5. Require separate authorization for RPC/fork execution, signing, deployment or broadcasting.
 
 No secrets, private keys, seed phrases or credentials are recorded here.
+
+
+## Apollo Step 104B - V4 signing authorization hardening verified
+
+Date: 2026-10-14
+Repository: /workspaces/profitbot_project
+Codespace: bookish cod
+Branch: repair/simulation-safety
+Earlier baseline commit: 50ab170
+
+### Verified results
+- New signing authorization adapter: 16/16 focused offline tests passed.
+- Original safety-gated signer and gate-to-signer integration: 19/19 tests passed.
+- Total across those two targeted runs: 35 passed, 0 failed.
+- Syntax checks passed for all three approved hardening files.
+- git diff --check passed.
+- Existing tracked lifecycle test change preserved: 26 inserted lines.
+
+### Approved hardening files
+- scripts/utils/polygonV4SafetyGatedSignerAuthorizationCompositionEvidence.js
+- scripts/utils/polygonV4SafetyGatedSigningAuthorizationCompositionEvidence.js
+- test/polygonV4SafetyGatedSigningAuthorizationCompositionEvidence.test.js
+
+The signing adapter reuses validateGate() at initial validation and
+before its signing authorization callback. Regression tests reject missing
+simulation evidence, missing or unready gas affordability evidence, and
+inconsistent economics-to-simulation lineage.
+
+### Protected work
+Do not modify, delete, stage or run these gas experiments without approval:
+- test/polygonV4GasStateSensitivityProbe.test.js
+- test/polygonV4PairedGasMeasurementIntegration.test.js
+- test/polygonV4PairedGasStateSensitivityIntegration.test.js
+
+Preserve all existing untracked work, backups, and checkpoint history.
+Do not remove intentional execution barriers.
+
+### Outstanding verification
+- The full regression suite has NOT been rerun for this hardening.
+- Earlier historical baseline: 1363 Node + 29 Hardhat = 1392 passing.
+- Inspect test commands and test discovery before a new full-suite run.
+- Investigate divergence/tracking between main and repair/simulation-safety.
+- Do not assume either branch can be merged or pushed safely.
+- Structural evidence tests do not establish live RPC freshness,
+  cryptographic evidence provenance or universal operational enforcement.
+
+### Operational restrictions
+No live execution, signing, broadcasting, deployment, staging,
+commit, push, merge, reset or force-push was performed in these steps.
+Keep live execution disabled pending separate verification and approval.

@@ -669,6 +669,32 @@ describe(
               "APEPE V3 allowance remains"
             );
 
+            // Verify Permit2's internal allowance separately
+            // from DAI's ERC-20 allowance to Permit2.
+            const permit2Contract =
+              new ethers.Contract(
+                permit2,
+                [
+                  "function allowance(address owner,address token,address spender) view returns (uint160 amount,uint48 expiration,uint48 nonce)"
+                ],
+                ethers.provider
+              );
+
+            const v4Router =
+              await executor.V4_ROUTER();
+
+            const internalPermit2Allowance =
+              await permit2Contract.allowance(
+                executor.address,
+                DAI,
+                v4Router
+              );
+
+            assert(
+              internalPermit2Allowance.amount.isZero(),
+              "Permit2 internal V4 router allowance remains"
+            );
+
             assert(
               receipt.gasUsed.gt(0),
               "final receipt gasUsed must be positive"
